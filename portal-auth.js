@@ -164,7 +164,7 @@ function createPortalAuth(runtimeDir, env = process.env) {
     return sanitizeUser(getUserById.get(id));
   }
   function createTutorUsers(tutors, password) {
-    if (String(password || '').length < 12) throw new Error('A senha precisa ter pelo menos 12 caracteres.');
+    if (!String(password || '')) throw new Error('Informe a senha inicial dos tutores.');
     if (!Array.isArray(tutors) || !tutors.length) throw new Error('Nenhum tutor ativo disponível para provisionar.');
     const existingRows = db.prepare('SELECT * FROM users').all();
     const existingByAccount = new Map();

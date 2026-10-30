@@ -141,8 +141,8 @@
   $('tutorProvisionForm').addEventListener('submit', async event => {
     event.preventDefault();
     const password = $('tutorInitialPassword').value;
-    if (password.length < 12) {
-      $('tutorProvisionError').textContent = 'A senha precisa ter pelo menos 12 caracteres.'; show($('tutorProvisionError'), true); return;
+    if (!password) {
+      $('tutorProvisionError').textContent = 'Informe a senha inicial dos tutores.'; show($('tutorProvisionError'), true); return;
     }
     const list = tutorCandidates.map(tutor => `• ${tutor.name} — ${tutor.polo} — ${tutor.username}`).join('\n');
     if (!confirm(`Criar uma conta central de Matrículas para cada tutor listado, usando a mesma senha inicial?\n\n${list}\n\nCada conta terá consulta do polo e acesso individual às matrículas do tutor.`)) return;
