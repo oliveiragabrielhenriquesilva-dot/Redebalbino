@@ -147,8 +147,9 @@ process.on('SIGINT', () => stop('SIGINT'));
 
 function rewriteText(body, prefix) {
   let text = body.toString('utf8');
-  text = text.replace(/(["'`])\/(?!\/)/g, (_, q) => `${q}${prefix}/`);
-  text = text.replace(/url\(\s*(['"]?)\/(?!\/)/gi, (_, q) => `url(${q}${prefix}/`);
+  const inScope = value => /^(?:api|assets|artes|fotos|uploads|style\.css|app\.js|gestao\.js|conciliacao\.js|whatsapp\.js|planilha\.js|balbino-chat(?:-[^/]+)?|favicon(?:-[^/]+)?|apple-touch-icon\.png)(?=\/|[?#]|$)/i.test(value);
+  text = text.replace(/(["'`])\/(?!\/)([^"'`\\\s]*)/g, (match, quote, value) => inScope(value) ? `${quote}${prefix}/${value}` : match);
+  text = text.replace(/url\(\s*(['"]?)\/(?!\/)([^)'"\s]*)/gi, (match, quote, value) => inScope(value) ? `url(${quote}${prefix}/${value}` : match);
   return Buffer.from(text, 'utf8');
 }
 function isText(type = '') {
