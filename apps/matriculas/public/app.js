@@ -47,18 +47,14 @@ function miniBarra(valor, total, marco = null) {
 }
 
 // Logo padrão (marca original: balão de conversa + capelo de formatura)
-function marcaSVG(tam = 40) {
-  return `<svg width="${tam}" height="${tam}" viewBox="0 0 44 44" aria-hidden="true"><defs><linearGradient id="lgRB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b82f6"/><stop offset="1" stop-color="#14b8a6"/></linearGradient></defs>
-    <path d="M10 2h24a8 8 0 0 1 8 8v18a8 8 0 0 1-8 8H18l-8.5 6.2V35.6A8 8 0 0 1 2 28V10a8 8 0 0 1 8-8z" fill="url(#lgRB)"/>
-    <path d="M22 9 6.5 15.6 22 22.2l15.5-6.6z" fill="#fff"/>
-    <path d="M12.8 19.2v5c0 2.4 4.1 4.4 9.2 4.4s9.2-2 9.2-4.4v-5L22 23.1z" fill="#fff" opacity=".88"/>
-    <path d="M35.4 16.6v7.4" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><circle cx="35.4" cy="25.2" r="1.8" fill="#fff"/></svg>`;
-}
-function logoHTML(cfgs, escuro = true) {
+function marcaSVG(tam = 40, escuro = true) {
+  const imagem = escuro ? 'monograma-rede-balbino-branco.webp' : 'monograma-rede-balbino.webp';
+  return `<img class="marca-oficial" width="${tam}" height="${tam}" src="/brand/${imagem}" alt="Rede Balbino">`;
+} function logoHTML(cfgs, escuro = true) {
   if (cfgs.logo) return `<img class="logo-img" src="${cfgs.logo}" alt="${esc(cfgs.nome_rede || 'Logo')}">`;
   const nome = String(cfgs.nome_rede || 'Rede Balbino').trim();
   const [p1, ...resto] = nome.split(/\s+/);
-  return `<div class="logo ${escuro ? '' : 'claro'}">${marcaSVG(40)}<div class="logo-txt">${resto.length ? `<small>${esc(p1)}</small><b>${esc(resto.join(' '))}</b>` : `<b>${esc(nome)}</b>`}</div></div>`;
+  return `<div class="logo ${escuro ? '' : 'claro'}">${marcaSVG(40, escuro)}<div class="logo-txt">${resto.length ? `<small>${esc(p1)}</small><b>${esc(resto.join(' '))}</b>` : `<b>${esc(nome)}</b>`}</div></div>`;
 }
 function saveGap(saldo, compacto = false) {
   if (saldo == null) return '<span class="muted">—</span>';

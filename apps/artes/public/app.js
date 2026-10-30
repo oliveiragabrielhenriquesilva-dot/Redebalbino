@@ -67,7 +67,7 @@ const telas = { inicio, nova, publicacoes, automacoes, cursos, tutoras, empresas
 async function navegar() {
   const rota = (location.hash.replace('#/', '') || 'inicio').split('?')[0];
   document.querySelectorAll('nav a').forEach(a => a.classList.toggle('ativo', a.dataset.rota === rota));
-  try { await carregarBase(); document.querySelector('.marca span').textContent = `Automatizador de publicações · versão ${S.estado.versao || '?'}`; await (telas[rota] || inicio)(); }
+  try { await carregarBase(); document.querySelector('.marca span').textContent = `Gerador de Artes · versão ${S.estado.versao || '?'}`; await (telas[rota] || inicio)(); }
   catch (e) { app.innerHTML = `<div class="cartao erro-txt">${esc(e.message)}</div>`; }
   window.scrollTo(0, 0);
 }

@@ -375,6 +375,16 @@ const server = http.createServer((req, res) => {
     });
     return res.end(JSON.stringify({ ok: appHealth.every(app => app.status === 'ready' && app.loaded), apps: appHealth }));
   }
+  const brandAssets = {
+    '/brand/rede-balbino-branco.webp': 'rede-balbino-branco.webp',
+    '/brand/monograma-rede-balbino.webp': 'monograma-rede-balbino.webp',
+    '/brand/monograma-rede-balbino-branco.webp': 'monograma-rede-balbino-branco.webp'
+  };
+  if (brandAssets[url.pathname]) {
+    const content = fs.readFileSync(path.join(ROOT, 'brand', brandAssets[url.pathname]));
+    res.writeHead(200, { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+    return res.end(content);
+  }
   const app = apps.find(a => url.pathname === a.prefix || url.pathname.startsWith(a.prefix + '/'));
   if (!app) {
     const portalAssets = { '/': ['portal.html', 'text/html; charset=utf-8'], '/index.html': ['portal.html', 'text/html; charset=utf-8'], '/portal.css': ['portal.css', 'text/css; charset=utf-8'], '/portal.js': ['portal.js', 'text/javascript; charset=utf-8'] };

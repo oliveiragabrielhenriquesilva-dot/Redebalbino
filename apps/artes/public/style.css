@@ -1,13 +1,13 @@
 :root {
-  --marinho: #03132D;
-  --azul: #172C58;
-  --ciano: #00D0FF;
-  --ciano-escuro: #007A99;
-  --fundo: #F3F5F9;
-  --cartao: #FFFFFF;
-  --texto: #0E1A33;
-  --suave: #5A6782;
-  --linha: #DDE3EE;
+  --marinho: #0b0e12;
+  --azul: #3b82f6;
+  --ciano: #3b82f6;
+  --ciano-escuro: #60a5fa;
+  --fundo: #0b0e12;
+  --cartao: #11161d;
+  --texto: #edf2f7;
+  --suave: #9aa7b7;
+  --linha: #26303c;
   --ok: #1B7F4B;
   --alerta: #A15C00;
   --erro: #B42318;
@@ -131,3 +131,28 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--ciano); out
 .btn.mini { padding: 4px 10px; font-size: 13px; }
 .btn[disabled], .chip[disabled] { opacity: .45; cursor: default; }
 button.chip { font: inherit; cursor: pointer; }
+
+
+/* Identidade visual Rede Balbino — paleta alinhada ao Balbino Chat */
+body { font-family: Inter, "Segoe UI", system-ui, Arial, sans-serif; }
+.barra { background: #0b0e12; border-bottom: 1px solid #26303c; padding: 12px 28px; }
+.marca img.marca-oficial { height: 48px; width: auto; max-width: min(42vw, 270px); object-fit: contain; }
+.marca span { color: #c4ceda; border-color: #26303c; }
+main { color: var(--texto); }
+.cartao, .icones { background: #11161d; border-color: #26303c; color: #edf2f7; box-shadow: 0 10px 28px rgba(0,0,0,.20); }
+.btn:not(.prim):not(.ciano), .opcao, .chip, .icones .ic { background: #151b23; color: #edf2f7; border-color: #26303c; }
+.opcao.sel { background: #1b3153; border-color: #3b82f6; }
+.var { background: #1b3153; color: #b9d2ff; }
+input[type=text], input[type=date], input[type=datetime-local], input[type=password], input[type=search], select, textarea {
+  background: #151b23; color: #edf2f7; border-color: #364252;
+}
+input::placeholder, textarea::placeholder { color: #8290a2; }
+table { color: #edf2f7; }
+th { background: #151b23; color: #c4ceda; }
+td { border-color: #26303c; }
+nav a.ativo { background: #3b82f6; color: #081322; }
+:focus-visible { outline-color: #60a5fa; }
+@media (max-width: 680px) {
+  .barra { padding: 10px 16px; }
+  .marca img.marca-oficial { height: 40px; max-width: 52vw; }
+}
