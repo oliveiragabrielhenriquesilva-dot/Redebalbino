@@ -162,7 +162,7 @@ const bcSplashStartedAt=performance.now();
 async function finishStartupSplash(){const splash=$('#startupSplash');if(!splash)return;const wait=Math.max(0,700-(performance.now()-bcSplashStartedAt));if(wait)await new Promise(r=>setTimeout(r,wait));splash.classList.add('closing');setTimeout(()=>splash.classList.add('hidden'),220)}
 function showLogin(){$('#loginScreen').classList.remove('hidden')}function hideLogin(){$('#loginScreen').classList.add('hidden')}
 async function login(e){e.preventDefault();try{const d=await api('/api/auth/login',{method:'POST',body:{username:$('#loginUser').value,password:$('#loginPass').value}});state.me=d.user;hideLogin();await bootstrap();toast('Bem-vindo ao Balbino Chat')}catch(e){toast(e.message,true)}}
-async function logout(){await api('/api/auth/logout',{method:'POST'}).catch(()=>{});showLogin()}
+async function logout(){await api('/api/auth/logout',{method:'POST'}).catch(()=>{});if(location.pathname.startsWith('/chat')){location.href='/';return}showLogin()}
 function syncNavModules(page=null,persist=true){
   $$('[data-nav-module]').forEach(module=>{
     const id=module.dataset.navModule,toggle=module.querySelector('[data-nav-module-toggle]');if(!id||!toggle)return;
