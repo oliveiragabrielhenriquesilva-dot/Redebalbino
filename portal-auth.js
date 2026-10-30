@@ -52,7 +52,9 @@ function safeUsername(value) {
 function createPortalAuth(runtimeDir, env = process.env) {
   const dir = path.join(runtimeDir, 'portal');
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-  const db = new DatabaseSync(path.join(dir, 'portal.db'));
+  const dbFile = path.join(dir, 'portal.db');
+  const db = new DatabaseSync(dbFile);
+  try { fs.chmodSync(dbFile, 0o600); } catch {}
   db.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
