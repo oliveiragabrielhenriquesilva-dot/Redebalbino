@@ -119,7 +119,8 @@ function autorizado(req) {
   return false;
 }
 function enderecosRede() {
-  return Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => `http://${i.address}:${PORTA}/`);
+  try { return Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => `http://${i.address}:${PORTA}/`); }
+  catch (e) { console.warn('Não foi possível listar endereços locais da rede:', e.message); return []; }
 }
 const PAGINA_LOGIN = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar · Automatizador</title><link rel="icon" href="/assets/simbolo-branco.png">
 <style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#03132D;font-family:'Segoe UI',Arial,sans-serif;color:#03132D}
