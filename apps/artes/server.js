@@ -170,8 +170,9 @@ rota('PUT', '/api/rede', async (req) => {
 rota('GET', '/api/estado', () => {
   const c = getConfig();
   // Na hospedagem usamos o Chromium empacotado no servidor, sem depender do Chrome/Edge do usuário.
-  const navegador = process.env.CLOUD_CHROMIUM === '1' ? 'Chromium da hospedagem' : render.acharNavegador();
-  return { versao: VERSAO, navegador, supabase: Boolean(c.supabase_url && c.supabase_key), agora: sv.agoraLocal() };
+  const hospedado = process.env.CLOUD_CHROMIUM === '1';
+  const navegador = hospedado ? 'Chromium da hospedagem' : render.acharNavegador();
+  return { versao: VERSAO, navegador, navegadorStatus: render.statusChromium(), supabase: Boolean(c.supabase_url && c.supabase_key), agora: sv.agoraLocal() };
 });
 
 // Polos
@@ -566,4 +567,11 @@ servidor.on('error', async (e) => {
   setTimeout(iniciar, 1500);
 });
 if (require.main === module) iniciar();
-module.exports = { servidor, iniciarRotinasHospedadas };
+async function gracefulShutdown() {
+  if (servidor.listening) await new Promise(resolve => servidor.close(resolve));
+  await render.fecharChromiumCloud();
+}
+function healthStatus() {
+  return { chromium: render.statusChromium() };
+}
+module.exports = { servidor, iniciarRotinasHospedadas, gracefulShutdown, healthStatus };

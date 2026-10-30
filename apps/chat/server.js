@@ -841,4 +841,15 @@ if(embedded){
   process.on('SIGINT',()=>gracefulShutdown('SIGINT'));
   server.listen(PORT,HOST,iniciarServicos);
 }
-export { server, gracefulShutdown };
+function healthStatus() {
+  const connections = all().connections || [];
+  return { whatsapp: {
+    total: connections.length,
+    connected: connections.filter(connection => connection.state === 'CONNECTED').length,
+    reconnecting: connections.filter(connection => connection.state === 'RECONNECTING').length,
+    needsQr: connections.filter(connection => ['QR_REQUIRED', 'EXPIRED'].includes(connection.state)).length,
+    errors: connections.filter(connection => connection.state === 'ERROR').length
+  } };
+}
+
+export { server, gracefulShutdown, healthStatus };

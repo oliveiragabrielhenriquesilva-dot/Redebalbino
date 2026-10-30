@@ -479,7 +479,7 @@ function seed() {
     db.prepare("INSERT INTO config (chave, valor) VALUES ('segmentos_aplicado', '1')").run();
   }
 
-  const padrao = { porta: '3210', navegador: '', backup_pasta: '',
+  const padrao = { porta: '3210', navegador: '', backup_pasta: path.join(DATA_DIR, 'backups'),
     supabase_url: '', supabase_key: '', supabase_bucket: 'artes', meta_versao: 'v25.0',
     // Automações
     auto_aprovar: '0', horizonte_dias: '14', feriados_extras: '',
@@ -492,6 +492,8 @@ function seed() {
     proposta_whats_rotulo: 'Fale comigo no WhatsApp', proposta_rodape: 'Graduação EAD e semipresencial', proposta_site: 'unicesumar.edu.br' };
   const insCfg = db.prepare('INSERT OR IGNORE INTO config (chave, valor) VALUES (?, ?)');
   for (const [k, v] of Object.entries(padrao)) insCfg.run(k, v);
+  const backupAtual = db.prepare("SELECT valor FROM config WHERE chave = 'backup_pasta'").get();
+  if (!backupAtual?.valor) db.prepare("UPDATE config SET valor = ? WHERE chave = 'backup_pasta'").run(path.join(DATA_DIR, 'backups'));
 }
 seed();
 

@@ -207,24 +207,64 @@ function screenshot(urlOuArquivo, saida, w, h) {
   });
 }
 
-async function screenshotCloud(urlOuArquivo, saida, w, h) {
-  let browser;
-  try {
+let cloudBrowser = null;
+let cloudBrowserPromise = null;
+let cloudRenderQueue = Promise.resolve();
+let cloudLastRender = { at: null, ok: null };
+
+async function getCloudBrowser() {
+  if (cloudBrowser?.isConnected()) return cloudBrowser;
+  if (cloudBrowserPromise) return cloudBrowserPromise;
+  cloudBrowserPromise = (async () => {
     const chromiumModule = await import('@sparticuz/chromium');
     const puppeteerModule = await import('puppeteer-core');
     const chromium = chromiumModule.default || chromiumModule;
     const puppeteer = puppeteerModule.default || puppeteerModule;
     const executablePath = process.env.CHROME_PATH || await chromium.executablePath();
-    browser = await puppeteer.launch({ args: chromium.args, executablePath, headless: true });
-    const page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
-    await page.goto(urlOuArquivo, { waitUntil: 'networkidle0', timeout: 90000 });
-    await page.screenshot({ path: saida, type: 'png' });
+    const browser = await puppeteer.launch({ args: chromium.args, executablePath, headless: true });
+    cloudBrowser = browser;
+    browser.on('disconnected', () => { if (cloudBrowser === browser) cloudBrowser = null; });
+    return browser;
+  })();
+  try { return await cloudBrowserPromise; }
+  finally { cloudBrowserPromise = null; }
+}
+
+async function screenshotCloudOnce(urlOuArquivo, saida, w, h) {
+  let page;
+  try {
+    const browser = await getCloudBrowser();
+    page = await browser.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
+    await page.goto(urlOuArquivo, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await Promise.all([
+      page.waitForFunction(() => document.fonts.status === 'loaded', { timeout: 8000 }).catch(() => {}),
+      page.waitForFunction(() => Array.from(document.images).every(image => image.complete), { timeout: 8000 }).catch(() => {})
+    ]);
+    await page.screenshot({ path: saida, type: 'png', timeout: 15000 });
+    cloudLastRender = { at: new Date().toISOString(), ok: true };
     return saida;
   } catch (e) {
-    throw new Error('Não foi possível iniciar o Chromium na hospedagem: ' + e.message);
+    cloudLastRender = { at: new Date().toISOString(), ok: false };
+    throw new Error('Falha ao gerar imagem com o Chromium da hospedagem: ' + e.message);
   } finally {
-    if (browser) await browser.close().catch(() => {});
+    if (page) await page.close().catch(() => {});
   }
+}
+
+function screenshotCloud(urlOuArquivo, saida, w, h) {
+  const task = cloudRenderQueue.then(() => screenshotCloudOnce(urlOuArquivo, saida, w, h));
+  cloudRenderQueue = task.catch(() => {});
+  return task;
+}
+
+async function fecharChromiumCloud() {
+  const browser = cloudBrowser;
+  cloudBrowser = null;
+  if (browser) await browser.close().catch(() => {});
+}
+
+function statusChromium() {
+  return { configured: process.env.CLOUD_CHROMIUM === '1', browserOpen: Boolean(cloudBrowser?.isConnected()), lastRenderAt: cloudLastRender.at, lastRenderOk: cloudLastRender.ok };
 }
 
 async function gerarPNG({ tipo, polo, formato, dados, base, nome, tutora = null, quando = '' }) {
@@ -274,4 +314,4 @@ function lerTamanhoPNG(arq) {
   return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
 }
 
-module.exports = { FOTOS_DIR, htmlArte, htmlLivre, gerarPNG, gerarDeHtml, gerarJPG, legenda, montarVariaveis, acharNavegador, templateExiste, TAMANHOS, ARTES_DIR, linkWhats };
+module.exports = { FOTOS_DIR, htmlArte, htmlLivre, gerarPNG, gerarDeHtml, gerarJPG, legenda, montarVariaveis, acharNavegador, templateExiste, TAMANHOS, ARTES_DIR, linkWhats, fecharChromiumCloud, statusChromium };

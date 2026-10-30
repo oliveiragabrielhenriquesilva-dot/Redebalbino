@@ -122,7 +122,7 @@ async function startApps() {
       if (!process.env.ARTES_ADMIN_PASSWORD || process.env.ARTES_ADMIN_PASSWORD.length < 12) throw new Error('ARTES_ADMIN_PASSWORD ausente ou menor que 12 caracteres.');
       process.env.PORT = '3112';
       const mod = require(path.join(ROOT, 'apps', 'artes', 'server.js'));
-      app.server = mod.servidor; mod.iniciarRotinasHospedadas();
+      app.server = mod.servidor; app.shutdown = mod.gracefulShutdown; app.health = mod.healthStatus; mod.iniciarRotinasHospedadas();
       const stats = inspectDatabase(path.join(RUNTIME, 'artes', 'sistema.db'), 'artes');
       console.log(`[artes] banco ativo: ${JSON.stringify(stats || { erro: 'estrutura não reconhecida' })}`);
     });
@@ -130,7 +130,7 @@ async function startApps() {
       if (!process.env.GOCHAT_ADMIN_PASSWORD || process.env.GOCHAT_ADMIN_PASSWORD.length < 12) throw new Error('GOCHAT_ADMIN_PASSWORD ausente ou menor que 12 caracteres.');
       process.env.PORT = '3113';
       const mod = await import(pathToFileURL(path.join(ROOT, 'apps', 'chat', 'server.js')).href);
-      app.server = mod.server; app.shutdown = mod.gracefulShutdown;
+      app.server = mod.server; app.shutdown = mod.gracefulShutdown; app.health = mod.healthStatus;
     });
   } finally {
     if (portOriginal == null) delete process.env.PORT;
@@ -138,11 +138,24 @@ async function startApps() {
   }
 }
 let shuttingDown = false;
-function stop(signal) {
+async function stop(signal) {
+  if (shuttingDown) return;
   shuttingDown = true;
-  for (const app of apps) if (app.shutdown) app.shutdown(signal, false).catch(error => console.error('[chat] falha ao encerrar:', error.message));
-  server.close();
-  setTimeout(() => process.exit(0), 4000).unref();
+  const forceExit = setTimeout(() => {
+    console.error('[gateway] encerramento excedeu 20 segundos; forçando saída.');
+    process.exit(1);
+  }, 20000);
+  forceExit.unref();
+  try {
+    await Promise.allSettled(apps.filter(app => app.shutdown).map(app => Promise.resolve().then(() => app.shutdown(signal, false))));
+    await new Promise(resolve => {
+      if (!server.listening) return resolve();
+      server.close(resolve);
+    });
+  } finally {
+    clearTimeout(forceExit);
+    process.exit(0);
+  }
 }
 process.on('SIGTERM', () => stop('SIGTERM'));
 process.on('SIGINT', () => stop('SIGINT'));
@@ -349,10 +362,18 @@ const server = http.createServer((req, res) => {
   }
   if (url.pathname === '/healthz') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-    return res.end(JSON.stringify({ ok: true, apps: apps.map(({ key, status, server: appServer, error }) => ({
-      name: key, status, loaded: Boolean(appServer),
-      ...(error ? { error: String(error.message || error).replace(/\/home\/[^\s:'\"]+/g, '[caminho]').slice(0, 240) } : {})
-    })) }));
+    const appHealth = apps.map(app => {
+      const result = {
+        name: app.key, status: app.status, loaded: Boolean(app.server),
+        ...(app.error ? { error: String(app.error.message || app.error).replace(/\/home\/[^\s:'\"]+/g, '[caminho]').slice(0, 240) } : {})
+      };
+      if (app.health) {
+        try { result.health = app.health(); }
+        catch { result.health = { status: 'unavailable' }; }
+      }
+      return result;
+    });
+    return res.end(JSON.stringify({ ok: appHealth.every(app => app.status === 'ready' && app.loaded), apps: appHealth }));
   }
   const app = apps.find(a => url.pathname === a.prefix || url.pathname.startsWith(a.prefix + '/'));
   if (!app) {

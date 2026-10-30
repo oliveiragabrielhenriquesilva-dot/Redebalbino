@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { db, DB_PATH, getConfig } = require('./db');
-const { ARTES_DIR, gerarJPG } = require('./render');
+const { ARTES_DIR, FOTOS_DIR, gerarJPG } = require('./render');
 
 // ---------- Meta (Instagram) ----------
 function metaPronta(polo) {
@@ -116,13 +116,24 @@ async function verificarAgendadas() {
 function fazerBackup() {
   const { backup_pasta } = getConfig();
   if (!backup_pasta) return null;
-  fs.mkdirSync(backup_pasta, { recursive: true });
-  const destino = path.join(backup_pasta, `sistema-${new Date().toISOString().slice(0, 10)}.db`);
+  const pastaBackup = path.resolve(backup_pasta);
+  for (const origem of [ARTES_DIR, FOTOS_DIR].map(dir => path.resolve(dir))) {
+    if (pastaBackup === origem || pastaBackup.startsWith(origem + path.sep)) throw new Error('A pasta de backup não pode ficar dentro da pasta das imagens ou fotos.');
+  }
+  fs.mkdirSync(pastaBackup, { recursive: true });
+  const data = new Date().toISOString().slice(0, 10);
+  const destino = path.join(pastaBackup, `sistema-${data}.db`);
   db.exec('PRAGMA wal_checkpoint(TRUNCATE);');
   fs.copyFileSync(DB_PATH, destino);
-  // mantém os 14 backups mais recentes
-  const antigos = fs.readdirSync(backup_pasta).filter(f => /^sistema-\d{4}-\d{2}-\d{2}\.db$/.test(f)).sort().reverse().slice(14);
-  for (const f of antigos) fs.rmSync(path.join(backup_pasta, f), { force: true });
+  const pastaMidias = path.join(pastaBackup, `midias-${data}`);
+  fs.mkdirSync(pastaMidias, { recursive: true });
+  for (const [nome, origem] of [['artes', ARTES_DIR], ['fotos', FOTOS_DIR]]) {
+    if (fs.existsSync(origem)) fs.cpSync(origem, path.join(pastaMidias, nome), { recursive: true, force: true });
+  }
+  const antigos = fs.readdirSync(pastaBackup).filter(f => /^sistema-\d{4}-\d{2}-\d{2}\.db$/.test(f)).sort().reverse().slice(14);
+  for (const f of antigos) fs.rmSync(path.join(pastaBackup, f), { force: true });
+  const midiasAntigas = fs.readdirSync(pastaBackup).filter(f => /^midias-\d{4}-\d{2}-\d{2}$/.test(f)).sort().reverse().slice(14);
+  for (const f of midiasAntigas) fs.rmSync(path.join(pastaBackup, f), { recursive: true, force: true });
   return destino;
 }
 
