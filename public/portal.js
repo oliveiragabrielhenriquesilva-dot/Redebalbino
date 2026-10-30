@@ -2,9 +2,9 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const apps = {
-    matriculas: { title: 'Acompanhamento de Matrículas', desc: 'Acompanhe matrículas, metas, polos, tutores e relatórios.', href: '/matriculas/', icon: '▤', color: 'blue' },
-    artes: { title: 'Gerador de Artes', desc: 'Crie peças de divulgação usando os modelos da equipe.', href: '/artes/', icon: '▧', color: 'violet' },
-    chat: { title: 'Balbino Chat', desc: 'Centralize os atendimentos acadêmicos pelo WhatsApp.', href: '/chat/', icon: '◉', color: 'teal' }
+    matriculas: { title: 'Acompanhamento de Matrículas', desc: 'Acompanhe matrículas, metas, polos, tutores e relatórios.', href: '/matriculas/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5.5 7.5h8a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4h-8v-14Z"/><path d="M26.5 7.5h-8a4 4 0 0 0-1 0v18a4 4 0 0 1 4-4h5v-14Z"/><path d="m10 13 2.2 2.2L15 12"/></svg>', color: 'blue' },
+    artes: { title: 'Gerador de Artes', desc: 'Crie peças de divulgação usando os modelos da equipe.', href: '/artes/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="4"/><circle cx="12" cy="12" r="2.2"/><path d="m7 24 7-7 4 4 3-3 4 4M22.5 5.5l4 4M20 8l-9 9-1 4 4-1 9-9"/></svg>', color: 'violet' },
+    chat: { title: 'Balbino Chat', desc: 'Centralize os atendimentos acadêmicos pelo WhatsApp.', href: '/chat/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M26.5 15.3a10.5 10.5 0 0 1-15.7 9.1L5 26l1.7-5.3a10.5 10.5 0 1 1 19.8-5.4Z"/><path d="M11 12.5c.5 3.5 3 6 6.5 6.5M12 11l2 2-1.2 1.6M20.7 19l-2-2 1.6-1.2"/></svg>', color: 'teal' }
   };
   let me = null, users = [];
   const request = async (url, options = {}) => {
@@ -31,12 +31,14 @@
     for (const key of me.apps) {
       const app = apps[key]; if (!app) continue;
       const card = document.createElement('article'); card.className = `app-card app-${key}`;
-      const icon = document.createElement('div'); icon.className = 'app-icon'; icon.textContent = app.icon;
+      const top = document.createElement('div'); top.className = 'app-card-top';
+      const icon = document.createElement('div'); icon.className = 'app-icon'; icon.setAttribute('aria-hidden', 'true'); icon.innerHTML = app.icon;
+      const label = document.createElement('span'); label.className = 'app-number'; label.textContent = app.color === 'blue' ? 'MATRÍCULAS' : app.color === 'violet' ? 'CRIAÇÃO' : 'ATENDIMENTO';
       const title = document.createElement('h2'); title.textContent = app.title;
       const desc = document.createElement('p'); desc.textContent = app.desc;
       const link = document.createElement('a'); link.className = 'app-link'; link.href = app.href; link.textContent = 'Acessar sistema';
       const arrow = document.createElement('span'); arrow.textContent = '↗'; link.append(arrow);
-      card.append(icon, title, desc, link); grid.append(card);
+      top.append(icon, label); card.append(top, title, desc, link); grid.append(card);
     }
     show($('emptyState'), me.apps.length === 0);
   }
