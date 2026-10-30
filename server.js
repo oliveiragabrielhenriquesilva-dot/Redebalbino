@@ -4,35 +4,87 @@ const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 const { pathToFileURL } = require('node:url');
+const { DatabaseSync } = require('node:sqlite');
 
 try { process.loadEnvFile?.(path.join(__dirname, '.env')); } catch {}
 const ROOT = __dirname;
 const RUNTIME = path.resolve(process.env.BALBINO_RUNTIME_DIR || path.join(os.homedir(), 'central-balbino-runtime'));
 const PORT = Number(process.env.PORT || 3000);
 const apps = [
-  { key: 'matriculas', prefix: '/matriculas', server: null },
-  { key: 'artes', prefix: '/artes', server: null },
-  { key: 'chat', prefix: '/chat', server: null }
+  { key: 'matriculas', prefix: '/matriculas', server: null, status: 'starting' },
+  { key: 'artes', prefix: '/artes', server: null, status: 'starting' },
+  { key: 'chat', prefix: '/chat', server: null, status: 'starting' }
 ];
 
-function copyTreeIfMissing(source, destination) {
-  if (fs.existsSync(destination) || !fs.existsSync(source)) return;
-  fs.mkdirSync(path.dirname(destination), { recursive: true });
-  fs.cpSync(source, destination, { recursive: true, errorOnExist: true });
+function walkForDatabase(root, filename, depth = 0, out = []) {
+  if (!fs.existsSync(root) || depth > 5) return out;
+  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    if (entry.name === 'backups' || entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+    const full = path.join(root, entry.name);
+    if (entry.isFile() && entry.name === filename) out.push(full);
+    else if (entry.isDirectory()) walkForDatabase(full, filename, depth + 1, out);
+  }
+  return out;
+}
+function inspectDatabase(file, kind) {
+  let db;
+  try {
+    db = new DatabaseSync(file, { readOnly: true });
+    const tables = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(r => r.name));
+    if (kind === 'matriculas' && tables.has('ciclos') && tables.has('matriculas')) {
+      return { cycles: db.prepare('SELECT COUNT(*) n FROM ciclos').get().n, enrollments: db.prepare('SELECT COUNT(*) n FROM matriculas').get().n };
+    }
+    if (kind === 'artes' && tables.has('tipos') && tables.has('cursos')) {
+      return { types: db.prepare('SELECT COUNT(*) n FROM tipos').get().n, courses: db.prepare('SELECT COUNT(*) n FROM cursos').get().n, poles: tables.has('polos') ? db.prepare('SELECT COUNT(*) n FROM polos').get().n : 0 };
+    }
+  } catch {}
+  finally { db?.close(); }
+  return null;
+}
+function recoverNestedDatabase(dir, filename, kind) {
+  const destination = path.join(dir, filename);
+  const current = fs.existsSync(destination) ? inspectDatabase(destination, kind) : null;
+  const candidates = walkForDatabase(dir, filename).filter(file => path.resolve(file) !== path.resolve(destination));
+  const rows = candidates.map(file => ({ file, stats: inspectDatabase(file, kind) })).filter(x => x.stats);
+  const score = s => kind === 'matriculas' ? (s.cycles * 1_000_000_000 + s.enrollments) : (s.courses * 1_000_000 + s.types * 1_000 + s.poles);
+  const meaningful = s => kind === 'matriculas' ? s.cycles > 0 : s.courses > 0;
+  rows.sort((a, b) => score(b.stats) - score(a.stats));
+  const best = rows[0];
+  if (!best || !meaningful(best.stats) || score(best.stats) <= score(current || (kind === 'matriculas' ? { cycles: 0, enrollments: 0 } : { types: 0, courses: 0, poles: 0 }))) {
+    return { recovered: false, stats: current };
+  }
+  fs.mkdirSync(dir, { recursive: true });
+  const temp = path.join(dir, `.${filename}.${process.pid}.recovered`);
+  const source = new DatabaseSync(best.file);
+  try { source.exec(`VACUUM INTO '${temp.replace(/'/g, "''")}'`); }
+  finally { source.close(); }
+  if (fs.existsSync(destination)) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backup = path.join(dir, `before-auto-recovery-${stamp}-${filename}`);
+    fs.copyFileSync(destination, backup);
+  }
+  for (const ext of ['-wal', '-shm']) if (fs.existsSync(destination + ext)) fs.renameSync(destination + ext, `${destination + ext}.before-auto-recovery`);
+  fs.renameSync(temp, destination);
+  if (kind === 'artes') {
+    const nestedData = path.dirname(best.file);
+    for (const name of ['artes', 'fotos']) {
+      const from = path.join(nestedData, name), to = path.join(dir, name);
+      if (fs.existsSync(from) && !fs.existsSync(to)) fs.cpSync(from, to, { recursive: true, errorOnExist: false, force: false });
+    }
+  }
+  console.log(`[${kind}] banco recuperado de subpasta; ${JSON.stringify(best.stats)}.`);
+  return { recovered: true, stats: best.stats };
 }
 function prepareRuntime() {
   fs.mkdirSync(RUNTIME, { recursive: true });
-  copyTreeIfMissing(path.join(ROOT, 'apps', 'matriculas', 'dados'), path.join(RUNTIME, 'matriculas'));
-  copyTreeIfMissing(path.join(ROOT, 'apps', 'artes', 'data'), path.join(RUNTIME, 'artes'));
+  for (const [key, filename] of [['matriculas', 'matriculas.db'], ['artes', 'sistema.db']]) {
+    const dir = path.join(RUNTIME, key);
+    fs.mkdirSync(dir, { recursive: true });
+    recoverNestedDatabase(dir, filename, key);
+  }
   for (const part of ['data', 'uploads', 'sessions', 'backups']) fs.mkdirSync(path.join(RUNTIME, 'chat', part), { recursive: true });
 }
 async function startApps() {
-  if (!process.env.GOCHAT_ADMIN_PASSWORD || process.env.GOCHAT_ADMIN_PASSWORD.length < 12) {
-    throw new Error('Defina GOCHAT_ADMIN_PASSWORD (mínimo 12 caracteres) nas variáveis do app Hostinger.');
-  }
-  if (!process.env.ARTES_ADMIN_PASSWORD || process.env.ARTES_ADMIN_PASSWORD.length < 12) {
-    throw new Error('Defina ARTES_ADMIN_PASSWORD (mínimo 12 caracteres) nas variáveis do app Hostinger.');
-  }
   prepareRuntime();
   process.env.NODE_ENV = 'production';
   process.env.HOSTED = '1';
@@ -50,20 +102,32 @@ async function startApps() {
 
   const portOriginal = process.env.PORT;
   try {
-    process.env.PORT = '3111';
-    const matriculas = require(path.join(ROOT, 'apps', 'matriculas', 'server.js'));
-    apps[0].server = matriculas.servidor;
-    matriculas.iniciarRotinasHospedadas();
-
-    process.env.PORT = '3112';
-    const artes = require(path.join(ROOT, 'apps', 'artes', 'server.js'));
-    apps[1].server = artes.servidor;
-    artes.iniciarRotinasHospedadas();
-
-    process.env.PORT = '3113';
-    const chat = await import(pathToFileURL(path.join(ROOT, 'apps', 'chat', 'server.js')).href);
-    apps[2].server = chat.server;
-    apps[2].shutdown = chat.gracefulShutdown;
+    const boot = async (key, action) => {
+      const app = apps.find(a => a.key === key);
+      try { await action(app); app.status = 'ready'; }
+      catch (error) { app.status = 'error'; console.error(`[${key}] falha ao iniciar:`, error.stack || error.message); }
+    };
+    await boot('matriculas', async app => {
+      process.env.PORT = '3111';
+      const mod = require(path.join(ROOT, 'apps', 'matriculas', 'server.js'));
+      app.server = mod.servidor; mod.iniciarRotinasHospedadas();
+      const stats = inspectDatabase(path.join(RUNTIME, 'matriculas', 'matriculas.db'), 'matriculas');
+      console.log(`[matriculas] banco ativo: ${JSON.stringify(stats || { erro: 'estrutura não reconhecida' })}`);
+    });
+    await boot('artes', async app => {
+      if (!process.env.ARTES_ADMIN_PASSWORD || process.env.ARTES_ADMIN_PASSWORD.length < 12) throw new Error('ARTES_ADMIN_PASSWORD ausente ou menor que 12 caracteres.');
+      process.env.PORT = '3112';
+      const mod = require(path.join(ROOT, 'apps', 'artes', 'server.js'));
+      app.server = mod.servidor; mod.iniciarRotinasHospedadas();
+      const stats = inspectDatabase(path.join(RUNTIME, 'artes', 'sistema.db'), 'artes');
+      console.log(`[artes] banco ativo: ${JSON.stringify(stats || { erro: 'estrutura não reconhecida' })}`);
+    });
+    await boot('chat', async app => {
+      if (!process.env.GOCHAT_ADMIN_PASSWORD || process.env.GOCHAT_ADMIN_PASSWORD.length < 12) throw new Error('GOCHAT_ADMIN_PASSWORD ausente ou menor que 12 caracteres.');
+      process.env.PORT = '3113';
+      const mod = await import(pathToFileURL(path.join(ROOT, 'apps', 'chat', 'server.js')).href);
+      app.server = mod.server; app.shutdown = mod.gracefulShutdown;
+    });
   } finally {
     if (portOriginal == null) delete process.env.PORT;
     else process.env.PORT = portOriginal;
@@ -166,7 +230,10 @@ function proxy(req, res, app, originalUrl) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
-  if (url.pathname === '/healthz') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true, apps: apps.map(a => a.key) })); }
+  if (url.pathname === '/healthz') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(JSON.stringify({ ok: true, apps: apps.map(({ key, status, server: appServer }) => ({ name: key, status, loaded: Boolean(appServer) })) }));
+  }
   const app = apps.find(a => url.pathname === a.prefix || url.pathname.startsWith(a.prefix + '/'));
   if (!app) {
     if (url.pathname === '/' || url.pathname === '/index.html') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(rootPage()); }
