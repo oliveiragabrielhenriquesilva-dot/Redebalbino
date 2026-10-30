@@ -16,10 +16,11 @@ const avatarSyncRuntime=new Map();
 const whatsappActivityAt=new Map();
 const openSockets=new Set();
 const reconnectTimers=new Map();
+const connectPromises=new Map();
 function clearReconnectTimer(instanceId){const t=reconnectTimers.get(instanceId);if(t){clearTimeout(t);reconnectTimers.delete(instanceId)}}
 function scheduleReconnect(instanceId,delayMs,reason='UNKNOWN'){
   clearReconnectTimer(instanceId);
-  const timer=setTimeout(()=>{reconnectTimers.delete(instanceId);connectInstance(instanceId).catch(e=>{const conn=all().connections.find(c=>c.id===instanceId);if(conn){conn.lastError={status:null,message:e.message,at:Date.now()};conn.state='ERROR';save();emit('connection.update',conn)}pushLog('CONNECTION_RECONNECT_ERROR',{instanceId,reason,error:String(e?.message||e)})})},Math.max(500,Number(delayMs)||1500));
+  const timer=setTimeout(()=>{reconnectTimers.delete(instanceId);connectInstance(instanceId).catch(e=>{const conn=all().connections.find(c=>c.id===instanceId);let nextDelay=5000;if(conn){const attempt=Number(conn.reconnectAttemptCount||0)+1;conn.reconnectAttemptCount=attempt;conn.lastError={status:null,message:e.message,at:Date.now()};conn.state='RECONNECTING';nextDelay=Math.min(5000*2**Math.min(attempt-1,4),60000);save();emit('connection.update',conn)}pushLog('CONNECTION_RECONNECT_ERROR',{instanceId,reason,error:String(e?.message||e),retryInMs:conn?nextDelay:null});if(conn)scheduleReconnect(instanceId,nextDelay,'START_FAILED')})},Math.max(500,Number(delayMs)||1500));
   reconnectTimers.set(instanceId,timer);
   pushLog('CONNECTION_RECONNECT_SCHEDULED',{instanceId,delayMs:Math.max(500,Number(delayMs)||1500),reason});
 }
@@ -762,7 +763,7 @@ async function consumePollUpdateEnvelope(baileys,sock,instanceId,msg){
   applyDecodedPollUpdates(baileys,sock,instanceId,rec,[update]);pushLog('POLL_VOTE_DECRYPTED',{instanceId,updateId:msg?.key?.id||null,pollId,creator:usedCreator,voter:usedVoter});return true;
 }
 
-export async function connectInstance(instanceId='principal'){
+async function connectInstanceOnce(instanceId='principal'){
   const db=all();let conn=db.connections.find(c=>c.id===instanceId);
   const existing=sockets.get(instanceId);
   if(existing){
@@ -823,7 +824,7 @@ export async function connectInstance(instanceId='principal'){
     if(u.qr){conn.qr=await QRCode.toDataURL(u.qr);conn.state='QR_REQUIRED';pushLog('CONNECTION_QR_REQUIRED',{instanceId})}
     if(u.connection==='open'){
       openSockets.add(instanceId);clearReconnectTimer(instanceId);
-      conn.state='CONNECTED';conn.qr=null;conn.lastError=null;conn.connectedAt=Date.now();conn.phone=phoneFromJid(sock.user?.id||'');conn.reconnect428Count=0;conn.sync428Attempts=0;registerConnectionSelfIdentity(instanceId,{profileName:sock.user?.name||'',phone:conn.phone,source:'socket-open'});try{repairMultiConnectionData({reason:`connection-open:${instanceId}`,mergeConversations:false})}catch(e){pushLog('MULTICONNECTION_REPAIR_ERROR',{instanceId,error:String(e?.message||e)})}pushLog('CONNECTION_CONNECTED',{instanceId,phone:conn.phone,profileName:sock.user?.name||null});if(all().settings.syncGroupsOnConnect!==false)setTimeout(()=>refreshGroupsFromSocket(sock,instanceId).catch(()=>{}),2500);if(all().settings.syncChannelsOnConnect!==false)setTimeout(()=>refreshKnownChannels(sock,instanceId).catch(()=>{}),4000);if(conn.syncRequested){updateSyncState(conn,{status:'WAITING_PHONE',connectedAt:Date.now(),note:'Aguardando o WhatsApp disponibilizar contatos e histórico.'});setTimeout(()=>{if(conn.syncRequested&&['WAITING_PHONE','STARTING','RECEIVING'].includes(conn.sync?.status)){const got=Number(conn.sync?.chunks||0)>0;conn.syncRequested=false;updateSyncState(conn,{status:got?'PARTIAL':'NO_DATA',completedAt:Date.now(),note:got?'O WhatsApp enviou parte do histórico disponível.':'O WhatsApp não disponibilizou novos dados nesta tentativa. Tente novamente mais tarde ou após religar o aparelho principal.'})}},60000)}
+      conn.state='CONNECTED';conn.qr=null;conn.lastError=null;conn.connectedAt=Date.now();conn.phone=phoneFromJid(sock.user?.id||'');conn.reconnect428Count=0;conn.reconnectAttemptCount=0;conn.sync428Attempts=0;registerConnectionSelfIdentity(instanceId,{profileName:sock.user?.name||'',phone:conn.phone,source:'socket-open'});try{repairMultiConnectionData({reason:`connection-open:${instanceId}`,mergeConversations:false})}catch(e){pushLog('MULTICONNECTION_REPAIR_ERROR',{instanceId,error:String(e?.message||e)})}pushLog('CONNECTION_CONNECTED',{instanceId,phone:conn.phone,profileName:sock.user?.name||null});if(all().settings.syncGroupsOnConnect!==false)setTimeout(()=>refreshGroupsFromSocket(sock,instanceId).catch(()=>{}),2500);if(all().settings.syncChannelsOnConnect!==false)setTimeout(()=>refreshKnownChannels(sock,instanceId).catch(()=>{}),4000);if(conn.syncRequested){updateSyncState(conn,{status:'WAITING_PHONE',connectedAt:Date.now(),note:'Aguardando o WhatsApp disponibilizar contatos e histórico.'});setTimeout(()=>{if(conn.syncRequested&&['WAITING_PHONE','STARTING','RECEIVING'].includes(conn.sync?.status)){const got=Number(conn.sync?.chunks||0)>0;conn.syncRequested=false;updateSyncState(conn,{status:got?'PARTIAL':'NO_DATA',completedAt:Date.now(),note:got?'O WhatsApp enviou parte do histórico disponível.':'O WhatsApp não disponibilizou novos dados nesta tentativa. Tente novamente mais tarde ou após religar o aparelho principal.'})}},60000)}
       reassignOrphanConversations(instanceId);
       for(const queued of all().messages.filter(m=>m.direction==='OUT'&&m.status==='QUEUED')){
         const cv=all().conversations.find(c=>c.id===queued.conversationId&&c.instanceId===instanceId);if(!cv)continue;const ct=all().contacts.find(c=>c.id===cv.contactId);if(!ct)continue;
@@ -1031,6 +1032,16 @@ export async function connectInstance(instanceId='principal'){
     }
   });
   return sock;
+}
+
+export function connectInstance(instanceId='principal'){
+  const active=connectPromises.get(instanceId);
+  if(active)return active;
+  const pending=connectInstanceOnce(instanceId).finally(()=>{
+    if(connectPromises.get(instanceId)===pending)connectPromises.delete(instanceId);
+  });
+  connectPromises.set(instanceId,pending);
+  return pending;
 }
 
 function flowTextFallback(config){

@@ -169,7 +169,9 @@ rota('PUT', '/api/rede', async (req) => {
 
 rota('GET', '/api/estado', () => {
   const c = getConfig();
-  return { versao: VERSAO, navegador: render.acharNavegador(), supabase: Boolean(c.supabase_url && c.supabase_key), agora: sv.agoraLocal() };
+  // Na hospedagem usamos o Chromium empacotado no servidor, sem depender do Chrome/Edge do usuário.
+  const navegador = process.env.CLOUD_CHROMIUM === '1' ? 'Chromium da hospedagem' : render.acharNavegador();
+  return { versao: VERSAO, navegador, supabase: Boolean(c.supabase_url && c.supabase_key), agora: sv.agoraLocal() };
 });
 
 // Polos
