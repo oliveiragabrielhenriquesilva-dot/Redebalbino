@@ -11,9 +11,9 @@ const ROOT = __dirname;
 const RUNTIME = path.resolve(process.env.BALBINO_RUNTIME_DIR || path.join(os.homedir(), 'central-balbino-runtime'));
 const PORT = Number(process.env.PORT || 3000);
 const apps = [
-  { key: 'matriculas', prefix: '/matriculas', server: null, status: 'starting' },
-  { key: 'artes', prefix: '/artes', server: null, status: 'starting' },
-  { key: 'chat', prefix: '/chat', server: null, status: 'starting' }
+  { key: 'matriculas', prefix: '/matriculas', server: null, status: 'starting', error: null },
+  { key: 'artes', prefix: '/artes', server: null, status: 'starting', error: null },
+  { key: 'chat', prefix: '/chat', server: null, status: 'starting', error: null }
 ];
 
 function walkForDatabase(root, filename, depth = 0, out = []) {
@@ -107,7 +107,7 @@ async function startApps() {
     const boot = async (key, action) => {
       const app = apps.find(a => a.key === key);
       try { await action(app); app.status = 'ready'; }
-      catch (error) { app.status = 'error'; console.error(`[${key}] falha ao iniciar:`, error.stack || error.message); }
+      catch (error) { app.status = 'error'; app.error = error; console.error(`[${key}] falha ao iniciar:`, error.stack || error.message); }
     };
     await boot('matriculas', async app => {
       process.env.PORT = '3111';
@@ -234,7 +234,10 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
   if (url.pathname === '/healthz') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-    return res.end(JSON.stringify({ ok: true, apps: apps.map(({ key, status, server: appServer }) => ({ name: key, status, loaded: Boolean(appServer) })) }));
+    return res.end(JSON.stringify({ ok: true, apps: apps.map(({ key, status, server: appServer, error }) => ({
+      name: key, status, loaded: Boolean(appServer),
+      ...(error ? { error: String(error.message || error).replace(/\/home\/[^\s:'\"]+/g, '[caminho]').slice(0, 240) } : {})
+    })) }));
   }
   const app = apps.find(a => url.pathname === a.prefix || url.pathname.startsWith(a.prefix + '/'));
   if (!app) {
