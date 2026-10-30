@@ -69,7 +69,7 @@ function recoverNestedDatabase(dir, filename, kind) {
     const nestedData = path.dirname(best.file);
     for (const name of ['artes', 'fotos']) {
       const from = path.join(nestedData, name), to = path.join(dir, name);
-      if (fs.existsSync(from) && !fs.existsSync(to)) fs.cpSync(from, to, { recursive: true, errorOnExist: false, force: false });
+      if (fs.existsSync(from)) fs.cpSync(from, to, { recursive: true, errorOnExist: false, force: false });
     }
   }
   console.log(`[${kind}] banco recuperado de subpasta; ${JSON.stringify(best.stats)}.`);
