@@ -236,6 +236,40 @@ function jsonReply(res, status, data, headers = {}) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers });
   res.end(JSON.stringify(data));
 }
+function tutorUsername(name, polo) {
+  const normalized = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const first = normalized(name).split(/\s+/)[0] || '';
+  const place = normalized(polo);
+  if (first === 'larissa' && place.includes('ribeirao preto')) return 'larissa.maria';
+  if (first === 'larissa' && place.includes('ituverava')) return 'larissa.paula';
+  return normalized(name).replace(/\s+/g, '.');
+}
+function readTutorRoster() {
+  const file = path.join(RUNTIME, 'matriculas', 'matriculas.db');
+  if (!fs.existsSync(file)) throw Object.assign(new Error('O banco de Matrículas ainda não está disponível.'), { status: 503 });
+  const db = new DatabaseSync(file, { readOnly: true });
+  try {
+    const rows = db.prepare(`SELECT t.id tutorId, t.nome, t.polo_origem_id origemId,
+        tp.polo_id poloId, p.nome polo
+      FROM tutores t
+      LEFT JOIN tutor_polos tp ON tp.tutor_id=t.id
+      LEFT JOIN polos p ON p.id=tp.polo_id
+      WHERE t.ativo=1 ORDER BY t.nome COLLATE NOCASE, t.id, p.nome COLLATE NOCASE`).all();
+    const grouped = new Map();
+    for (const row of rows) {
+      if (!grouped.has(row.tutorId)) grouped.set(row.tutorId, { id: row.tutorId, name: row.nome, origemId: row.origemId, polos: [] });
+      if (row.poloId) grouped.get(row.tutorId).polos.push({ id: row.poloId, name: row.polo });
+    }
+    return [...grouped.values()].map(tutor => {
+      const origin = tutor.polos.find(polo => Number(polo.id) === Number(tutor.origemId));
+      const polo = origin || (tutor.polos.length === 1 ? tutor.polos[0] : null);
+      if (!polo) return { id: tutor.id, name: tutor.name, polo: tutor.polos.map(item => item.name).join(', ') || 'Sem polo', username: '', error: 'Tutor vinculado a mais de um polo sem polo de origem definido.' };
+      const name = tutor.name === 'Larissa' && polo.name === 'Ituverava' ? 'Larissa Paula' :
+        (String(tutor.name).replace(/[.\s]+$/g, '') === 'Larissa' && polo.name === 'Ribeirão Preto' ? 'Larissa Maria' : tutor.name);
+      return { id: tutor.id, name, polo: polo.name, username: tutorUsername(tutor.name, polo.name) };
+    });
+  } finally { db.close(); }
+}
 async function readJson(req, max = 64 * 1024) {
   const chunks = []; let size = 0;
   for await (const chunk of req) { size += chunk.length; if (size > max) throw Object.assign(new Error('Requisição muito grande.'), { status: 413 }); chunks.push(chunk); }
@@ -272,6 +306,20 @@ async function portalApi(req, res, url) {
   if (!actor) return jsonReply(res, 401, { error: 'Entre no portal para continuar.' });
   if (!actor.is_admin) return jsonReply(res, 403, { error: 'Acesso restrito ao administrador.' });
   if (method === 'GET' && p === '/api/portal/users') return jsonReply(res, 200, { users: portal.listUsers() });
+  if (method === 'GET' && p === '/api/portal/tutor-users/preview') {
+    try { return jsonReply(res, 200, { tutors: readTutorRoster() }); }
+    catch (error) { return jsonReply(res, error.status || 500, { error: error.message }); }
+  }
+  if (method === 'POST' && p === '/api/portal/tutor-users') {
+    try {
+      const body = await readJson(req);
+      const tutors = readTutorRoster();
+      const blocked = tutors.filter(tutor => tutor.error || !tutor.username);
+      if (blocked.length) return jsonReply(res, 409, { error: `Revise os vínculos de polo antes de criar os acessos: ${blocked.map(tutor => tutor.name).join(', ')}.` });
+      const result = portal.createTutorUsers(tutors.map(tutor => ({ tutorId: tutor.id, name: tutor.name, username: tutor.username })), body.password);
+      return jsonReply(res, 201, result);
+    } catch (error) { return jsonReply(res, error.message.includes('UNIQUE') ? 409 : (error.status || 400), { error: error.message.includes('UNIQUE') ? 'Há um login duplicado no portal.' : error.message }); }
+  }
   if (method === 'POST' && p === '/api/portal/users') {
     try { return jsonReply(res, 201, { user: portal.publicUser(portal.createUser(await readJson(req))) }); }
     catch (error) { return jsonReply(res, error.message.includes('UNIQUE') ? 409 : 400, { error: error.message.includes('UNIQUE') ? 'Esse usuário já existe.' : error.message }); }

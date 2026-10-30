@@ -163,6 +163,53 @@ function createPortalAuth(runtimeDir, env = process.env) {
       VALUES(?,?,?,?,?,?,?,?,?,?,?)`).run(id, name, username, salt, hash, JSON.stringify(apps), JSON.stringify(accounts), 0, 1, now, now);
     return sanitizeUser(getUserById.get(id));
   }
+  function createTutorUsers(tutors, password) {
+    if (String(password || '').length < 12) throw new Error('A senha precisa ter pelo menos 12 caracteres.');
+    if (!Array.isArray(tutors) || !tutors.length) throw new Error('Nenhum tutor ativo disponível para provisionar.');
+    const existingRows = db.prepare('SELECT * FROM users').all();
+    const existingByAccount = new Map();
+    for (const row of existingRows) {
+      const account = parseJSON(row.accounts_json, {}).matriculas;
+      if (account) existingByAccount.set(account, row);
+    }
+    const prepared = tutors.map(tutor => {
+      const name = String(tutor.name || '').trim().slice(0, 100);
+      const username = safeUsername(tutor.username);
+      const account = `@tutor:${Number(tutor.tutorId)}`;
+      if (!name || !Number.isInteger(Number(tutor.tutorId)) || Number(tutor.tutorId) < 1 || !/^[a-z0-9._-]{2,80}$/.test(username)) {
+        throw new Error('A lista contém um tutor com dados inválidos.');
+      }
+      return { name, username, account, existing: existingByAccount.get(account) || null };
+    });
+    const newRows = prepared.filter(row => !row.existing);
+    const names = new Set();
+    for (const row of newRows) {
+      if (names.has(row.username)) throw new Error(`O login ${row.username} aparece mais de uma vez na lista.`);
+      names.add(row.username);
+      const collision = getUserByName.get(row.username);
+      if (collision) throw new Error(`O login ${row.username} já pertence a outra conta do portal.`);
+    }
+    const insert = db.prepare(`INSERT INTO users
+      (id,name,username,password_salt,password_hash,apps_json,accounts_json,is_admin,active,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?)`);
+    const created = [], existing = [];
+    const now = Date.now();
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      for (const row of prepared) {
+        if (row.existing) { existing.push({ name: row.name, username: row.existing.username, active: Boolean(row.existing.active) }); continue; }
+        const { salt, hash } = hashPassword(password), id = crypto.randomUUID();
+        insert.run(id, row.name, row.username, salt, hash,
+          JSON.stringify(['matriculas']), JSON.stringify({ matriculas: row.account }), 0, 1, now, now);
+        created.push({ name: row.name, username: row.username });
+      }
+      db.exec('COMMIT');
+    } catch (error) {
+      try { db.exec('ROLLBACK'); } catch {}
+      throw error;
+    }
+    return { created, existing };
+  }
   function updateUser(id, input, actorId) {
     const row = getUserById.get(id);
     if (!row) throw new Error('Usuário não encontrado.');
@@ -199,7 +246,7 @@ function createPortalAuth(runtimeDir, env = process.env) {
     return sanitizeUser(getUserById.get(id));
   }
 
-  return { db, bootstrap, login, logout, current, forApp, publicUser, listUsers, createUser, updateUser, changePassword, setActive, sessionCookie };
+  return { db, bootstrap, login, logout, current, forApp, publicUser, listUsers, createUser, createTutorUsers, updateUser, changePassword, setActive, sessionCookie };
 }
 
 module.exports = { createPortalAuth };

@@ -62,9 +62,20 @@
 
   <dialog class="users-dialog" id="usersDialog" aria-labelledby="usersTitle">
     <div class="dialog-head"><div><div class="eyebrow">Administração</div><h2 id="usersTitle">Usuários e acessos</h2></div><button class="icon-btn" id="closeUsersBtn" type="button" aria-label="Fechar">×</button></div>
-    <p class="dialog-note">O login central controla quais sistemas aparecem. Nos sistemas Matrículas e Chat, a pessoa também precisa ter um usuário cadastrado para herdar o perfil e as permissões já definidos lá.</p>
+    <p class="dialog-note">O login central controla quais sistemas aparecem. Os acessos de tutores em Matrículas são vinculados ao polo e ao perfil de consulta de cada um.</p>
     <div class="user-list" id="userList"></div>
-    <div class="dialog-actions"><button class="primary-btn" id="newUserBtn" type="button">+ Adicionar usuário</button></div>
+    <div class="dialog-actions admin-actions"><button class="secondary-btn" id="prepareTutorUsersBtn" type="button">Preparar acessos dos tutores</button><button class="primary-btn" id="newUserBtn" type="button">+ Adicionar usuário</button></div>
+    <section class="tutor-provision hidden" id="tutorProvision" aria-labelledby="tutorProvisionTitle">
+      <h3 id="tutorProvisionTitle">Acessos de Matrículas</h3>
+      <p class="provision-note">Cada tutor entrará com uma conta do Portal da Rede Balbino. O acesso de Matrículas será somente para consulta do próprio polo e das matrículas individuais do tutor. Larissas ficam identificadas pelo sobrenome escolhido.</p>
+      <div class="tutor-preview" id="tutorPreview" aria-live="polite"></div>
+      <form id="tutorProvisionForm">
+        <label for="tutorInitialPassword">Senha inicial comum (mínimo 12 caracteres)</label>
+        <input id="tutorInitialPassword" type="password" minlength="12" autocomplete="new-password" required>
+        <div class="form-actions"><button class="secondary-btn" id="cancelTutorProvisionBtn" type="button">Cancelar</button><button class="primary-btn" id="createTutorUsersBtn" type="submit">Criar acessos no Portal</button></div>
+        <p class="form-error hidden" id="tutorProvisionError" role="alert"></p>
+      </form>
+    </section>
     <form class="user-form hidden" id="userForm">
       <input type="hidden" id="editUserId">
       <div class="form-title" id="userFormTitle">Novo usuário</div>

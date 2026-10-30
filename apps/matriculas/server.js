@@ -141,6 +141,16 @@ function usuarioDaSessao(req) {
   if (process.env.CENTRAL_BALBINO_EMBEDDED === '1') {
     let portal = null; try { portal = JSON.parse(req.headers['x-balbino-portal'] || 'null'); } catch {}
     if (portal && portal.app === 'matriculas') {
+      const tutorMatch = String(portal.account || '').match(/^@tutor:(\d+)$/);
+      if (tutorMatch) {
+        const tutorId = Number(tutorMatch[1]);
+        const tutor = get('SELECT id, nome, ativo, polo_origem_id FROM tutores WHERE id=?', tutorId);
+        if (!tutor || !tutor.ativo) return null;
+        const vinculos = all('SELECT polo_id FROM tutor_polos WHERE tutor_id=? ORDER BY polo_id', tutorId).map(x => Number(x.polo_id));
+        const poloId = vinculos.includes(Number(tutor.polo_origem_id)) ? Number(tutor.polo_origem_id) : (vinculos.length === 1 ? vinculos[0] : 0);
+        if (!poloId) return null;
+        return { id: -tutorId, nome: tutor.nome, login: String(portal.username || tutor.nome), papel: 'visualizador', polo_id: poloId, tutor_id: tutorId, portal: true };
+      }
       const u = portal.account === '@admin'
         ? get("SELECT id,nome,login,papel,polo_id FROM usuarios WHERE ativo=1 AND papel='admin' ORDER BY id LIMIT 1")
         : get('SELECT id,nome,login,papel,polo_id FROM usuarios WHERE ativo=1 AND login=? COLLATE NOCASE', String(portal.account || ''));
@@ -330,7 +340,9 @@ function filtrosMatricula(q, usuario) {
   const campoPolo = q.credito_tutor ? 'COALESCE(m.tutor_polo_id, m.polo_id)' : 'm.polo_id';
   if (usuario.papel === 'visualizador' && usuario.polo_id) add(campoPolo + ' = ?', usuario.polo_id);
   else if (q.polo) add(campoPolo + ' = ?', Number(q.polo));
-  if (q.tutor) add('m.tutor_id = ?', Number(q.tutor));
+  if (usuario.tutor_id && (q.tutor || q.visao === 'individual')) {
+    add('m.tutor_id = ?', q.tutor && Number(q.tutor) !== Number(usuario.tutor_id) ? -1 : Number(usuario.tutor_id));
+  } else if (q.tutor) add('m.tutor_id = ?', Number(q.tutor));
   if (q.produto) add('m.produto_id = ?', Number(q.produto));
   if (q.categoria) add('pr.categoria_id = ?', Number(q.categoria));
   if (q.grupo) add('ca.grupo = ?', String(q.grupo));
@@ -1294,6 +1306,7 @@ function paginaTutor(q, usuario) {
   const poloId = usuario.papel === 'visualizador' && usuario.polo_id ? usuario.polo_id : Number(q.polo);
   const tutorId = Number(q.tutor);
   if (!cicloId || !poloId || !tutorId) falha(400, 'Informe processo, polo e tutor');
+  if (usuario.tutor_id && Number(usuario.tutor_id) !== tutorId) falha(404, 'Tutor não encontrado neste polo');
   const pn = painel({ ciclo: cicloId, polo: poloId, ref: q.ref, historico:'1' }, usuario);
   const t = pn.porTutor.find(x => x.tutor_id === tutorId && x.polo_id === poloId);
   if (!t) falha(404, 'Tutor não encontrado neste polo');
@@ -1484,6 +1497,7 @@ async function rotear(req, res) {
   if (p === '/api/bootstrap' && m === 'GET') return enviarJson(res, 200, bootstrap(usuario));
 
   if (p === '/api/minha-senha' && m === 'POST') {
+    if (usuario.portal) falha(403, 'Altere a senha pelo Portal da Rede Balbino.');
     const c = await lerCorpo(req);
     const u = get('SELECT senha_hash FROM usuarios WHERE id = ?', usuario.id);
     if (!confereSenha(c.atual || '', u.senha_hash)) falha(400, 'Senha atual incorreta');

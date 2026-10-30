@@ -6,7 +6,7 @@
     artes: { title: 'Gerador de Artes', desc: 'Crie peças de divulgação usando os modelos da equipe.', href: '/artes/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="4"/><circle cx="12" cy="12" r="2.2"/><path d="m7 24 7-7 4 4 3-3 4 4M22.5 5.5l4 4M20 8l-9 9-1 4 4-1 9-9"/></svg>', color: 'violet' },
     chat: { title: 'Balbino Chat', desc: 'Centralize os atendimentos acadêmicos pelo WhatsApp.', href: '/chat/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M26.5 15.3a10.5 10.5 0 0 1-15.7 9.1L5 26l1.7-5.3a10.5 10.5 0 1 1 19.8-5.4Z"/><path d="M11 12.5c.5 3.5 3 6 6.5 6.5M12 11l2 2-1.2 1.6M20.7 19l-2-2 1.6-1.2"/></svg>', color: 'teal' }
   };
-  let me = null, users = [];
+  let me = null, users = [], tutorCandidates = [];
   const request = async (url, options = {}) => {
     const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options,
       headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) } });
@@ -64,6 +64,14 @@
   $('manageUsersBtn').addEventListener('click', async () => { $('usersDialog').showModal(); await loadUsers(); });
   $('closeUsersBtn').addEventListener('click', () => $('usersDialog').close());
   $('newUserBtn').addEventListener('click', () => openForm(null));
+  $('prepareTutorUsersBtn').addEventListener('click', async () => {
+    const panel = $('tutorProvision');
+    show(panel, panel.classList.contains('hidden'));
+    if (!panel.classList.contains('hidden')) await loadTutorPreview();
+  });
+  $('cancelTutorProvisionBtn').addEventListener('click', () => {
+    $('tutorProvisionForm').reset(); show($('tutorProvision'), false); show($('tutorProvisionError'), false);
+  });
   $('cancelUserBtn').addEventListener('click', closeForm);
   $('usersDialog').addEventListener('click', event => { if (event.target === $('usersDialog')) $('usersDialog').close(); });
   function selectedApps() { return [...document.querySelectorAll('input[name="app"]:checked')].map(input => input.value); }
@@ -89,6 +97,25 @@
     try { const data = await request('/api/portal/users'); users = data.users; renderUsers(); }
     catch (err) { toast(err.message, true); }
   }
+  async function loadTutorPreview() {
+    const preview = $('tutorPreview'); preview.replaceChildren(); show($('tutorProvisionError'), false);
+    try {
+      const data = await request('/api/portal/tutor-users/preview'); tutorCandidates = data.tutors || [];
+      if (!tutorCandidates.length) { preview.textContent = 'Nenhum tutor ativo encontrado.'; return; }
+      for (const tutor of tutorCandidates) {
+        const row = document.createElement('div'); row.className = 'tutor-preview-row';
+        const identity = document.createElement('strong'); identity.textContent = tutor.name;
+        const details = document.createElement('span'); details.textContent = tutor.error ? tutor.error : `${tutor.username} · ${tutor.polo}`;
+        row.append(identity, details); preview.append(row);
+      }
+      if (tutorCandidates.some(tutor => tutor.error || !tutor.username)) {
+        $('tutorProvisionError').textContent = 'Há vínculo de polo sem definição. Ajuste o cadastro antes de criar os acessos.';
+        show($('tutorProvisionError'), true); $('createTutorUsersBtn').disabled = true;
+      } else $('createTutorUsersBtn').disabled = false;
+    } catch (error) {
+      $('tutorProvisionError').textContent = error.message; show($('tutorProvisionError'), true);
+    }
+  }
   function renderUsers() {
     const list = $('userList'); list.replaceChildren();
     for (const user of users) {
@@ -110,6 +137,24 @@
       await request(id ? `/api/portal/users/${encodeURIComponent(id)}` : '/api/portal/users', { method: id ? 'PUT' : 'POST', body: JSON.stringify(payload) });
       closeForm(); await loadUsers(); toast('Usuário salvo.');
     } catch (err) { $('userError').textContent = err.message; show($('userError'), true); }
+  });
+  $('tutorProvisionForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const password = $('tutorInitialPassword').value;
+    if (password.length < 12) {
+      $('tutorProvisionError').textContent = 'A senha precisa ter pelo menos 12 caracteres.'; show($('tutorProvisionError'), true); return;
+    }
+    const list = tutorCandidates.map(tutor => `• ${tutor.name} — ${tutor.polo} — ${tutor.username}`).join('\n');
+    if (!confirm(`Criar uma conta central de Matrículas para cada tutor listado, usando a mesma senha inicial?\n\n${list}\n\nCada conta terá consulta do polo e acesso individual às matrículas do tutor.`)) return;
+    const button = $('createTutorUsersBtn'); button.disabled = true; show($('tutorProvisionError'), false);
+    try {
+      const result = await request('/api/portal/tutor-users', { method: 'POST', body: JSON.stringify({ password }) });
+      $('tutorProvisionForm').reset(); show($('tutorProvision'), false); await loadUsers();
+      const skipped = result.existing?.length || 0;
+      toast(`${result.created.length} acessos criados${skipped ? `; ${skipped} já existiam` : ''}.`);
+    } catch (error) {
+      $('tutorProvisionError').textContent = error.message; show($('tutorProvisionError'), true);
+    } finally { button.disabled = false; }
   });
   async function resetPassword(user) {
     const password = prompt(`Nova senha para ${user.name} (mínimo de 12 caracteres):`); if (password === null) return;
