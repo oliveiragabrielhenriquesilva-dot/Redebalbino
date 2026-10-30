@@ -93,7 +93,7 @@ function proxy(req, res, app, originalUrl) {
     const headers = { ...upstreamRes.headers };
     const location = headers.location;
     if (location && location.startsWith('/')) headers.location = app.prefix + location;
-    if (headers['set-cookie']) headers['set-cookie'] = headers['set-cookie'].map(c => c.replace(/;s*Path=/(?=;|$)/i, `; Path=${app.prefix}/`));
+    if (headers['set-cookie']) headers['set-cookie'] = headers['set-cookie'].map(c => c.replace(/;\s*Path=\/(?=;|$)/i, `; Path=${app.prefix}/`));
     const contentType = String(headers['content-type'] || '');
     if (!isText(contentType) || /text\/event-stream/i.test(contentType) || req.method === 'HEAD') {
       res.writeHead(upstreamRes.statusCode || 502, headers);
