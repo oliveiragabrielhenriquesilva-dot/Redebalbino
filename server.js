@@ -170,9 +170,7 @@ server.on('upgrade', (req, socket, head) => {
   upstream.on('error', () => socket.destroy()); socket.on('error', () => upstream.destroy());
 });
 
-startApps().then(() => {
-  server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /artes`));
-}).catch(error => {
+server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /artes`));
+startApps().catch(error => {
   console.error('Não foi possível preparar os sistemas:', error);
-  process.exitCode = 1;
 });
