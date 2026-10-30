@@ -508,12 +508,15 @@ const servidor = http.createServer(async (req, res) => {
 const hostEscuta = () => process.env.HOST || (getConfig().rede_ativa === '1' ? '0.0.0.0' : '127.0.0.1');
 function iniciar() { servidor.listen(PORTA, hostEscuta()); }
 function reabrirEscuta() {
+  if (process.env.CENTRAL_BALBINO_EMBEDDED === '1') return;
   servidor.close(() => servidor.listen(PORTA, hostEscuta(), () => console.log(getConfig().rede_ativa === '1'
     ? `  Acesso pela rede liberado: ${enderecosRede().join('  ')}` : '  Acesso pela rede desligado.')));
   servidor.closeAllConnections();
 }
-servidor.once('listening', () => {
-  {
+let rotinasHospedadasIniciadas = false;
+function iniciarRotinasHospedadas() {
+  if (rotinasHospedadasIniciadas) return;
+  rotinasHospedadasIniciadas = true;
     console.log('');
     console.log(`  Automatizador de Publicações — Polos UniCesumar (versão ${VERSAO})`);
     console.log(`  Aberto em ${BASE}`);
@@ -529,8 +532,8 @@ servidor.once('listening', () => {
       const cmd = process.platform === 'win32' ? `start "" "${BASE}"` : process.platform === 'darwin' ? `open "${BASE}"` : `xdg-open "${BASE}"`;
       exec(cmd);
     }
-  }
-});
+}
+servidor.once('listening', iniciarRotinasHospedadas);
 let tentativas = 0;
 servidor.on('error', async (e) => {
   if (e.code !== 'EADDRINUSE') throw e;
@@ -555,4 +558,5 @@ servidor.on('error', async (e) => {
   try { await fetch(BASE + 'api/desligar', { method: 'POST' }); } catch {}
   setTimeout(iniciar, 1500);
 });
-iniciar();
+if (require.main === module) iniciar();
+module.exports = { servidor, iniciarRotinasHospedadas };

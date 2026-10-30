@@ -4,7 +4,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const { DatabaseSync } = require('node:sqlite');
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'dados');
+const DATA_DIR = process.env.MATRICULAS_DATA_DIR || process.env.DATA_DIR || path.join(__dirname, 'dados');
 fs.mkdirSync(DATA_DIR, { recursive: true });
 const DB_FILE = path.join(DATA_DIR, 'matriculas.db');
 

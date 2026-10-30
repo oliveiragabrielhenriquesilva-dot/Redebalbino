@@ -1841,9 +1841,12 @@ function backupAutomatico(forcar = false) {
   }
 }
 
-if (require.main === module) servidor.listen(PORT, process.env.HOST || '0.0.0.0', () => {
+let backupInterval = null;
+function iniciarRotinasHospedadas() {
+  if (backupInterval) return;
   backupAutomatico();
-  setInterval(backupAutomatico, 60 * 60 * 1000);
+  backupInterval = setInterval(backupAutomatico, 60 * 60 * 1000);
+  backupInterval.unref?.();
   const ips = Object.values(os.networkInterfaces()).flat().filter(i => i && i.family === 'IPv4' && !i.internal).map(i => i.address);
   console.log('');
   console.log('  Sistema de Matrículas rodando!');
@@ -1852,6 +1855,7 @@ if (require.main === module) servidor.listen(PORT, process.env.HOST || '0.0.0.0'
   console.log(`  Banco de dados:    ${DB_FILE}`);
   console.log('');
   console.log('  Deixe esta janela aberta enquanto o sistema estiver em uso.');
-});
+}
+if (require.main === module) servidor.listen(PORT, process.env.HOST || '0.0.0.0', iniciarRotinasHospedadas);
 
-module.exports = { servidor, db, conciliacaoMA, painel, ritmo, previsaoSemana, diario, origensPolo, ritmoSemanal, paginaTutor, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, percentualCalendario, gestao };
+module.exports = { servidor, db, conciliacaoMA, painel, ritmo, previsaoSemana, diario, origensPolo, ritmoSemanal, paginaTutor, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, percentualCalendario, gestao, iniciarRotinasHospedadas };

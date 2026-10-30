@@ -811,19 +811,17 @@ async function autoConnectStoredWhatsAppSessions(){
 setInterval(()=>{for(const res of [...sseClients]){try{res.write(`: ping ${Date.now()}\n\n`)}catch{sseClients.delete(res)}}},15000).unref?.();
 
 let shuttingDown=false;
-async function gracefulShutdown(signal){
+async function gracefulShutdown(signal, exitProcess=true){
   if(shuttingDown)return;shuttingDown=true;
   console.log(`Encerrando Balbino Chat com segurança (${signal})...`);
   try{pushLog('SERVER_SHUTDOWN',{signal,at:Date.now()});save();flush()}catch{}
   try{await Promise.allSettled((all().connections||[]).map(c=>disconnectInstance(c.id,false)))}catch{}
   try{flush()}catch{}
-  try{server.close(()=>process.exit(0));setTimeout(()=>process.exit(0),8000).unref?.()}catch{process.exit(0)}
+  if(server.listening)await new Promise(resolve=>server.close(resolve));
+  if(exitProcess){setTimeout(()=>process.exit(0),8000).unref?.();process.exit(0)}
 }
-process.on('SIGTERM',()=>gracefulShutdown('SIGTERM'));
-process.on('SIGINT',()=>gracefulShutdown('SIGINT'));
 
-if(process.env.HOSTED==='1'&&(!ADMIN_PASSWORD||ADMIN_PASSWORD.length<12)){console.error('Defina GOCHAT_ADMIN_PASSWORD com no mínimo 12 caracteres.');process.exit(1)}
-server.listen(PORT,HOST,()=>{
+async function iniciarServicos(){
   console.log(`Balbino Chat v${APP_VERSION} em http://localhost:${PORT}`);
   for(const n of lanAddresses())console.log(`Rede local: ${n.url} (${n.name})`);
   console.log(`Login inicial: ${ADMIN_USER} / ${process.env.GOCHAT_ADMIN_PASSWORD?'senha definida no ambiente':'senha não configurada'}`);
@@ -832,4 +830,15 @@ server.listen(PORT,HOST,()=>{
   const forced=process.env.GOCHAT_AUTO_CONNECT;
   if(forced){setTimeout(()=>connectInstance(forced).catch(e=>pushLog('AUTO_CONNECT_ERROR',{instanceId:forced,error:e.message})),700)}
   else setTimeout(()=>autoConnectStoredWhatsAppSessions().catch(e=>pushLog('AUTO_CONNECT_ERROR',{instanceId:'*',error:e.message})),900);
-});
+}
+
+const embedded=process.env.CENTRAL_BALBINO_EMBEDDED==='1';
+if(process.env.HOSTED==='1'&&(!ADMIN_PASSWORD||ADMIN_PASSWORD.length<12))throw new Error('Defina GOCHAT_ADMIN_PASSWORD com no mínimo 12 caracteres.');
+if(embedded){
+  iniciarServicos();
+}else{
+  process.on('SIGTERM',()=>gracefulShutdown('SIGTERM'));
+  process.on('SIGINT',()=>gracefulShutdown('SIGINT'));
+  server.listen(PORT,HOST,iniciarServicos);
+}
+export { server, gracefulShutdown };
