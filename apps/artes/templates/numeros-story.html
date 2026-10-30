@@ -1,0 +1,26 @@
+<style>
+.arte div { text-wrap: balance; }
+.lista-num { display: flex; flex-direction: column; gap: 22px; align-self: stretch; }
+.lista-num .item { display: flex; align-items: center; gap: 30px; padding: 28px 36px; text-align: left; }
+.lista-num .n { flex: none; min-width: 300px; white-space: nowrap; font-size: 62px; font-weight: 800; line-height: 1; color: #00D0FF; }
+.lista-num .t { flex: 1; font-size: 34px; font-weight: 500; line-height: 1.25; }
+</style>
+<div class="arte" style="width: 1080px; height: 1920px; padding: 230px 80px 240px; display: flex; flex-direction: column;">
+<img class="simbolo" src="assets/simbolo-branco.png" alt="" style="left: -260px; top: 820px; width: 820px;">
+<div class="topo">
+  <img class="logo" src="assets/logo-branco.png" alt="UniCesumar">
+  <div class="selo">GRADUAÇÃO</div>
+</div>
+<div class="miolo" style="align-items: center; justify-content: space-evenly; text-align: center; padding: 24px 0;">
+  <div class="medalhao" style="width: 220px; height: 220px;">{{{icone_svg}}}</div>
+  <div style="font-size: 88px; font-weight: 800; line-height: 1.05; max-width: 900px;">{{{titulo_html}}}</div>
+  <div class="lista-num">
+    <div class="cartao-azul item" style="{{{num1_oculto}}}"><div class="n">{{num1}}</div><div class="t">{{txt1}}</div></div>
+    <div class="cartao-azul item" style="{{{num2_oculto}}}"><div class="n">{{num2}}</div><div class="t">{{txt2}}</div></div>
+    <div class="cartao-azul item" style="{{{num3_oculto}}}"><div class="n">{{num3}}</div><div class="t">{{txt3}}</div></div>
+    <div class="cartao-azul item" style="{{{num4_oculto}}}"><div class="n">{{num4}}</div><div class="t">{{txt4}}</div></div>
+  </div>
+  <div style="font-size: 46px; font-weight: 700; {{{cta_oculto}}}">{{cta}}</div>
+</div>
+<div class="rodape"><div class="polo" style="font-size: 34px;">Polo {{polo}}</div><div class="zap" style="font-size: 30px;">WhatsApp {{whatsapp}}</div></div>
+</div>

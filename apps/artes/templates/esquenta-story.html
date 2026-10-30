@@ -1,0 +1,51 @@
+<style>
+.arte div { text-wrap: balance; }
+.arte.black { background: radial-gradient(circle at 50% 100%, rgba(255,200,0,0.22) 0%, rgba(255,200,0,0) 50%), radial-gradient(circle at 90% 12%, rgba(0,208,255,0.16) 0%, rgba(0,208,255,0) 40%), #050608; }
+.selo-amarelo { background: #FFC800; color: #050608; }
+.contorno { color: transparent; -webkit-text-stroke: 5px #00D0FF; }
+.cartao-preto { position: relative; background: rgba(255,255,255,0.04); border: 2px solid rgba(0,208,255,0.45); border-radius: 22px; }
+.disco { flex: none; border-radius: 50%; border: 7px solid #FFC800; background: #050608; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 0 16px rgba(255,200,0,0.10), 0 0 70px rgba(255,200,0,0.25); }
+</style>
+<div class="arte black" style="width: 1080px; height: 1920px; padding: 230px 80px 240px; display: flex; flex-direction: column;">
+<img class="simbolo" src="assets/simbolo-branco.png" alt="" style="right: -260px; top: 160px; width: 860px; opacity: 0.05;">
+<div class="topo">
+  <img class="logo" src="assets/logo-branco.png" alt="UniCesumar">
+  <div class="selo selo-amarelo" style="{{{selo_oculto}}}">{{selo}}</div>
+</div>
+<div class="miolo" style="justify-content: space-evenly; align-items: center; text-align: center; gap: 24px; padding: 10px 0 20px;">
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <div style="font-size: {{{titulo1_tamanho_story}}}px; font-weight: 800; line-height: 0.95; letter-spacing: 2px; {{{titulo1_oculto}}}">{{titulo1}}</div>
+    <div class="contorno" style="font-size: {{{titulo2_tamanho_story}}}px; font-weight: 800; line-height: 0.9; letter-spacing: 4px; {{{titulo2_oculto}}}">{{titulo2}}</div>
+  </div>
+  <div style="font-size: 44px; font-weight: 500; line-height: 1.2; max-width: 900px; {{{chamada_oculto}}}">{{{chamada_html}}}</div>
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; {{{bloco_curso_oculto}}}">
+    <div class="medalhao" style="width: 130px; height: 130px; margin-bottom: 10px; box-shadow: 0 0 0 18px rgba(0,208,255,0.07);">{{{icone_svg}}}</div>
+    <div style="font-size: 44px; font-weight: 500; line-height: 1.1;"><span style="{{{linha1_oculto}}}">{{linha1}}</span> <span style="color: #00D0FF; {{{linha2_oculto}}}">{{linha2}}</span></div>
+    <div style="font-size: {{{curso_tamanho_story}}}px; font-weight: 800; line-height: 1.02; max-width: 920px;">{{curso}}</div>
+  </div>
+  <div style="align-self: stretch; display: flex; align-items: center; justify-content: center; gap: 36px;">
+    <div class="cartao-preto" style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 30px 24px; {{{inicio_oculto}}}">
+      <div style="font-size: 34px; font-weight: 500;">{{inicio_rotulo}}</div>
+      <div style="font-size: 124px; font-weight: 800; line-height: 1; color: #00D0FF; white-space: nowrap;">{{inicio}}</div>
+    </div>
+    <div class="disco" style="width: 250px; height: 250px; {{{contagem_oculto}}}">
+      <div style="font-size: 28px; font-weight: 700; letter-spacing: 3px; color: #FFC800;">{{contagem_topo}}</div>
+      <div style="font-size: calc(112px * {{{contagem_num_tamanho}}}); font-weight: 800; line-height: 1;">{{contagem_num}}</div>
+      <div style="font-size: 28px; font-weight: 700; letter-spacing: 3px; color: #FFC800;">{{contagem_base}}</div>
+    </div>
+  </div>
+  <div style="align-self: stretch; background: #FFC800; color: #050608; border-radius: 18px; padding: 22px 30px; display: flex; flex-direction: column; align-items: center; gap: 4px; {{{destaque_oculto}}}">
+    <span style="font-size: 34px; font-weight: 600;">{{destaque_antes}}</span>
+    <span style="font-size: 92px; font-weight: 800; line-height: 1;">{{destaque}}</span>
+    <span style="font-size: 34px; font-weight: 600;">{{destaque_depois}}</span>
+  </div>
+  <div class="cartao-preto" style="align-self: stretch; display: flex; align-items: center; gap: 36px; padding: 24px 32px; text-align: left;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 42px; font-weight: 800; line-height: 1.15; {{{cta_titulo_oculto}}}">{{cta_titulo}}</div>
+      <div style="font-size: 30px; font-weight: 300; line-height: 1.35; {{{cta_texto_oculto}}}">{{cta_texto}}</div>
+    </div>
+    <div style="flex: none; width: 190px; height: 190px; border: 4px solid #00D0FF; border-radius: 18px; background: #FFFFFF; padding: 12px;"><img src="{{{qr_url}}}" alt="" style="width: 100%; height: 100%; display: block;"></div>
+  </div>
+</div>
+<div class="rodape"><div class="polo" style="font-size: 34px;">Polo {{polo}}</div><div class="zap" style="font-size: 30px;">WhatsApp {{whatsapp}}</div></div>
+</div>

@@ -1,0 +1,40 @@
+<style>
+.arte div { text-wrap: balance; }
+.preco-de { font-size: 30px; font-weight: 300; color: rgba(255,255,255,0.75); text-decoration: line-through; text-decoration-thickness: 2px; }
+.faixa-cta { background: #00D0FF; color: #03132D; border-radius: 16px; padding: 20px 30px; font-size: 36px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+</style>
+<div class="arte" style="width: 1080px; height: 1350px; padding: 72px; display: flex; flex-direction: column;">
+<img class="simbolo" src="assets/simbolo-branco.png" alt="" style="right: -240px; top: -100px; width: 760px;">
+<div class="topo">
+  <img class="logo" src="assets/logo-branco.png" alt="UniCesumar">
+  <div class="selo" style="{{{selo_oculto}}}">{{selo}}</div>
+</div>
+<div class="miolo" style="justify-content: space-evenly;">
+  <div style="display: flex; align-items: center; gap: 40px;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-size: 40px; font-weight: 500; line-height: 1.1;"><span style="{{{linha1_oculto}}}">{{linha1}}</span> <span style="color: #00D0FF; {{{linha2_oculto}}}">{{linha2}}</span></div>
+      <div style="font-size: {{{curso_tamanho}}}px; font-weight: 800; line-height: 1.02;">{{curso}}</div>
+    </div>
+    <div class="medalhao" style="width: 170px; height: 170px; margin-right: 30px;">{{{icone_svg}}}</div>
+  </div>
+  <div class="cartao-azul" style="display: flex; align-items: center; gap: 30px; padding: 30px 34px;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+      <div style="font-size: 32px; font-weight: 500;">{{primeira_rotulo}}</div>
+      <div style="font-size: 112px; font-weight: 800; line-height: 1; white-space: nowrap;">{{primeira}}</div>
+    </div>
+    <div style="width: 2px; align-self: stretch; background: rgba(0,208,255,0.4);"></div>
+    <div style="flex: none; display: flex; flex-direction: column; align-items: center; text-align: center; {{{desconto_oculto}}}">
+      <div style="font-size: 64px; font-weight: 800; line-height: 1; color: #FFC800; white-space: nowrap;">{{desconto}}</div>
+      <div style="font-size: 26px; font-weight: 500; max-width: 230px; margin-top: 6px;">{{desconto_rotulo}}</div>
+    </div>
+  </div>
+  <div style="display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; {{{mensalidade_oculto}}}">
+    <div style="font-size: 34px; font-weight: 500;">{{mensalidade_rotulo}}</div>
+    <div class="preco-de" style="{{{preco_cheio_oculto}}}">{{preco_cheio}}</div>
+    <div style="font-size: 56px; font-weight: 800; color: #00D0FF;">{{mensalidade}}</div>
+  </div>
+  <div style="font-size: 22px; font-weight: 300; color: rgba(255,255,255,0.75); line-height: 1.35; {{{observacao_oculto}}}">{{observacao}}</div>
+  <div class="faixa-cta"><span>Matricule-se</span><span style="font-size: 28px; font-weight: 600;">inscricoes.unicesumar.edu.br</span></div>
+</div>
+<div class="rodape"><div class="polo">Polo {{polo}}</div><div class="zap">WhatsApp {{whatsapp}}</div></div>
+</div>

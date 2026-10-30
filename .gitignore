@@ -1,0 +1,14 @@
+node_modules/
+apps/*/node_modules/
+runtime/
+.env
+*.log
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/data/artes/
+**/data/fotos/
+**/data/tmp/
+**/dados/backups/
+**/sessions/
+**/uploads/

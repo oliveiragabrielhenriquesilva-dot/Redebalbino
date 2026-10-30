@@ -1,0 +1,29 @@
+<style>
+.arte div { text-wrap: balance; }
+</style>
+<div class="arte" style="width: 1080px; height: 1350px; padding: 72px; display: flex; flex-direction: column;">
+<img class="simbolo" src="assets/simbolo-branco.png" alt="" style="right: -240px; top: -100px; width: 760px;">
+<div class="topo">
+  <img class="logo" src="assets/logo-branco.png" alt="UniCesumar">
+  <div class="selo" style="{{{selo_oculto}}}">{{selo}}</div>
+</div>
+<div class="miolo" style="justify-content: space-evenly;">
+  <div style="display: flex; align-items: center; gap: 40px;">
+    <div style="flex: 1; font-size: 84px; font-weight: 800; line-height: 1.04;">{{{titulo_html}}}</div>
+    <div class="medalhao" style="width: 190px; height: 190px; margin-right: 30px;">{{{icone_svg}}}</div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 20px;">
+    <div class="cartao-azul passo" style="{{{opcao1_titulo_oculto}}}"><div class="num">1</div><div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-size: 38px; font-weight: 700;">{{opcao1_titulo}}</div><div style="font-size: 28px; font-weight: 300; {{{opcao1_texto_oculto}}}">{{{opcao1_texto_html}}}</div></div></div>
+    <div class="cartao-azul passo" style="{{{opcao2_titulo_oculto}}}"><div class="num">2</div><div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-size: 38px; font-weight: 700;">{{opcao2_titulo}}</div><div style="font-size: 28px; font-weight: 300; {{{opcao2_texto_oculto}}}">{{{opcao2_texto_html}}}</div></div></div>
+    <div class="cartao-azul passo" style="{{{opcao3_titulo_oculto}}}"><div class="num">3</div><div style="display: flex; flex-direction: column; gap: 6px;"><div style="font-size: 38px; font-weight: 700;">{{opcao3_titulo}}</div><div style="font-size: 28px; font-weight: 300; {{{opcao3_texto_oculto}}}">{{{opcao3_texto_html}}}</div></div></div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 32px;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-size: 40px; font-weight: 700; color: #00D0FF; {{{cta_oculto}}}">{{cta}}</div>
+      <div style="font-size: 30px; font-weight: 500;">inscricoes.unicesumar.edu.br</div>
+    </div>
+    <div style="flex: none; width: 170px; height: 170px; border: 4px solid #00D0FF; border-radius: 16px; background: #FFFFFF; padding: 10px;"><img src="{{{qr_url}}}" alt="" style="width: 100%; height: 100%; display: block;"></div>
+  </div>
+</div>
+<div class="rodape"><div class="polo">Polo {{polo}}</div><div class="zap">WhatsApp {{whatsapp}}</div></div>
+</div>

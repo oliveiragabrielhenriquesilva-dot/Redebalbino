@@ -1,0 +1,51 @@
+<style>
+.arte div { text-wrap: balance; }
+.arte.black { background: radial-gradient(circle at 100% 10%, rgba(0,208,255,0.20) 0%, rgba(0,208,255,0) 42%), radial-gradient(circle at 0% 92%, rgba(0,208,255,0.12) 0%, rgba(0,208,255,0) 40%), #050608; }
+.selo-amarelo { background: #FFC800; color: #050608; }
+.contorno { color: transparent; -webkit-text-stroke: 5px #00D0FF; }
+.cartao-preto { position: relative; background: rgba(255,255,255,0.04); border: 2px solid rgba(0,208,255,0.45); border-radius: 22px; }
+.fita { position: relative; align-self: stretch; margin: 2px -140px; transform: rotate(-3deg); background: #FFC800; color: #050608; padding: 16px 0; font-size: 32px; font-weight: 800; letter-spacing: 3px; white-space: nowrap; overflow: hidden; display: flex; justify-content: center; gap: 28px; }
+.fita span { flex: none; }
+.preco-de { font-size: 34px; font-weight: 300; color: rgba(255,255,255,0.7); text-decoration: line-through; text-decoration-thickness: 2px; }
+</style>
+<div class="arte black" style="width: 1080px; height: 1920px; padding: 230px 80px 240px; display: flex; flex-direction: column;">
+<img class="simbolo" src="assets/simbolo-branco.png" alt="" style="right: -260px; top: 160px; width: 860px; opacity: 0.05;">
+<div class="topo">
+  <img class="logo" src="assets/logo-branco.png" alt="UniCesumar">
+  <div class="selo selo-amarelo" style="{{{selo_oculto}}}">{{selo}}</div>
+</div>
+<div class="miolo" style="justify-content: space-evenly; align-items: center; text-align: center; gap: 16px; padding: 22px 0 10px;">
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <div style="font-size: {{{titulo1_tamanho_story}}}px; font-weight: 800; line-height: 0.88; letter-spacing: 2px; {{{titulo1_oculto}}}">{{titulo1}}</div>
+    <div class="contorno" style="font-size: {{{titulo2_tamanho_story}}}px; font-weight: 800; line-height: 0.92; letter-spacing: 2px; {{{titulo2_oculto}}}">{{titulo2}}</div>
+  </div>
+  <div class="fita" style="{{{faixa_oculto}}}"><span>{{faixa}}</span><span>✦</span><span>{{faixa}}</span><span>✦</span><span>{{faixa}}</span></div>
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+    <div style="font-size: {{{sub_tamanho_story}}}px; font-weight: 500; line-height: 1.1;"><span style="{{{linha1_oculto}}}">{{linha1}}</span> <span style="color: #00D0FF; {{{linha2_oculto}}}">{{linha2}}</span></div>
+    <div style="font-size: {{{curso_tamanho_story}}}px; font-weight: 800; line-height: 1.02; max-width: 920px; {{{curso_oculto}}}">{{curso}}</div>
+  </div>
+  <div class="cartao-preto" style="align-self: stretch; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 26px 32px;">
+    <div style="font-size: 36px; font-weight: 500; {{{primeira_oculto}}}">{{primeira_rotulo}}</div>
+    <div style="font-size: 120px; font-weight: 800; line-height: 1; white-space: nowrap; {{{primeira_oculto}}}">{{primeira}}</div>
+    <div style="display: flex; align-items: baseline; gap: 16px; margin-top: 10px; {{{desconto_oculto}}}">
+      <div style="font-size: 68px; font-weight: 800; color: #FFC800; line-height: 1; white-space: nowrap;">{{desconto}}</div>
+      <div style="font-size: 32px; font-weight: 500; text-align: left; max-width: 380px;">{{desconto_rotulo}}</div>
+    </div>
+    <div style="align-self: stretch; border-top: 2px solid rgba(0,208,255,0.3); margin-top: 18px; padding-top: 16px; display: flex; align-items: baseline; justify-content: center; gap: 16px; flex-wrap: wrap; {{{mensalidade_oculto}}}">
+      <div style="font-size: 30px; font-weight: 500;">{{mensalidade_rotulo}}</div>
+      <div class="preco-de" style="{{{preco_cheio_oculto}}}">{{preco_cheio}}</div>
+      <div style="font-size: 54px; font-weight: 800; color: #00D0FF;">{{mensalidade}}</div>
+    </div>
+  </div>
+  <div style="border: 2px solid #FFC800; color: #FFC800; border-radius: 999px; padding: 12px 30px; font-size: 30px; font-weight: 700; {{{validade_oculto}}}">{{validade_rotulo}} {{validade}}</div>
+  <div style="font-size: 23px; font-weight: 300; color: rgba(255,255,255,0.72); line-height: 1.35; max-width: 880px; {{{observacao_oculto}}}">{{observacao}}</div>
+  <div class="cartao-preto" style="align-self: stretch; display: flex; align-items: center; gap: 36px; padding: 20px 28px; text-align: left;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 44px; font-weight: 800; line-height: 1.15;">{{cta}}</div>
+      <div style="font-size: 30px; font-weight: 300; line-height: 1.4;">Aponte a câmera e fale com o polo pelo WhatsApp.</div>
+    </div>
+    <div style="flex: none; width: 170px; height: 170px; border: 4px solid #00D0FF; border-radius: 18px; background: #FFFFFF; padding: 12px;"><img src="{{{qr_url}}}" alt="" style="width: 100%; height: 100%; display: block;"></div>
+  </div>
+</div>
+<div class="rodape"><div class="polo" style="font-size: 34px;">Polo {{polo}}</div><div class="zap" style="font-size: 30px;">WhatsApp {{whatsapp}}</div></div>
+</div>

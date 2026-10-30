@@ -1,0 +1,13 @@
+{
+  "name": "automatizador-polos-unicesumar",
+  "version": "6.12.1",
+  "description": "Automatizador de publicações dos polos UniCesumar (sistema local)",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

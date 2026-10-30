@@ -1,0 +1,14 @@
+{
+  "name": "sistema-matriculas",
+  "version": "30.3.6",
+  "description": "Acompanhamento de matrículas por polo, tutor, origem, meta e ticket médio",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node --no-warnings server.js",
+    "test": "node --no-warnings --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

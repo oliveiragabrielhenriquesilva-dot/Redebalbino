@@ -1,0 +1,50 @@
+<style>
+.arte div { text-wrap: balance; }
+.lado { position: absolute; top: 0; bottom: 0; left: 0; width: 720px; background: linear-gradient(180deg, #172C58 0%, #0E2147 100%); border-right: 2px solid rgba(0,208,255,0.35); padding: 64px 64px 56px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.foto-tutora { position: relative; flex: none; width: 300px; height: 300px; border-radius: 50%; overflow: hidden; background: #03132D; border: 6px solid #00D0FF; box-shadow: 0 0 0 22px rgba(0,208,255,0.08); }
+.foto-tutora img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; display: block; }
+.foto-tutora .sem-foto { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.foto-tutora .sem-foto svg { width: 46%; height: 46%; }
+.cartao-whats { align-self: stretch; display: flex; align-items: center; gap: 26px; text-align: left; background: rgba(3,19,45,0.6); border: 2px solid rgba(0,208,255,0.4); border-radius: 20px; padding: 20px 24px; }
+.qr { flex: none; width: 140px; height: 140px; background: #FFFFFF; border-radius: 12px; border: 4px solid #00D0FF; padding: 8px; }
+.qr img { width: 100%; height: 100%; display: block; }
+.dir { position: absolute; top: 0; bottom: 0; left: 720px; right: 0; padding: 64px 80px 56px; display: flex; flex-direction: column; }
+.faixa-empresa { align-self: flex-start; max-width: 100%; border: 2px solid #00D0FF; color: #00D0FF; border-radius: 999px; padding: 10px 26px; font-size: 24px; font-weight: 700; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cursos { flex: 1; min-height: 0; display: grid; gap: 22px; align-content: center; margin-top: 28px; }
+.card-curso { min-width: 0; background: rgba(23,44,88,0.85); border: 2px solid rgba(0,208,255,0.4); border-radius: 20px; display: flex; align-items: center; gap: 28px; padding: 24px 30px; overflow: hidden; }
+.card-curso .ic { flex: none; width: 96px; height: 96px; border-radius: 50%; border: 2px solid rgba(0,208,255,0.6); background: radial-gradient(circle at 50% 38%, rgba(0,208,255,0.22), rgba(3,19,45,0.9) 72%); display: flex; align-items: center; justify-content: center; }
+.card-curso .ic svg { width: 54%; height: 54%; display: block; }
+.card-curso .nm { font-weight: 800; line-height: 1.08; overflow-wrap: break-word; }
+.card-curso .gr { font-size: 26px; font-weight: 500; color: #00D0FF; margin-top: 6px; }
+.cursos.c3 .card-curso { padding: 26px 34px; }
+.cursos.c3 .card-curso .ic { width: 112px; height: 112px; }
+.cursos.c5 .card-curso, .cursos.c6 .card-curso { padding: 20px 26px; gap: 22px; }
+.cursos.c5 .card-curso .ic, .cursos.c6 .card-curso .ic { width: 84px; height: 84px; }
+.cursos.c5 .card-curso .gr, .cursos.c6 .card-curso .gr { font-size: 24px; }
+.cursos.c5 .card-curso:last-child { grid-column: 1 / -1; }
+</style>
+<div class="arte" style="width: 1920px; height: 1080px;">
+<img class="simbolo" src="assets/simbolo-branco.png" alt="" style="right: -200px; bottom: -260px; width: 760px;">
+<div class="lado">
+  <img class="logo" src="assets/logo-branco.png" alt="UniCesumar" style="width: 300px;">
+  <div style="font-size: 46px; font-weight: 800; line-height: 1.1; margin-top: 36px; max-width: 520px; {{{chamada_oculto}}}">{{{chamada_html}}}</div>
+  <div class="foto-tutora" style="margin-top: 40px;">{{{foto_tutora}}}</div>
+  <div style="font-size: {{{nome_tamanho_h}}}px; font-weight: 800; line-height: 1.05; margin-top: 30px; max-width: 590px;">{{tutora}}</div>
+  <div style="font-size: 28px; font-weight: 300; margin-top: 6px;">{{cargo_linha}}</div>
+  <div style="flex: 1;"></div>
+  <div class="cartao-whats">
+    <div style="flex: 1; min-width: 0;">
+      <div style="font-size: 24px; font-weight: 700; color: #00D0FF; {{{whats_rotulo_oculto}}}">{{whats_rotulo}}</div>
+      <div style="font-size: 44px; font-weight: 800; white-space: nowrap;">{{whatsapp}}</div>
+    </div>
+    <div class="qr" style="{{{qr_oculto}}}"><img src="{{{qr_url}}}" alt=""></div>
+  </div>
+</div>
+<div class="dir">
+  <div class="faixa-empresa" style="{{{faixa_oculto}}}">{{faixa}}</div>
+  <div style="font-size: {{{titulo_tamanho}}}px; font-weight: 800; line-height: 1.05; margin-top: 28px;">{{titulo}}</div>
+  <div style="font-size: 32px; font-weight: 500; color: #00D0FF; margin-top: 14px; {{{subtitulo_oculto}}}">{{subtitulo}}</div>
+  <div class="cursos c{{{qtd}}}" style="grid-template-columns: repeat({{{colunas}}}, minmax(0, 1fr));">{{{cursos_html}}}</div>
+  <div class="rodape" style="padding-top: 20px; margin-top: 24px;"><div class="polo" style="font-size: 26px;">{{rodape}}</div><div class="zap" style="font-size: 26px;">{{site}}</div></div>
+</div>
+</div>

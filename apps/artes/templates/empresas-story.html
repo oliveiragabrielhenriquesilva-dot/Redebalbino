@@ -1,0 +1,46 @@
+<style>
+.foto-tutora { position: relative; flex: none; border-radius: 50%; overflow: hidden; background: #172C58; border: 6px solid #00D0FF; box-shadow: 0 0 0 26px rgba(0,208,255,0.08), 0 0 0 54px rgba(0,208,255,0.04); }
+.foto-tutora img { width: 100%; height: 100%; object-fit: cover; object-position: center 22%; display: block; }
+.foto-tutora .sem-foto { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.foto-tutora .sem-foto svg { width: 46%; height: 46%; }
+.pilula { border: 2px solid #00D0FF; color: #00D0FF; border-radius: 999px; padding: 12px 28px; font-size: 28px; font-weight: 700; letter-spacing: 1px; white-space: nowrap; }
+
+.arte div { text-wrap: balance; }
+.beneficio { display: flex; gap: 20px; align-items: center; text-align: left; }
+.beneficio .ok { flex: none; width: 52px; height: 52px; border-radius: 50%; background: #00D0FF; display: flex; align-items: center; justify-content: center; }
+.beneficio .ok svg { width: 30px; height: 30px; }
+</style>
+<div class="arte" style="width: 1080px; height: 1920px; padding: 230px 80px 240px; display: flex; flex-direction: column;">
+<img class="simbolo" src="assets/simbolo-branco.png" alt="" style="right: -260px; top: 300px; width: 880px;">
+<div class="topo">
+  <img class="logo" src="assets/logo-branco.png" alt="UniCesumar">
+  <div class="pilula" style="{{{selo_oculto}}}">{{selo}}</div>
+</div>
+<div class="miolo" style="justify-content: space-evenly; padding: 20px 0;">
+  <div style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="font-size: 88px; font-weight: 800; line-height: 1.04;">{{titulo}}</div>
+    <div style="font-size: 46px; font-weight: 500; line-height: 1.2; color: #00D0FF; {{{subtitulo_oculto}}}">{{subtitulo}}</div>
+  </div>
+  <div style="display: flex; align-items: center; gap: 48px;">
+    <div class="foto-tutora" style="width: 300px; height: 300px;">{{{foto_tutora}}}</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-size: 36px; font-weight: 500; color: #00D0FF;">Fale com</div>
+      <div style="font-size: 68px; font-weight: 800; line-height: 1.04;">{{nome_destaque}}</div>
+      <div style="font-size: 32px; font-weight: 300; {{{cargo_oculto}}}">{{cargo}}</div>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 26px;">
+    <div class="beneficio" style="{{{beneficio1_oculto}}}"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#03132D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div style="font-size: 38px; font-weight: 500; line-height: 1.25;">{{beneficio1}}</div></div>
+    <div class="beneficio" style="{{{beneficio2_oculto}}}"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#03132D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div style="font-size: 38px; font-weight: 500; line-height: 1.25;">{{beneficio2}}</div></div>
+    <div class="beneficio" style="{{{beneficio3_oculto}}}"><span class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="#03132D" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div style="font-size: 38px; font-weight: 500; line-height: 1.25;">{{beneficio3}}</div></div>
+  </div>
+  <div class="cartao-azul" style="display: flex; align-items: center; gap: 36px; padding: 30px 36px;">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div style="font-size: 34px; font-weight: 700; color: #00D0FF; {{{cta_oculto}}}">{{cta}}</div>
+      <div style="font-size: 62px; font-weight: 800; line-height: 1; white-space: nowrap;">{{whatsapp}}</div>
+    </div>
+    <div style="flex: none; width: 200px; height: 200px; border: 4px solid #00D0FF; border-radius: 18px; background: #FFFFFF; padding: 12px;"><img src="{{{qr_url}}}" alt="" style="width: 100%; height: 100%; display: block;"></div>
+  </div>
+</div>
+<div class="rodape"><div class="polo" style="font-size: 32px;">{{rodape_nome}}</div><div class="zap" style="font-size: 28px;">unicesumar.edu.br</div></div>
+</div>

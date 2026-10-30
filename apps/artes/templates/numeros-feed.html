@@ -1,0 +1,28 @@
+<style>
+.arte div { text-wrap: balance; }
+.grade-num { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.grade-num .item { padding: 32px 30px; display: flex; flex-direction: column; gap: 8px; min-height: 220px; justify-content: center; }
+.grade-num .n { font-size: 68px; font-weight: 800; line-height: 1; color: #00D0FF; }
+.grade-num .t { font-size: 30px; font-weight: 500; line-height: 1.25; }
+</style>
+<div class="arte" style="width: 1080px; height: 1350px; padding: 72px; display: flex; flex-direction: column;">
+<img class="simbolo" src="assets/simbolo-branco.png" alt="" style="right: -240px; top: -100px; width: 760px;">
+<div class="topo">
+  <img class="logo" src="assets/logo-branco.png" alt="UniCesumar">
+  <div class="selo">GRADUAÇÃO</div>
+</div>
+<div class="miolo" style="justify-content: space-evenly;">
+  <div style="display: flex; align-items: center; gap: 40px;">
+    <div style="flex: 1; font-size: 76px; font-weight: 800; line-height: 1.05;">{{{titulo_html}}}</div>
+    <div class="medalhao" style="width: 180px; height: 180px; margin-right: 30px;">{{{icone_svg}}}</div>
+  </div>
+  <div class="grade-num">
+    <div class="cartao-azul item" style="{{{num1_oculto}}}"><div class="n">{{num1}}</div><div class="t">{{txt1}}</div></div>
+    <div class="cartao-azul item" style="{{{num2_oculto}}}"><div class="n">{{num2}}</div><div class="t">{{txt2}}</div></div>
+    <div class="cartao-azul item" style="{{{num3_oculto}}}"><div class="n">{{num3}}</div><div class="t">{{txt3}}</div></div>
+    <div class="cartao-azul item" style="{{{num4_oculto}}}"><div class="n">{{num4}}</div><div class="t">{{txt4}}</div></div>
+  </div>
+  <div style="font-size: 44px; font-weight: 700; {{{cta_oculto}}}">{{cta}}</div>
+</div>
+<div class="rodape"><div class="polo">Polo {{polo}}</div><div class="zap">WhatsApp {{whatsapp}}</div></div>
+</div>
