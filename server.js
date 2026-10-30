@@ -5,10 +5,12 @@ const fs = require('node:fs');
 const os = require('node:os');
 const { pathToFileURL } = require('node:url');
 const { DatabaseSync } = require('node:sqlite');
+const { createPortalAuth } = require('./portal-auth');
 
 try { process.loadEnvFile?.(path.join(__dirname, '.env')); } catch {}
 const ROOT = __dirname;
 const RUNTIME = path.resolve(process.env.BALBINO_RUNTIME_DIR || path.join(os.homedir(), 'central-balbino-runtime'));
+const portal = createPortalAuth(RUNTIME);
 const PORT = Number(process.env.PORT || 3000);
 const apps = [
   { key: 'matriculas', prefix: '/matriculas', server: null, status: 'starting', error: null },
@@ -215,9 +217,6 @@ function mountResponse(req, res, app) {
     return cb ? end(out, cb) : end(out);
   };
 }
-function rootPage() {
-  return `<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rede Balbino</title><style>body{font:16px system-ui;max-width:720px;margin:10vh auto;padding:24px;color:#16233a}a{display:block;padding:16px;margin:10px 0;border:1px solid #ccd4e2;border-radius:10px;color:#1455cf;text-decoration:none}</style><h1>Rede Balbino</h1><a href="/matriculas/">Acompanhamento de Matrículas</a><a href="/artes/">Gerador de Artes</a><a href="/chat/">Balbino Chat</a></html>`;
-}
 function proxy(req, res, app, originalUrl) {
   if (!app.server) { res.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(`O sistema ${app.key} ainda está iniciando.`); return; }
   const originalUrlValue = req.url;
@@ -226,13 +225,80 @@ function proxy(req, res, app, originalUrl) {
   req.headers['x-forwarded-prefix'] = app.prefix;
   req.headers['x-forwarded-host'] = req.headers.host || 'redebalbino.com.br';
   req.headers['x-forwarded-proto'] = req.headers['x-forwarded-proto'] || 'https';
+  const access = portal.forApp(req, app.key);
+  req.headers['x-balbino-portal'] = access.status === 'allowed' ? JSON.stringify({ app: app.key, id: access.user.id, name: access.user.name, username: access.user.username, account: access.account }) : '';
   mountResponse(req, res, app);
   app.server.emit('request', req, res);
   req.url = originalUrlValue;
 }
 
+function jsonReply(res, status, data, headers = {}) {
+  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers });
+  res.end(JSON.stringify(data));
+}
+async function readJson(req, max = 64 * 1024) {
+  const chunks = []; let size = 0;
+  for await (const chunk of req) { size += chunk.length; if (size > max) throw Object.assign(new Error('Requisição muito grande.'), { status: 413 }); chunks.push(chunk); }
+  try { return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); }
+  catch { throw Object.assign(new Error('JSON inválido.'), { status: 400 }); }
+}
+function sameOrigin(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  try { return new URL(origin).host === String(req.headers.host || '').toLowerCase(); } catch { return false; }
+}
+const loginAttempts = new Map();
+async function portalApi(req, res, url) {
+  const method = req.method, p = url.pathname;
+  if (method === 'GET' && p === '/api/portal/me') {
+    const row = portal.current(req);
+    return jsonReply(res, 200, { configured: portal.bootstrap.configured, user: row ? portal.publicUser(row) : null });
+  }
+  if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && !sameOrigin(req)) return jsonReply(res, 403, { error: 'Origem da solicitação inválida.' });
+  if (method === 'POST' && p === '/api/portal/login') {
+    const ip = req.socket.remoteAddress || 'unknown', now = Date.now(), old = loginAttempts.get(ip);
+    if (old && old.until > now && old.count >= 10) return jsonReply(res, 429, { error: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' });
+    const body = await readJson(req), result = portal.login(body.username, body.password, req);
+    if (!result) {
+      const entry = old && old.until > now ? old : { count: 0, until: now + 10 * 60 * 1000 };
+      entry.count++; loginAttempts.set(ip, entry);
+      return jsonReply(res, 401, { error: 'Usuário ou senha inválidos.' });
+    }
+    loginAttempts.delete(ip);
+    return jsonReply(res, 200, { user: result.user }, { 'Set-Cookie': result.cookie });
+  }
+  if (method === 'POST' && p === '/api/portal/logout') return jsonReply(res, 200, { ok: true }, { 'Set-Cookie': portal.logout(req) });
+  const actor = portal.current(req);
+  if (!actor) return jsonReply(res, 401, { error: 'Entre no portal para continuar.' });
+  if (!actor.is_admin) return jsonReply(res, 403, { error: 'Acesso restrito ao administrador.' });
+  if (method === 'GET' && p === '/api/portal/users') return jsonReply(res, 200, { users: portal.listUsers() });
+  if (method === 'POST' && p === '/api/portal/users') {
+    try { return jsonReply(res, 201, { user: portal.publicUser(portal.createUser(await readJson(req))) }); }
+    catch (error) { return jsonReply(res, error.message.includes('UNIQUE') ? 409 : 400, { error: error.message.includes('UNIQUE') ? 'Esse usuário já existe.' : error.message }); }
+  }
+  let match = p.match(/^\/api\/portal\/users\/([a-f0-9-]+)$/i);
+  if (method === 'PUT' && match) {
+    try { const user = portal.updateUser(match[1], await readJson(req), actor.id); return jsonReply(res, 200, { user: portal.publicUser(user) }); }
+    catch (error) { return jsonReply(res, error.message.includes('UNIQUE') ? 409 : 400, { error: error.message }); }
+  }
+  match = p.match(/^\/api\/portal\/users\/([a-f0-9-]+)\/(password|active)$/i);
+  if (method === 'POST' && match) {
+    const [, id, action] = match, body = await readJson(req);
+    try {
+      if (action === 'password') portal.changePassword(id, body.password);
+      else portal.setActive(id, body.active, actor.id);
+      return jsonReply(res, 200, { ok: true });
+    } catch (error) { return jsonReply(res, 400, { error: error.message }); }
+  }
+  return jsonReply(res, 404, { error: 'Endpoint não encontrado.' });
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
+  if (url.pathname.startsWith('/api/portal/')) {
+    portalApi(req, res, url).catch(error => jsonReply(res, error.status || 400, { error: error.message || 'Falha ao processar a solicitação.' }));
+    return;
+  }
   if (url.pathname === '/healthz') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     return res.end(JSON.stringify({ ok: true, apps: apps.map(({ key, status, server: appServer, error }) => ({
@@ -242,18 +308,36 @@ const server = http.createServer((req, res) => {
   }
   const app = apps.find(a => url.pathname === a.prefix || url.pathname.startsWith(a.prefix + '/'));
   if (!app) {
-    if (url.pathname === '/' || url.pathname === '/index.html') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); return res.end(rootPage()); }
+    const portalAssets = { '/': ['portal.html', 'text/html; charset=utf-8'], '/index.html': ['portal.html', 'text/html; charset=utf-8'], '/portal.css': ['portal.css', 'text/css; charset=utf-8'], '/portal.js': ['portal.js', 'text/javascript; charset=utf-8'] };
+    if (portalAssets[url.pathname]) {
+      const [file, type] = portalAssets[url.pathname], content = fs.readFileSync(path.join(ROOT, 'public', file));
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); return res.end(content);
+    }
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Caminho não encontrado.');
   }
   if (url.pathname === app.prefix) { res.writeHead(308, { Location: app.prefix + '/' }); return res.end(); }
+  const access = portal.forApp(req, app.key);
+  const childPath = url.pathname.slice(app.prefix.length) || '/';
+  const childMethod = req.method;
+  const isNativeLogout = (app.key === 'matriculas' && childPath === '/api/logout' && childMethod === 'POST') ||
+    (app.key === 'artes' && childPath === '/api/sair' && childMethod === 'POST') ||
+    (app.key === 'chat' && childPath === '/api/auth/logout' && childMethod === 'POST');
+  if (isNativeLogout) return jsonReply(res, 200, { ok: true }, { 'Set-Cookie': portal.logout(req) });
+  if (access.status !== 'allowed') {
+    if (url.pathname.includes('/api/')) return jsonReply(res, access.status === 'forbidden' ? 403 : 401, { error: access.status === 'forbidden' ? 'Seu acesso não inclui este sistema.' : 'Entre no portal para continuar.' });
+    res.writeHead(302, { Location: `/?next=${encodeURIComponent(`${app.prefix}${url.pathname.slice(app.prefix.length)}${url.search}`)}`, 'Cache-Control': 'no-store' }); return res.end();
+  }
   proxy(req, res, app, url.pathname.slice(app.prefix.length) + url.search);
 });
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
   const app = apps.find(a => url.pathname.startsWith(a.prefix + '/'));
   if (!app) { socket.destroy(); return; }
+  const access = portal.forApp(req, app.key);
+  if (access.status !== 'allowed') { socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'); socket.destroy(); return; }
   if (!app.server?.listenerCount('upgrade')) { socket.destroy(); return; }
   req.url = url.pathname.slice(app.prefix.length) + url.search;
+  req.headers['x-balbino-portal'] = JSON.stringify({ app: app.key, id: access.user.id, name: access.user.name, username: access.user.username, account: access.account });
   app.server.emit('upgrade', req, socket, head);
 });
 
