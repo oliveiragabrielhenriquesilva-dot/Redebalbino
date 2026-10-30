@@ -1,5 +1,6 @@
 'use strict';
 const http = require('node:http');
+const net = require('node:net');
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -15,6 +16,28 @@ const apps = [
   { key: 'chat', prefix: '/chat', port: 3113, dir: path.join(ROOT, 'apps', 'chat'), entry: 'server.js' }
 ];
 const children = [];
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+function portAtiva(port) {
+  return new Promise(resolve => {
+    const socket = net.createConnection({ host: '127.0.0.1', port });
+    const timer = setTimeout(() => { socket.destroy(); resolve(false); }, 800);
+    socket.once('connect', () => { clearTimeout(timer); socket.destroy(); resolve(true); });
+    socket.once('error', () => { clearTimeout(timer); resolve(false); });
+  });
+}
+async function aguardarServico(app, child) {
+  const limite = Date.now() + 45000;
+  while (Date.now() < limite) {
+    if (await portAtiva(app.port)) return true;
+    if (child.exitCode !== null) {
+      console.error(`[${app.key}] encerrou antes de abrir a porta ${app.port}.`);
+      return false;
+    }
+    await delay(300);
+  }
+  console.error(`[${app.key}] não abriu a porta ${app.port} em 45 segundos.`);
+  return false;
+}
 
 function copyTreeIfMissing(source, destination) {
   if (fs.existsSync(destination) || !fs.existsSync(source)) return;
@@ -27,7 +50,7 @@ function prepareRuntime() {
   copyTreeIfMissing(path.join(ROOT, 'apps', 'artes', 'data'), path.join(RUNTIME, 'artes'));
   for (const part of ['data', 'uploads', 'sessions', 'backups']) fs.mkdirSync(path.join(RUNTIME, 'chat', part), { recursive: true });
 }
-function startApps() {
+async function startApps() {
   if (!process.env.GOCHAT_ADMIN_PASSWORD || process.env.GOCHAT_ADMIN_PASSWORD.length < 12) {
     throw new Error('Defina GOCHAT_ADMIN_PASSWORD (mínimo 12 caracteres) nas variáveis do app Hostinger.');
   }
@@ -36,6 +59,10 @@ function startApps() {
   }
   prepareRuntime();
   for (const app of apps) {
+    if (await portAtiva(app.port)) {
+      console.log(`[${app.key}] já está ativo na porta ${app.port}; reutilizando o serviço.`);
+      continue;
+    }
     const env = {
       ...process.env,
       NODE_ENV: 'production',
@@ -57,9 +84,9 @@ function startApps() {
     const child = spawn(process.execPath, [path.join(app.dir, app.entry)], { cwd: app.dir, env, stdio: 'inherit' });
     child.on('exit', (code, signal) => {
       console.error(`[${app.key}] encerrou (código ${code ?? '—'}, sinal ${signal ?? '—'}).`);
-      if (!shuttingDown) process.exitCode = 1;
     });
     children.push(child);
+    await aguardarServico(app, child);
   }
 }
 let shuttingDown = false;
@@ -143,5 +170,9 @@ server.on('upgrade', (req, socket, head) => {
   upstream.on('error', () => socket.destroy()); socket.on('error', () => upstream.destroy());
 });
 
-startApps();
-server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /artes`));
+startApps().then(() => {
+  server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /artes`));
+}).catch(error => {
+  console.error('Não foi possível preparar os sistemas:', error);
+  process.exitCode = 1;
+});
