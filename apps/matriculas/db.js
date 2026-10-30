@@ -76,7 +76,8 @@ CREATE TABLE IF NOT EXISTS origens (
 CREATE TABLE IF NOT EXISTS categorias (
   id INTEGER PRIMARY KEY,
   nome TEXT NOT NULL UNIQUE COLLATE NOCASE,
-  ordem INTEGER NOT NULL DEFAULT 0
+  ordem INTEGER NOT NULL DEFAULT 0,
+  grupo TEXT
 );
 
 CREATE TABLE IF NOT EXISTS produtos (
@@ -162,6 +163,11 @@ CREATE TABLE IF NOT EXISTS historico (
   detalhe TEXT
 );
 `);
+
+// Banco já existente: versões anteriores criaram categorias sem a coluna usada pelas migrações.
+if (!db.prepare('PRAGMA table_info(categorias)').all().some(c => c.name === 'grupo')) {
+  db.exec('ALTER TABLE categorias ADD COLUMN grupo TEXT');
+}
 
 // ---------------------------------------------------------------------------
 // Carga inicial dos CADASTROS (não das matrículas) com base na planilha
