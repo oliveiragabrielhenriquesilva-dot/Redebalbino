@@ -44,7 +44,9 @@ function inspectDatabase(file, kind) {
 function recoverNestedDatabase(dir, filename, kind) {
   const destination = path.join(dir, filename);
   const current = fs.existsSync(destination) ? inspectDatabase(destination, kind) : null;
-  const candidates = walkForDatabase(dir, filename).filter(file => path.resolve(file) !== path.resolve(destination));
+  const appDataRoot = path.join(ROOT, 'apps', kind);
+  const candidates = [...new Set([...walkForDatabase(dir, filename), ...walkForDatabase(appDataRoot, filename)])]
+    .filter(file => path.resolve(file) !== path.resolve(destination));
   const rows = candidates.map(file => ({ file, stats: inspectDatabase(file, kind) })).filter(x => x.stats);
   const score = s => kind === 'matriculas' ? (s.cycles * 1_000_000_000 + s.enrollments) : (s.courses * 1_000_000 + s.types * 1_000 + s.poles);
   const meaningful = s => kind === 'matriculas' ? s.cycles > 0 : s.courses > 0;
