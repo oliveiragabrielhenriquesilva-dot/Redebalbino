@@ -699,7 +699,7 @@ async function config() {
     setTimeout(navegar, 900);
   });
   const sair = document.getElementById('rede-sair');
-  if (sair) sair.onclick = async () => { await api('POST', '/api/sair'); location.reload(); };
+  if (sair) sair.onclick = async () => { await api('POST', '/api/sair'); if (location.pathname.startsWith('/artes')) { location.href = '/'; return; } location.reload(); };
   document.getElementById('backup').onclick = e => ocupado(e.currentTarget, async () => { const r = await api('POST', '/api/backup'); aviso('Backup salvo em ' + r.arquivo); });
   document.getElementById('teste').onclick = e => ocupado(e.currentTarget, async () => {
     const r = await api('POST', '/api/teste-navegador');

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1730">
+  <meta name="description" content="Portal seguro dos sistemas da Rede Balbino.">
+  <title>Rede Balbino — Portal de Acesso</title>
+  <link rel="stylesheet" href="/portal.css">
+  <script src="/portal.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Rede Balbino — início">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M4 12.8 16 7l12 5.8L16 18.6 4 12.8Z" fill="white"/><path d="M8 15.1v5.1c0 2 3.6 3.7 8 3.7s8-1.7 8-3.7v-5.1l-8 3.8-8-3.8Z" fill="white" opacity=".87"/><path d="M27.5 13.3v7" stroke="white" stroke-width="1.6" stroke-linecap="round"/><circle cx="27.5" cy="22.1" r="1.5" fill="white"/></svg></span>
+        <span class="brand-name"><small>REDE</small>Balbino</span>
+      </a>
+      <div class="top-actions"><span class="secure-label"><i aria-hidden="true"></i> Acesso seguro</span><button class="user-chip hidden" id="logoutBtn" type="button">Sair</button></div>
+    </header>
+
+    <main id="main">
+      <section class="login-view" id="loginView" aria-labelledby="loginTitle">
+        <div class="login-copy">
+          <div class="eyebrow">Portal da equipe</div>
+          <h1>Seu trabalho,<br><span>em um só lugar.</span></h1>
+          <p>Entre para acessar as ferramentas da Rede Balbino disponíveis para você.</p>
+          <div class="login-features"><span>Uma conta</span><span>Seus sistemas</span><span>Acesso protegido</span></div>
+        </div>
+        <form class="login-card" id="loginForm">
+          <div class="login-icon" aria-hidden="true">RB</div>
+          <p class="card-kicker">BEM-VINDO À REDE BALBINO</p>
+          <h2 id="loginTitle">Entrar</h2>
+          <label for="loginUsername">Usuário</label>
+          <input id="loginUsername" name="username" autocomplete="username" required autofocus>
+          <label for="loginPassword">Senha</label>
+          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+          <button class="primary-btn" id="loginSubmit" type="submit">Entrar no portal <span aria-hidden="true">→</span></button>
+          <p class="form-error hidden" id="loginError" role="alert"></p>
+          <p class="login-help">Use o usuário e a senha do portal da equipe.</p>
+        </form>
+      </section>
+
+      <section class="dashboard hidden" id="dashboardView" aria-labelledby="dashboardTitle">
+        <div class="dashboard-heading">
+          <div><div class="eyebrow">Central de sistemas</div><h1 id="dashboardTitle">Olá, <span id="userName"></span></h1><p>Estes são os sistemas liberados para o seu acesso.</p></div>
+          <button class="secondary-btn hidden" id="manageUsersBtn" type="button"><span aria-hidden="true">♙</span> Usuários e acessos</button>
+        </div>
+        <div class="app-grid" id="appGrid"></div>
+        <div class="empty-state hidden" id="emptyState">Sua conta ainda não tem acesso a nenhum sistema. Peça ao administrador da Rede Balbino para liberar os acessos.</div>
+      </section>
+
+      <section class="setup-warning hidden" id="setupWarning" role="alert">
+        <strong>O acesso central ainda não foi configurado.</strong>
+        <span>O administrador precisa definir uma senha para o portal nas variáveis de ambiente da Hostinger.</span>
+      </section>
+    </main>
+    <footer><span><strong>Rede Balbino</strong> · Portal de acesso</span><span>As permissões são gerenciadas pelo administrador</span></footer>
+  </div>
+
+  <dialog class="users-dialog" id="usersDialog" aria-labelledby="usersTitle">
+    <div class="dialog-head"><div><div class="eyebrow">Administração</div><h2 id="usersTitle">Usuários e acessos</h2></div><button class="icon-btn" id="closeUsersBtn" type="button" aria-label="Fechar">×</button></div>
+    <p class="dialog-note">O login central controla quais sistemas aparecem. Nos sistemas Matrículas e Chat, a pessoa também precisa ter um usuário cadastrado para herdar o perfil e as permissões já definidos lá.</p>
+    <div class="user-list" id="userList"></div>
+    <div class="dialog-actions"><button class="primary-btn" id="newUserBtn" type="button">+ Adicionar usuário</button></div>
+    <form class="user-form hidden" id="userForm">
+      <input type="hidden" id="editUserId">
+      <div class="form-title" id="userFormTitle">Novo usuário</div>
+      <div class="form-grid">
+        <div><label for="newName">Nome</label><input id="newName" required maxlength="100"></div>
+        <div><label for="newUsername">Usuário do portal</label><input id="newUsername" required minlength="2" maxlength="80" autocomplete="off"></div>
+        <div class="password-field" id="passwordField"><label for="newPassword">Senha inicial (mínimo 12 caracteres)</label><input id="newPassword" type="password" minlength="12" autocomplete="new-password"></div>
+      </div>
+      <fieldset><legend>Sistemas liberados</legend>
+        <label class="check-row"><input type="checkbox" name="app" value="matriculas"> Acompanhamento de Matrículas</label>
+        <div class="mapping hidden" id="matriculasMapping"><label for="matriculasLogin">Login já cadastrado no Matrículas</label><input id="matriculasLogin" autocomplete="off"></div>
+        <label class="check-row"><input type="checkbox" name="app" value="artes"> Gerador de Artes</label>
+        <label class="check-row"><input type="checkbox" name="app" value="chat"> Balbino Chat</label>
+        <div class="mapping hidden" id="chatMapping"><label for="chatUsername">Usuário já cadastrado no Balbino Chat</label><input id="chatUsername" autocomplete="off"></div>
+      </fieldset>
+      <div class="form-actions"><button class="secondary-btn" id="cancelUserBtn" type="button">Cancelar</button><button class="primary-btn" type="submit">Salvar usuário</button></div>
+      <p class="form-error hidden" id="userError" role="alert"></p>
+    </form>
+  </dialog>
+  <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

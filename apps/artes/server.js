@@ -112,6 +112,10 @@ function senhaConfere(senha, guardado) {
 }
 function lerCookie(req, nome) { const m = new RegExp('(?:^|;\\s*)' + nome + '=([^;]+)').exec(req.headers.cookie || ''); return m ? m[1] : ''; }
 function autorizado(req) {
+  if (process.env.CENTRAL_BALBINO_EMBEDDED === '1') {
+    try { const portal = JSON.parse(req.headers['x-balbino-portal'] || 'null'); return Boolean(portal && portal.app === 'artes'); }
+    catch { return false; }
+  }
   if (ehLocal(req)) return true;
   const t = lerCookie(req, 'ap_sessao'); const val = sessoes.get(t);
   if (val && val > Date.now()) return true;

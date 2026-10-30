@@ -214,7 +214,7 @@ function montarShell() {
   $('#sel-polo').value = estado.polo || '';
   $('#sel-ciclo').onchange = (e) => { estado.ciclo = Number(e.target.value); ls.set('ciclo', estado.ciclo); rotear(); };
   $('#sel-polo').onchange = (e) => { estado.polo = e.target.value ? Number(e.target.value) : ''; ls.set('polo', estado.polo); rotear(); };
-  $('#b-sair').onclick = async () => { await api('/api/logout', { method: 'POST' }); B = null; iniciar(); };
+  $('#b-sair').onclick = async () => { await api('/api/logout', { method: 'POST' }); if (location.pathname.startsWith('/matriculas')) { location.href = '/'; return; } B = null; iniciar(); };
   $('#b-senha').onclick = modalTrocarSenha;
   $('#b-menu').onclick = () => $('#side').classList.toggle('aberta');
   if ($('#b-nova')) $('#b-nova').onclick = () => modalMatricula(null, () => rotear());
