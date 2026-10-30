@@ -18,38 +18,37 @@
         <span class="brand-mark" aria-hidden="true"><img src="/brand/monograma-rede-balbino-branco.webp" alt=""></span>
         <span class="brand-name"><small>REDE</small>Balbino</span>
       </a>
-      <div class="top-actions"><span class="secure-label"><i aria-hidden="true"></i> Acesso seguro</span><button class="user-chip hidden" id="logoutBtn" type="button">Sair</button></div>
+      <div class="top-actions"><span class="secure-label"><i aria-hidden="true"></i> Área da equipe</span><button class="user-chip hidden" id="logoutBtn" type="button">Sair</button></div>
     </header>
 
     <main id="main">
       <section class="login-view" id="loginView" aria-labelledby="loginTitle">
         <div class="login-copy">
-          <div class="eyebrow">Portal da equipe</div>
-          <h1>Seu trabalho,<br><span>em um só lugar.</span></h1>
-          <p>Entre para acessar as ferramentas da Rede Balbino disponíveis para você.</p>
-          <div class="login-features"><span>Uma conta</span><span>Seus sistemas</span><span>Acesso protegido</span></div>
+          <div class="eyebrow">Acesso da equipe</div>
+          <h1>Acesse os sistemas<br><span>da Rede Balbino.</span></h1>
+          <p>Entre com seu usuário e senha para continuar.</p>
         </div>
         <form class="login-card" id="loginForm">
           <div class="login-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><use href="#rede-balbino-mark"/></svg></div>
-          <p class="card-kicker">BEM-VINDO À REDE BALBINO</p>
-          <h2 id="loginTitle">Entrar</h2>
+          <p class="card-kicker">REDE BALBINO</p>
+          <h2 id="loginTitle">Entrar na sua conta</h2>
           <label for="loginUsername">Usuário</label>
           <input id="loginUsername" name="username" autocomplete="username" required autofocus>
           <label for="loginPassword">Senha</label>
           <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
-          <button class="primary-btn" id="loginSubmit" type="submit">Entrar no portal <span aria-hidden="true">→</span></button>
+          <button class="primary-btn" id="loginSubmit" type="submit">Entrar <span aria-hidden="true">→</span></button>
           <p class="form-error hidden" id="loginError" role="alert"></p>
-          <p class="login-help">Use o usuário e a senha do portal da equipe.</p>
+          <p class="login-help">Use os dados de acesso que recebeu do administrador.</p>
         </form>
       </section>
 
       <section class="dashboard hidden" id="dashboardView" aria-labelledby="dashboardTitle">
         <div class="dashboard-heading">
-          <div><div class="eyebrow">Central de sistemas</div><h1 id="dashboardTitle">Olá, <span id="userName"></span></h1><p>Estes são os sistemas liberados para o seu acesso.</p></div>
+          <div><div class="eyebrow">Sistemas da equipe</div><h1 id="dashboardTitle">Olá, <span id="userName"></span></h1><p>Escolha um sistema para continuar.</p></div>
           <button class="secondary-btn hidden" id="manageUsersBtn" type="button"><span aria-hidden="true">♙</span> Usuários e acessos</button>
         </div>
         <div class="app-grid" id="appGrid"></div>
-        <div class="empty-state hidden" id="emptyState">Sua conta ainda não tem acesso a nenhum sistema. Peça ao administrador da Rede Balbino para liberar os acessos.</div>
+        <div class="empty-state hidden" id="emptyState">Sua conta ainda não tem acesso a nenhum sistema. Peça ao administrador para liberar o acesso.</div>
       </section>
 
       <section class="setup-warning hidden" id="setupWarning" role="alert">
@@ -57,7 +56,7 @@
         <span>O administrador precisa definir uma senha para o portal nas variáveis de ambiente da Hostinger.</span>
       </section>
     </main>
-    <footer><span><strong>Rede Balbino</strong> · Portal de acesso</span><span>As permissões são gerenciadas pelo administrador</span></footer>
+    <footer><span><strong>Rede Balbino</strong> · Portal de acesso</span><span>Precisa de ajuda? Fale com o administrador.</span></footer>
   </div>
 
   <dialog class="users-dialog" id="usersDialog" aria-labelledby="usersTitle">
