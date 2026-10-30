@@ -138,6 +138,16 @@ function lerCookies(req) {
   return out;
 }
 function usuarioDaSessao(req) {
+  if (process.env.CENTRAL_BALBINO_EMBEDDED === '1') {
+    let portal = null; try { portal = JSON.parse(req.headers['x-balbino-portal'] || 'null'); } catch {}
+    if (portal && portal.app === 'matriculas') {
+      const u = portal.account === '@admin'
+        ? get("SELECT id,nome,login,papel,polo_id FROM usuarios WHERE ativo=1 AND papel='admin' ORDER BY id LIMIT 1")
+        : get('SELECT id,nome,login,papel,polo_id FROM usuarios WHERE ativo=1 AND login=? COLLATE NOCASE', String(portal.account || ''));
+      return u ? { id: u.id, nome: u.nome, login: u.login, papel: u.papel, polo_id: u.polo_id } : null;
+    }
+    return null;
+  }
   const token = lerCookies(req).sessao;
   if (!token) return null;
   const s = get(`SELECT u.id, u.nome, u.login, u.papel, u.polo_id, u.ativo, s.expira
