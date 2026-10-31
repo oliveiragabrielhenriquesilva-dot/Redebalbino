@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071a35">
+  <meta name="description" content="Calendários, atividades e orientações da Rede Balbino.">
+  <title>Balbino Informa</title>
+  <link rel="icon" href="/brand/monograma-rede-balbino.webp" type="image/webp">
+  <link rel="stylesheet" href="/informa/style.css">
+  <link rel="stylesheet" href="/informa/details.css">
+  <script src="/informa/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Voltar ao portal da Rede Balbino"><img src="/brand/rede-balbino-branco.webp" alt="Rede Balbino"></a>
+    <div class="top-actions"><span class="secure"><i></i> Acesso da equipe</span><a class="portal-link" href="/">Meus sistemas</a></div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow">REDE BALBINO · CONSULTAS</span>
+        <h1>Balbino <span>Informa</span></h1>
+        <p>Calendários, atividades e orientações da equipe em um só lugar.</p>
+      </div>
+      <form class="search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
+        <label class="visually-hidden" for="query">O que você quer consultar?</label>
+        <input id="query" type="search" placeholder="Busque por prova, atividade, curso ou assunto" autocomplete="off">
+        <button type="submit">Buscar <span aria-hidden="true">→</span></button>
+      </form>
+      <div class="suggestions" aria-label="Buscas rápidas">
+        <span>Buscar por:</span>
+        <button type="button" data-query="prova presencial">Provas</button>
+        <button type="button" data-query="atividade de estudo">Atividades</button>
+        <button type="button" data-query="graduação 10 semanas">Graduação · 10 semanas</button>
+        <button type="button" data-query="Conexão Pedagógico 51/2027">Conexão Pedagógico</button>
+      </div>
+    </section>
+
+    <section class="content" aria-label="Conteúdo para consulta">
+      <div class="section-heading">
+        <div><span class="eyebrow dark-eyebrow">CONSULTA RÁPIDA</span><h2 id="resultsHeading">Informações e documentos</h2></div>
+        <label class="filter-label" for="category">Categoria</label>
+        <select id="category"><option value="todos">Todas</option><option value="calendarios">Calendários</option><option value="pedagogico">Orientações pedagógicas</option></select>
+      </div>
+      <p class="result-count" id="resultCount" aria-live="polite"></p>
+      <div class="cards" id="cards"></div>
+      <div class="empty hidden" id="empty">Não encontrei conteúdo com esse termo. Tente buscar por curso, modalidade ou tipo de atividade.</div>
+    </section>
+
+    <section class="notice"><span class="notice-icon" aria-hidden="true">i</span><p>As datas podem variar conforme o curso e a modalidade. Confira o calendário correspondente e as orientações oficiais no Studeo.</p></section>
+  </main>
+
+  <footer><span>Rede Balbino · Balbino Informa</span><a href="/">Voltar ao portal</a></footer>
+</body>
+</html>

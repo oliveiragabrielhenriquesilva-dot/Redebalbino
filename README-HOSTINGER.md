@@ -1,6 +1,6 @@
 # Central Balbino — implantação na Hostinger
 
-O domínio `redebalbino.com.br` usará os caminhos `/chat`, `/matriculas` e `/artes`.
+O domínio `redebalbino.com.br` usará os caminhos `/chat`, `/matriculas`, `/artes` e `/informa`.
 O projeto raiz é uma aplicação Node.js 24 que encaminha cada caminho ao respectivo sistema.
 
 ## Requisitos de implantação
@@ -27,6 +27,9 @@ O Gerador de Artes precisa de Chromium no ambiente Linux. Configure `CHROME_PATH
 - `/chat/` — Balbino Chat
 - `/matriculas/` — Acompanhamento de Matrículas
 - `/artes/` — Gerador de Artes
+- `/informa/` — Balbino Informa, área de consulta disponível para todas as contas ativas do portal
 - `/healthz` — saúde do roteador
 
 Cada banco fica em seu diretório próprio sob `runtime/`.
+
+O Balbino Informa usa a sessão central do portal e não exige login ou permissão de sistema separados. A aplicação publica somente as páginas de consulta e os resumos textuais; os documentos internos originais não ficam no repositório.

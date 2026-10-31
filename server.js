@@ -354,6 +354,43 @@ async function portalApi(req, res, url) {
   return jsonReply(res, 404, { error: 'Endpoint não encontrado.' });
 }
 
+const INFORMA_FILES = new Map([
+  ['/', 'index.html'],
+  ['/index.html', 'index.html'],
+  ['/app.js', 'app.js'],
+  ['/style.css', 'style.css'],
+  ['/details.css', 'details.css']
+]);
+function serveInforma(req, res, url) {
+  if (!portal.current(req)) {
+    res.writeHead(302, { Location: '/?next=' + encodeURIComponent(url.pathname + url.search), 'Cache-Control': 'no-store' });
+    return res.end();
+  }
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    res.writeHead(405, { Allow: 'GET, HEAD', 'Cache-Control': 'no-store' });
+    return res.end();
+  }
+  if (url.pathname === '/informa') {
+    res.writeHead(308, { Location: '/informa/' + url.search, 'Cache-Control': 'no-store' });
+    return res.end();
+  }
+  const relative = url.pathname.slice('/informa'.length) || '/';
+  const fileName = INFORMA_FILES.get(relative);
+  if (!fileName) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end('Arquivo não encontrado.');
+  }
+  const content = fs.readFileSync(path.join(ROOT, 'apps', 'informa', 'public', fileName));
+  const types = { 'index.html': 'text/html; charset=utf-8', 'app.js': 'text/javascript; charset=utf-8', 'style.css': 'text/css; charset=utf-8', 'details.css': 'text/css; charset=utf-8' };
+  res.writeHead(200, {
+    'Content-Type': types[fileName],
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy': "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'"
+  });
+  return req.method === 'HEAD' ? res.end() : res.end(content);
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
   if (url.pathname.startsWith('/api/portal/')) {
@@ -375,6 +412,7 @@ const server = http.createServer((req, res) => {
     });
     return res.end(JSON.stringify({ ok: appHealth.every(app => app.status === 'ready' && app.loaded), apps: appHealth }));
   }
+  if (url.pathname === '/informa' || url.pathname.startsWith('/informa/')) return serveInforma(req, res, url);
   const brandAssets = {
     '/brand/rede-balbino-branco.webp': 'rede-balbino-branco.webp',
     '/brand/monograma-rede-balbino.webp': 'monograma-rede-balbino.webp',
@@ -420,7 +458,7 @@ server.on('upgrade', (req, socket, head) => {
   app.server.emit('upgrade', req, socket, head);
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /artes`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /artes, /informa`));
 startApps().catch(error => {
   console.error('Não foi possível preparar os sistemas:', error);
 });
