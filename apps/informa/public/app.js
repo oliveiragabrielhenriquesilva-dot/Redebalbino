@@ -149,6 +149,13 @@
     activeCategory = activeCategory === button.dataset.category ? 'todos' : button.dataset.category;
     render(); document.getElementById('resultsHeading').scrollIntoView({behavior:'smooth',block:'nearest'});
   }));
+  document.addEventListener('input', event => {
+    const input = event.target.closest('.date-editor');
+    if (!input || !calendar) return;
+    const course = calendar.courses.find(item => item.id === input.dataset.course);
+    const date = course?.modules[Number(input.dataset.module)]?.events[Number(input.dataset.event)];
+    if (date) date[input.dataset.key] = input.value.trim();
+  });
   document.getElementById('searchForm').addEventListener('submit', event => { event.preventDefault(); render(); });
   query.addEventListener('input', render); courseFilter.addEventListener('change', render);
   addAdminControls();
