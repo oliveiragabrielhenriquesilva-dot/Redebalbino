@@ -20,3 +20,5 @@
 .module-list{grid-template-columns:1fr}
 .mapa-note{grid-column:1/-1}
 @media(max-width:600px){.admin-actions{align-items:stretch;flex-direction:column}.admin-actions .admin-button{width:100%}.admin-status{min-height:18px}.activity-calendar-table{min-width:700px}.activity-table-wrap{overflow-x:auto}}
+
+.activity-calendar-table td[colspan="2"]{text-align:center}
