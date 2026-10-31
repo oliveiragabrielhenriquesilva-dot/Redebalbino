@@ -157,9 +157,16 @@
       for (const item of matches) {
         if (!byCourse.has(item.course)) byCourse.set(item.course, new Map());
         const modules = byCourse.get(item.course);
+        const disciplineMatch = item.title.match(/\s*[·–-]\s*(1ª|2ª)\s+(disciplina|etapa)$/i);
+        const discipline = disciplineMatch
+          ? disciplineMatch[2].toLowerCase() === 'etapa' ? `${disciplineMatch[1]} etapa` : `${disciplineMatch[1]} disciplina`
+          : 'Geral do módulo';
+        const activityTitle = disciplineMatch ? item.title.slice(0, disciplineMatch.index).trim() : item.title;
         for (const [module, date] of item.dates || []) {
-          if (!modules.has(module)) modules.set(module, []);
-          modules.get(module).push({ title: item.title, date });
+          if (!modules.has(module)) modules.set(module, new Map());
+          const disciplines = modules.get(module);
+          if (!disciplines.has(discipline)) disciplines.set(discipline, []);
+          disciplines.get(discipline).push({ title: activityTitle, date });
         }
       }
       for (const [courseName, modules] of byCourse) {
@@ -170,14 +177,22 @@
         for (const module of orderedModules) {
           const card = document.createElement('article'); card.className = 'info-card tone-atividades module-card';
           const title = document.createElement('h4'); title.textContent = module;
-          const dates = document.createElement('div'); dates.className = 'date-list';
-          for (const activity of modules.get(module)) {
-            const row = document.createElement('div'); row.className = 'date-row activity-date-row';
-            const name = document.createElement('span'); name.textContent = activity.title;
-            const date = document.createElement('strong'); date.textContent = activity.date;
-            row.append(name, date); dates.append(row);
+          const disciplineList = document.createElement('div'); disciplineList.className = 'discipline-list';
+          const disciplines = modules.get(module);
+          const orderedDisciplines = [...disciplines.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+          for (const discipline of orderedDisciplines) {
+            const block = document.createElement('section'); block.className = 'discipline-block';
+            const label = document.createElement('h5'); label.className = 'discipline-heading'; label.textContent = discipline;
+            const dates = document.createElement('div'); dates.className = 'discipline-dates';
+            for (const activity of disciplines.get(discipline)) {
+              const row = document.createElement('div'); row.className = 'activity-date-row';
+              const name = document.createElement('span'); name.textContent = activity.title;
+              const date = document.createElement('strong'); date.textContent = activity.date;
+              row.append(name, date); dates.append(row);
+            }
+            block.append(label, dates); disciplineList.append(block);
           }
-          card.append(title, dates); grid.append(card);
+          card.append(title, disciplineList); grid.append(card);
         }
         group.append(heading, grid); results.append(group);
       }
