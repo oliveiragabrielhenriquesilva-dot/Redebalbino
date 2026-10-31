@@ -3,56 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071a35">
-  <meta name="description" content="Calendários, atividades e orientações da Rede Balbino.">
+  <meta name="theme-color" content="#0b1d39">
+  <meta name="description" content="Consulte atividades, MAPA, provas e publicação de notas da Rede Balbino.">
   <title>Balbino Informa</title>
   <link rel="icon" href="/brand/monograma-rede-balbino.webp" type="image/webp">
   <link rel="stylesheet" href="/informa/style.css">
-  <link rel="stylesheet" href="/informa/details.css">
   <script src="/informa/app.js" defer></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="/" aria-label="Voltar ao portal da Rede Balbino"><img src="/brand/rede-balbino-branco.webp" alt="Rede Balbino"></a>
-    <div class="top-actions"><span class="secure"><i></i> Acesso da equipe</span><a class="portal-link" href="/">Meus sistemas</a></div>
+    <div class="top-actions"><span class="secure"><i></i> Área da equipe</span><a class="portal-link" href="/">Meus sistemas <span aria-hidden="true">↗</span></a></div>
   </header>
 
-  <main>
+  <main class="shell">
     <section class="hero">
       <div class="hero-copy">
-        <span class="eyebrow">REDE BALBINO · CONSULTAS</span>
+        <span class="eyebrow">CONSULTA ACADÊMICA</span>
         <h1>Balbino <span>Informa</span></h1>
-        <p>Calendários, atividades e orientações da equipe em um só lugar.</p>
+        <p>Encontre prazos de atividades, orientações sobre o MAPA, datas de provas e publicação de notas.</p>
       </div>
       <form class="search" id="searchForm" role="search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
-        <label class="visually-hidden" for="query">O que você quer consultar?</label>
-        <input id="query" type="search" placeholder="Busque por prova, atividade, curso ou assunto" autocomplete="off">
+        <label class="visually-hidden" for="query">Buscar informações</label>
+        <input id="query" type="search" placeholder="Ex.: prova online, MAPA, 52/27, 14/08" autocomplete="off">
         <button type="submit">Buscar <span aria-hidden="true">→</span></button>
       </form>
-      <div class="suggestions" aria-label="Buscas rápidas">
-        <span>Buscar por:</span>
-        <button type="button" data-query="prova presencial">Provas</button>
-        <button type="button" data-query="atividade de estudo">Atividades</button>
-        <button type="button" data-query="graduação 10 semanas">Graduação · 10 semanas</button>
-        <button type="button" data-query="Conexão Pedagógico 51/2027">Conexão Pedagógico</button>
+      <div class="hero-foot"><span>Calendários e orientações da equipe</span><span class="hero-dot"></span><span>Atualizado para 2026 e Processo 51/2027</span></div>
+    </section>
+
+    <section class="topics" aria-labelledby="topicsTitle">
+      <div class="section-heading"><div><span class="eyebrow light-eyebrow">ATALHOS</span><h2 id="topicsTitle">O que você quer consultar?</h2></div></div>
+      <div class="topic-grid" role="group" aria-label="Filtrar por assunto">
+        <button class="topic-card topic-activities" type="button" data-category="atividades" aria-pressed="false"><span class="topic-icon">A</span><span class="topic-copy"><strong>Atividades</strong><small>Prazos separados por módulo e atividade</small></span><span class="topic-arrow" aria-hidden="true">↗</span></button>
+        <button class="topic-card topic-mapa" type="button" data-category="mapa" aria-pressed="false"><span class="topic-icon">M</span><span class="topic-copy"><strong>MAPA</strong><small>Composição da nota e onde conferir o prazo</small></span><span class="topic-arrow" aria-hidden="true">↗</span></button>
+        <button class="topic-card topic-exams" type="button" data-category="provas" aria-pressed="false"><span class="topic-icon">P</span><span class="topic-copy"><strong>Datas de provas</strong><small>Agendamento, realização e provas online</small></span><span class="topic-arrow" aria-hidden="true">↗</span></button>
+        <button class="topic-card topic-publications" type="button" data-category="publicacoes" aria-pressed="false"><span class="topic-icon">N</span><span class="topic-copy"><strong>Publicação de notas</strong><small>Datas de fechamento por módulo</small></span><span class="topic-arrow" aria-hidden="true">↗</span></button>
       </div>
     </section>
 
-    <section class="content" aria-label="Conteúdo para consulta">
-      <div class="section-heading">
-        <div><span class="eyebrow dark-eyebrow">CONSULTA RÁPIDA</span><h2 id="resultsHeading">Informações e documentos</h2></div>
-        <label class="filter-label" for="category">Categoria</label>
-        <select id="category"><option value="todos">Todas</option><option value="calendarios">Calendários</option><option value="pedagogico">Orientações pedagógicas</option></select>
+    <section class="results-section" aria-labelledby="resultsHeading">
+      <div class="results-toolbar">
+        <div><span class="eyebrow light-eyebrow">CONSULTA RÁPIDA</span><h2 id="resultsHeading">Todas as informações</h2><p id="resultCount" class="result-count" aria-live="polite"></p></div>
+        <label class="course-filter">Curso ou calendário
+          <select id="courseFilter"><option value="todos">Todos</option></select>
+        </label>
       </div>
-      <p class="result-count" id="resultCount" aria-live="polite"></p>
-      <div class="cards" id="cards"></div>
-      <div class="empty hidden" id="empty">Não encontrei conteúdo com esse termo. Tente buscar por curso, modalidade ou tipo de atividade.</div>
+      <div class="result-grid" id="results"></div>
+      <div class="empty hidden" id="empty">Não encontrei esse assunto. Tente buscar por módulo, curso, atividade ou data.</div>
     </section>
 
-    <section class="notice"><span class="notice-icon" aria-hidden="true">i</span><p>As datas podem variar conforme o curso e a modalidade. Confira o calendário correspondente e as orientações oficiais no Studeo.</p></section>
+    <aside class="notice"><span class="notice-mark" aria-hidden="true">i</span><p><strong>Confira também o Studeo.</strong> Alguns prazos e orientações variam por curso e disciplina. Quando não houver uma data geral, consulte o cronograma dentro da sala da disciplina.</p></aside>
   </main>
 
-  <footer><span>Rede Balbino · Balbino Informa</span><a href="/">Voltar ao portal</a></footer>
+  <footer><span>Rede Balbino <i>·</i> Balbino Informa</span><a href="/">Voltar ao portal</a></footer>
 </body>
 </html>
