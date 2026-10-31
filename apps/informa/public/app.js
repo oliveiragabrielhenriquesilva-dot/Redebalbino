@@ -177,12 +177,16 @@
         const moduleList = document.createElement('div'); moduleList.className = 'module-list';
         for (const module of orderedModules) {
           const moduleCard = document.createElement('section'); moduleCard.className = 'module-card';
-          const moduleTitle = document.createElement('h4'); moduleTitle.className = 'module-heading'; moduleTitle.textContent = `Módulo ${module}`;
           const tableWrap = document.createElement('div'); tableWrap.className = 'activity-table-wrap';
           const table = document.createElement('table'); table.className = 'activity-calendar-table';
           const thead = document.createElement('thead');
+          const moduleRow = document.createElement('tr'); moduleRow.className = 'module-title-row';
+          const moduleTitle = document.createElement('th'); moduleTitle.colSpan = 3; moduleTitle.scope = 'colgroup'; moduleTitle.textContent = `Módulo ${module}`;
+          moduleRow.append(moduleTitle); thead.append(moduleRow);
           const headerRow = document.createElement('tr');
-          for (const label of ['Atividade', '1ª disciplina / etapa', '2ª disciplina / etapa']) {
+          const activityHeader = document.createElement('th'); activityHeader.scope = 'col'; activityHeader.setAttribute('aria-label', 'Atividade'); headerRow.append(activityHeader);
+          const stageLabel = courseName.toLocaleLowerCase('pt-BR').includes('profissionalizantes') ? 'etapa' : 'disciplina';
+          for (const label of [`1ª ${stageLabel}`, `2ª ${stageLabel}`]) {
             const th = document.createElement('th'); th.scope = 'col'; th.textContent = label; headerRow.append(th);
           }
           thead.append(headerRow);
@@ -197,7 +201,7 @@
             tbody.append(row);
           }
           table.append(thead, tbody); tableWrap.append(table);
-          moduleCard.append(moduleTitle, tableWrap); moduleList.append(moduleCard);
+          moduleCard.append(tableWrap); moduleList.append(moduleCard);
         }
         group.append(heading, moduleList); results.append(group);
       }
