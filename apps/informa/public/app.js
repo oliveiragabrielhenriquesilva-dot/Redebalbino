@@ -152,9 +152,10 @@
     });
 
     results.replaceChildren();
-    if (activeCategory === 'atividades' && matches.length) {
+    const activityMatches = matches.filter(item => item.category === 'atividades');
+    if (activityMatches.length) {
       const byCourse = new Map();
-      for (const item of matches) {
+      for (const item of activityMatches) {
         if (!byCourse.has(item.course)) byCourse.set(item.course, new Map());
         const modules = byCourse.get(item.course);
         const disciplineMatch = item.title.match(/\s*[·–-]\s*(1ª|2ª)\s+(disciplina|etapa)$/i);
@@ -200,8 +201,8 @@
         }
         group.append(heading, moduleList); results.append(group);
       }
-    } else {
-      for (const item of matches) {
+    }
+    for (const item of matches.filter(item => item.category !== 'atividades')) {
         const card = document.createElement('article'); card.className = `info-card tone-${item.category}`;
         const top = document.createElement('div'); top.className = 'card-topline';
         const tag = document.createElement('span'); tag.className = 'category-tag'; tag.textContent = item.type;
@@ -219,7 +220,6 @@
         card.append(top, title, description, dates);
         if (item.note) { const note = document.createElement('p'); note.className = 'card-note'; note.textContent = item.note; card.append(note); }
         results.append(card);
-      }
     }
 
     heading.textContent = categoryNames[activeCategory];
