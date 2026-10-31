@@ -249,6 +249,54 @@ function jsonReply(res, status, data, headers = {}) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...headers });
   res.end(JSON.stringify(data));
 }
+
+function informaCalendarFile() { return path.join(RUNTIME, 'informa', 'calendar.json'); }
+function readInformaCalendar() {
+  const file = informaCalendarFile();
+  const source = fs.existsSync(file) ? file : path.join(ROOT, 'apps', 'informa', 'calendar-2026.json');
+  return JSON.parse(fs.readFileSync(source, 'utf8'));
+}
+function validateInformaCalendar(input) {
+  const original = JSON.parse(fs.readFileSync(path.join(ROOT, 'apps', 'informa', 'calendar-2026.json'), 'utf8'));
+  if (!input || input.year !== original.year || !Array.isArray(input.courses) || input.courses.length !== original.courses.length) throw new Error('Estrutura do calendário inválida.');
+  const output = structuredClone(original);
+  for (let ci = 0; ci < original.courses.length; ci++) {
+    const baseCourse = original.courses[ci], editedCourse = input.courses[ci];
+    if (!editedCourse || editedCourse.id !== baseCourse.id || !Array.isArray(editedCourse.modules) || editedCourse.modules.length !== baseCourse.modules.length) throw new Error('A lista de cursos não corresponde ao calendário publicado.');
+    for (let mi = 0; mi < baseCourse.modules.length; mi++) {
+      const baseModule = baseCourse.modules[mi], editedModule = editedCourse.modules[mi];
+      if (!editedModule || editedModule.label !== baseModule.label || !Array.isArray(editedModule.events) || editedModule.events.length !== baseModule.events.length) throw new Error('A lista de módulos não corresponde ao calendário publicado.');
+      for (let ei = 0; ei < baseModule.events.length; ei++) {
+        const baseEvent = baseModule.events[ei], editedEvent = editedModule.events[ei];
+        if (!editedEvent || editedEvent.name !== baseEvent.name) throw new Error('As atividades do calendário não podem ser alteradas por esta tela.');
+        for (const key of ['first', 'second', 'common']) {
+          const value = editedEvent[key] == null ? '' : String(editedEvent[key]).trim();
+          if (value.length > 120 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) throw new Error('Uma das datas excede o limite permitido.');
+          output.courses[ci].modules[mi].events[ei][key] = value;
+        }
+      }
+    }
+  }
+  return output;
+}
+async function informaApi(req, res, url) {
+  if (url.pathname !== '/api/informa/calendar') return jsonReply(res, 404, { error: 'Endpoint não encontrado.' });
+  const user = portal.current(req);
+  if (!user) return jsonReply(res, 401, { error: 'Entre no portal para consultar o calendário.' });
+  if (req.method === 'GET') return jsonReply(res, 200, readInformaCalendar());
+  if (req.method !== 'PUT') return jsonReply(res, 405, { error: 'Método não permitido.' }, { Allow: 'GET, PUT' });
+  if (!sameOrigin(req)) return jsonReply(res, 403, { error: 'Origem da solicitação inválida.' });
+  if (!user.is_admin) return jsonReply(res, 403, { error: 'Somente o administrador pode alterar as datas.' });
+  try {
+    const calendar = validateInformaCalendar(await readJson(req, 2 * 1024 * 1024));
+    const file = informaCalendarFile(), dir = path.dirname(file), temp = `${file}.${process.pid}.tmp`;
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    fs.writeFileSync(temp, JSON.stringify(calendar, null, 2) + '\n', { mode: 0o600 });
+    fs.renameSync(temp, file);
+    return jsonReply(res, 200, { calendar, saved: true });
+  } catch (error) { return jsonReply(res, error.status || 400, { error: error.message || 'Não foi possível salvar o calendário.' }); }
+}
+
 function tutorUsername(name, polo) {
   const normalized = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const first = normalized(name).split(/\s+/)[0] || '';
@@ -393,6 +441,7 @@ function serveInforma(req, res, url) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
+  if (url.pathname.startsWith('/api/informa/')) { informaApi(req, res, url).catch(error => jsonReply(res, error.status || 500, { error: error.message || 'Falha ao processar o calendário.' })); return; }
   if (url.pathname.startsWith('/api/portal/')) {
     portalApi(req, res, url).catch(error => jsonReply(res, error.status || 400, { error: error.message || 'Falha ao processar a solicitação.' }));
     return;

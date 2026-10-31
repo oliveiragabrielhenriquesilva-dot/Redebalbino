@@ -1,0 +1,1686 @@
+{
+  "year": 2026,
+  "courses": [
+    {
+      "id": "graduacao-10",
+      "title": "Graduação · disciplinas de 10 semanas",
+      "disciplineLabels": [
+        "1ª disciplina",
+        "2ª disciplina"
+      ],
+      "modules": [
+        {
+          "label": "51",
+          "events": [
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/02/2026 a 02/05/2026"
+            },
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/02/2026"
+            },
+            {
+              "name": "Semana de Conhecimentos Gerais",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "09/03/2026 a 12/04/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial no polo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "20/04/2026 a 01/05/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial no polo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "27/04/2026 a 02/05/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/05/2026 a 08/05/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "02/04/2026 a 04/04/2026"
+            },
+            {
+              "name": "Visualização de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/06/2026 a 09/06/2026"
+            },
+            {
+              "name": "Realização de prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "27/04/2026 a 03/05/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "29/05/2026"
+            },
+            {
+              "name": "Solicitação de avaliação substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/06/2026 a 09/06/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/06/2026 a 09/06/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "08/06/2026 a 10/06/2026"
+            },
+            {
+              "name": "Realização de prova substitutiva online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "08/06/2026 a 14/06/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "29/06/2026"
+            },
+            {
+              "name": "Visualização de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "01/07/2026 a 07/07/2026"
+            }
+          ]
+        },
+        {
+          "label": "52",
+          "events": [
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "04/05/2026 a 11/07/2026"
+            },
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/04/2026"
+            },
+            {
+              "name": "Intervalo entre os módulos 52 e 53",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/07/2026 a 18/07/2026"
+            },
+            {
+              "name": "Semana de Conhecimentos Gerais",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/05/2026 a 21/06/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial no polo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "29/06/2026 a 10/07/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial no polo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "06/07/2026 a 11/07/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "12/07/2026 a 17/07/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "16/07/2026 a 18/07/2026"
+            },
+            {
+              "name": "Visualização de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "19/08/2026 a 25/08/2026"
+            },
+            {
+              "name": "Realização de prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "06/07/2026 a 12/07/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/08/2026"
+            },
+            {
+              "name": "Solicitação de avaliação substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "19/08/2026 a 25/08/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "19/08/2026 a 25/08/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "24/08/2026 a 26/08/2026"
+            },
+            {
+              "name": "Realização de prova substitutiva online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "24/08/2026 a 30/08/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/09/2026"
+            },
+            {
+              "name": "Visualização de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "16/09/2026 a 22/09/2026"
+            }
+          ]
+        },
+        {
+          "label": "53",
+          "events": [
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "20/07/2026 a 26/09/2026"
+            },
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/07/2026"
+            },
+            {
+              "name": "Semana de Conhecimentos Gerais",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/08/2026 a 06/09/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial no polo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/09/2026 a 25/09/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial no polo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "21/09/2026 a 26/09/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "27/09/2026 a 02/10/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "01/10/2026 a 03/10/2026"
+            },
+            {
+              "name": "Visualização de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/10/2026 a 03/11/2026"
+            },
+            {
+              "name": "Realização de prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "21/09/2026 a 27/09/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "26/10/2026"
+            },
+            {
+              "name": "Solicitação de avaliação substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/10/2026 a 03/11/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/10/2026 a 03/11/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/11/2026 a 04/11/2026"
+            },
+            {
+              "name": "Realização de prova substitutiva online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/11/2026 a 08/11/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/11/2026"
+            },
+            {
+              "name": "Visualização de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "25/11/2026 a 01/12/2026"
+            }
+          ]
+        },
+        {
+          "label": "54",
+          "events": [
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/09/2026 a 05/12/2026"
+            },
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "22/09/2026"
+            },
+            {
+              "name": "Semana de Conhecimentos Gerais",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/10/2026 a 15/11/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial no polo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/11/2026 a 04/12/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial no polo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "30/11/2026 a 05/12/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "06/12/2026 a 11/12/2026"
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "10/12/2026 a 12/12/2026"
+            },
+            {
+              "name": "Visualização de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/01/2027 a 19/01/2027"
+            },
+            {
+              "name": "Realização de prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "30/11/2026 a 06/12/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "22/12/2026"
+            },
+            {
+              "name": "Solicitação de avaliação substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/01/2027 a 19/01/2027"
+            },
+            {
+              "name": "Agendamento de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/01/2027 a 19/01/2027"
+            },
+            {
+              "name": "Realização de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/01/2027 a 20/01/2027"
+            },
+            {
+              "name": "Realização de prova substitutiva online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/01/2027 a 24/01/2027"
+            },
+            {
+              "name": "Lançamento/publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "08/02/2027"
+            },
+            {
+              "name": "Visualização de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "10/02/2027 a 16/02/2027"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "graduacao-5",
+      "title": "Graduação · disciplinas de 5 semanas",
+      "disciplineLabels": [
+        "1ª disciplina",
+        "2ª disciplina"
+      ],
+      "modules": [
+        {
+          "label": "51",
+          "events": [
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/02/2026 a 02/05/2026"
+            },
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/02/2026"
+            },
+            {
+              "name": "Semana de Conhecimentos Gerais",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "09/03/2026 a 12/04/2026"
+            },
+            {
+              "name": "Atividade de estudo",
+              "category": "calendario",
+              "first": "23/02/2026 a 22/03/2026",
+              "second": "30/03/2026 a 19/04/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de prova presencial no polo",
+              "category": "calendario",
+              "first": "16/03/2026 a 27/03/2026",
+              "second": "20/04/2026 a 01/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova presencial no polo",
+              "category": "calendario",
+              "first": "23/03/2026 a 28/03/2026",
+              "second": "27/04/2026 a 02/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "29/03/2026 a 03/04/2026",
+              "second": "03/05/2026 a 08/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "02/04/2026 a 04/04/2026",
+              "second": "07/05/2026 a 09/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Visualização de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/06/2026 a 09/06/2026"
+            },
+            {
+              "name": "Realização de prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "27/04/2026 a 03/05/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas",
+              "category": "calendario",
+              "first": "27/04/2026",
+              "second": "29/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Solicitação de avaliação substitutiva",
+              "category": "calendario",
+              "first": "29/04/2026 a 05/05/2026",
+              "second": "03/06/2026 a 09/06/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "29/04/2026 a 05/05/2026",
+              "second": "03/06/2026 a 09/06/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "04/05/2026 a 06/05/2026",
+              "second": "08/06/2026 a 10/06/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova substitutiva online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "08/06/2026 a 14/06/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "25/05/2026",
+              "second": "29/06/2026",
+              "common": ""
+            },
+            {
+              "name": "Visualização de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "01/07/2026 a 07/07/2026"
+            }
+          ]
+        },
+        {
+          "label": "52",
+          "events": [
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "04/05/2026 a 11/07/2026"
+            },
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/04/2026"
+            },
+            {
+              "name": "Semana de Conhecimentos Gerais",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/05/2026 a 21/06/2026"
+            },
+            {
+              "name": "Atividade de estudo",
+              "category": "calendario",
+              "first": "04/05/2026 a 31/05/2026",
+              "second": "08/06/2026 a 28/06/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de prova presencial no polo",
+              "category": "calendario",
+              "first": "25/05/2026 a 05/06/2026",
+              "second": "29/06/2026 a 10/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova presencial no polo",
+              "category": "calendario",
+              "first": "01/06/2026 a 06/06/2026",
+              "second": "06/07/2026 a 11/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "07/06/2026 a 12/06/2026",
+              "second": "12/07/2026 a 17/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "11/06/2026 a 13/06/2026",
+              "second": "16/07/2026 a 18/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Visualização de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "19/08/2026 a 25/08/2026"
+            },
+            {
+              "name": "Realização de prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "06/07/2026 a 12/07/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas",
+              "category": "calendario",
+              "first": "06/07/2026",
+              "second": "14/08/2026",
+              "common": ""
+            },
+            {
+              "name": "Solicitação de avaliação substitutiva",
+              "category": "calendario",
+              "first": "08/07/2026 a 14/07/2026",
+              "second": "19/08/2026 a 25/08/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "08/07/2026 a 14/07/2026",
+              "second": "19/08/2026 a 25/08/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "13/07/2026 a 15/07/2026",
+              "second": "24/08/2026 a 26/08/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova substitutiva online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "24/08/2026 a 30/08/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "03/08/2026",
+              "second": "14/09/2026",
+              "common": ""
+            },
+            {
+              "name": "Visualização de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "16/09/2026 a 22/09/2026"
+            }
+          ]
+        },
+        {
+          "label": "53",
+          "events": [
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "20/07/2026 a 26/09/2026"
+            },
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/07/2026"
+            },
+            {
+              "name": "Semana de Conhecimentos Gerais",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/08/2026 a 06/09/2026"
+            },
+            {
+              "name": "Atividade de estudo",
+              "category": "calendario",
+              "first": "20/07/2026 a 16/08/2026",
+              "second": "24/08/2026 a 13/09/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de prova presencial no polo",
+              "category": "calendario",
+              "first": "10/08/2026 a 21/08/2026",
+              "second": "14/09/2026 a 25/09/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova presencial no polo",
+              "category": "calendario",
+              "first": "17/08/2026 a 22/08/2026",
+              "second": "21/09/2026 a 26/09/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "23/08/2026 a 28/08/2026",
+              "second": "27/09/2026 a 02/10/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "27/08/2026 a 29/08/2026",
+              "second": "01/10/2026 a 03/10/2026",
+              "common": ""
+            },
+            {
+              "name": "Visualização de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/10/2026 a 03/11/2026"
+            },
+            {
+              "name": "Realização de prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "21/09/2026 a 27/09/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas",
+              "category": "calendario",
+              "first": "21/09/2026",
+              "second": "26/10/2026",
+              "common": ""
+            },
+            {
+              "name": "Solicitação de avaliação substitutiva",
+              "category": "calendario",
+              "first": "23/09/2026 a 29/09/2026",
+              "second": "28/10/2026 a 03/11/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "23/09/2026 a 29/09/2026",
+              "second": "28/10/2026 a 03/11/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "28/09/2026 a 30/09/2026",
+              "second": "03/11/2026 a 04/11/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova substitutiva online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/11/2026 a 08/11/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "19/10/2026",
+              "second": "23/11/2026",
+              "common": ""
+            },
+            {
+              "name": "Visualização de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "25/11/2026 a 01/12/2026"
+            }
+          ]
+        },
+        {
+          "label": "54",
+          "events": [
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/09/2026 a 05/12/2026"
+            },
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "22/09/2026"
+            },
+            {
+              "name": "Semana de Conhecimentos Gerais",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/10/2026 a 15/11/2026"
+            },
+            {
+              "name": "Atividade de estudo",
+              "category": "calendario",
+              "first": "28/09/2026 a 25/10/2026",
+              "second": "02/11/2026 a 22/11/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de prova presencial no polo",
+              "category": "calendario",
+              "first": "19/10/2026 a 30/10/2026",
+              "second": "23/11/2026 a 04/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova presencial no polo",
+              "category": "calendario",
+              "first": "26/10/2026 a 31/10/2026",
+              "second": "30/11/2026 a 05/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "01/11/2026 a 06/11/2026",
+              "second": "06/12/2026 a 11/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "05/11/2026 a 07/11/2026",
+              "second": "10/12/2026 a 12/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Visualização de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/01/2027 a 19/01/2027"
+            },
+            {
+              "name": "Realização de prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "30/11/2026 a 06/12/2026"
+            },
+            {
+              "name": "Lançamento/publicação de notas",
+              "category": "calendario",
+              "first": "30/11/2026",
+              "second": "22/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Solicitação de avaliação substitutiva",
+              "category": "calendario",
+              "first": "02/12/2026 a 08/12/2026",
+              "second": "13/01/2027 a 19/01/2027",
+              "common": ""
+            },
+            {
+              "name": "Agendamento de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "02/12/2026 a 08/12/2026",
+              "second": "13/01/2027 a 19/01/2027",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial substitutiva",
+              "category": "calendario",
+              "first": "07/12/2026 a 09/12/2026",
+              "second": "18/01/2027 a 20/01/2027",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova substitutiva online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/01/2027 a 24/01/2027"
+            },
+            {
+              "name": "Lançamento/publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "22/12/2026",
+              "second": "08/02/2027",
+              "common": ""
+            },
+            {
+              "name": "Visualização de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "10/02/2027 a 16/02/2027"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "profissionalizantes",
+      "title": "Cursos profissionalizantes",
+      "disciplineLabels": [
+        "1ª etapa",
+        "2ª etapa"
+      ],
+      "modules": [
+        {
+          "label": "71",
+          "events": [
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/02/2026"
+            },
+            {
+              "name": "Encontro ao vivo com a coordenação · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "19/02/2026"
+            },
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/02/2026 a 25/04/2026"
+            },
+            {
+              "name": "Atividade de estudo",
+              "category": "calendario",
+              "first": "23/02/2026 a 22/03/2026",
+              "second": "30/03/2026 a 19/04/2026",
+              "common": ""
+            },
+            {
+              "name": "Prova digital no Studeo",
+              "category": "calendario",
+              "first": "23/03/2026 a 29/03/2026",
+              "second": "20/04/2026 a 26/04/2026",
+              "common": ""
+            },
+            {
+              "name": "Fechamento e lançamento de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "27/04/2026"
+            }
+          ]
+        },
+        {
+          "label": "72",
+          "events": [
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/04/2026"
+            },
+            {
+              "name": "Encontro ao vivo com a coordenação · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "29/04/2026"
+            },
+            {
+              "name": "Intervalo entre os módulos 72 e 73",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "06/07/2026 a 18/07/2026"
+            },
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "04/05/2026 a 04/07/2026"
+            },
+            {
+              "name": "Atividade de estudo",
+              "category": "calendario",
+              "first": "04/05/2026 a 31/05/2026",
+              "second": "08/06/2026 a 28/06/2026",
+              "common": ""
+            },
+            {
+              "name": "Prova digital no Studeo",
+              "category": "calendario",
+              "first": "01/06/2026 a 07/06/2026",
+              "second": "29/06/2026 a 05/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Fechamento e lançamento de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "06/07/2026"
+            }
+          ]
+        },
+        {
+          "label": "73",
+          "events": [
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/07/2026"
+            },
+            {
+              "name": "Encontro ao vivo com a coordenação · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "15/07/2026"
+            },
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "20/07/2026 a 19/09/2026"
+            },
+            {
+              "name": "Atividade de estudo",
+              "category": "calendario",
+              "first": "20/07/2026 a 16/08/2026",
+              "second": "24/08/2026 a 13/09/2026",
+              "common": ""
+            },
+            {
+              "name": "Prova digital no Studeo",
+              "category": "calendario",
+              "first": "17/08/2026 a 23/08/2026",
+              "second": "14/09/2026 a 20/09/2026",
+              "common": ""
+            },
+            {
+              "name": "Fechamento e lançamento de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "21/09/2026"
+            }
+          ]
+        },
+        {
+          "label": "74",
+          "events": [
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "22/09/2026"
+            },
+            {
+              "name": "Encontro ao vivo com a coordenação · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/09/2026"
+            },
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/09/2026 a 28/11/2026"
+            },
+            {
+              "name": "Atividade de estudo",
+              "category": "calendario",
+              "first": "28/09/2026 a 25/10/2026",
+              "second": "02/11/2026 a 22/11/2026",
+              "common": ""
+            },
+            {
+              "name": "Prova digital no Studeo",
+              "category": "calendario",
+              "first": "26/10/2026 a 01/11/2026",
+              "second": "23/11/2026 a 29/11/2026",
+              "common": ""
+            },
+            {
+              "name": "Fechamento e lançamento de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "30/11/2026"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tecnicos",
+      "title": "Cursos técnicos",
+      "disciplineLabels": [
+        "1ª disciplina",
+        "2ª e 3ª disciplinas"
+      ],
+      "modules": [
+        {
+          "label": "91",
+          "events": [
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/02/2026"
+            },
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/02/2026 a 02/05/2026"
+            },
+            {
+              "name": "Agendamento de prova presencial no polo",
+              "category": "calendario",
+              "first": "16/03/2026 a 27/03/2026",
+              "second": "20/04/2026 a 01/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova presencial no polo",
+              "category": "calendario",
+              "first": "23/03/2026 a 28/03/2026",
+              "second": "27/04/2026 a 02/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "—"
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "29/03/2026 a 03/04/2026",
+              "second": "03/05/2026 a 08/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "02/04/2026 a 04/04/2026",
+              "second": "07/05/2026 a 09/05/2026",
+              "common": ""
+            },
+            {
+              "name": "Lançamento de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "29/05/2026"
+            },
+            {
+              "name": "Solicitação de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/06/2026 a 09/06/2026"
+            },
+            {
+              "name": "Solicitação e agendamento de avaliação substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/06/2026 a 09/06/2026"
+            },
+            {
+              "name": "Realização de prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "08/06/2026 a 10/06/2026"
+            },
+            {
+              "name": "Realização de prova online substitutiva no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "08/06/2026 a 14/06/2026"
+            },
+            {
+              "name": "Publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "29/06/2026"
+            },
+            {
+              "name": "Solicitação de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "01/07/2026 a 07/07/2026"
+            },
+            {
+              "name": "Agendamento de aulas práticas presenciais no polo · híbridos saúde",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/04/2026 a 24/09/2026"
+            },
+            {
+              "name": "Realização de aulas práticas presenciais no polo · híbridos saúde",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "20/04/2026 a 02/05/2026"
+            }
+          ]
+        },
+        {
+          "label": "92",
+          "events": [
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/04/2026"
+            },
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "04/05/2026 a 11/07/2026"
+            },
+            {
+              "name": "Intervalo entre os módulos 92 e 93",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/07/2026 a 18/07/2026"
+            },
+            {
+              "name": "Agendamento de prova presencial no polo",
+              "category": "calendario",
+              "first": "25/05/2026 a 05/06/2026",
+              "second": "29/06/2026 a 10/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova presencial no polo",
+              "category": "calendario",
+              "first": "01/06/2026 a 06/06/2026",
+              "second": "06/07/2026 a 11/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "04/05/2026 a 05/07/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "07/06/2026 a 12/06/2026",
+              "second": "12/07/2026 a 17/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "11/06/2026 a 13/06/2026",
+              "second": "16/07/2026 a 18/07/2026",
+              "common": ""
+            },
+            {
+              "name": "Lançamento de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/08/2026"
+            },
+            {
+              "name": "Solicitação de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "19/08/2026 a 25/08/2026"
+            },
+            {
+              "name": "Solicitação e agendamento de avaliação substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "19/08/2026 a 25/08/2026"
+            },
+            {
+              "name": "Realização de prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "24/08/2026 a 26/08/2026"
+            },
+            {
+              "name": "Realização de prova online substitutiva no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "24/08/2026 a 30/08/2026"
+            },
+            {
+              "name": "Publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/09/2026"
+            },
+            {
+              "name": "Solicitação de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "16/09/2026 a 22/09/2026"
+            },
+            {
+              "name": "Agendamento de aulas práticas presenciais no polo · híbridos saúde",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "22/06/2026 a 03/07/2026"
+            },
+            {
+              "name": "Realização de aulas práticas presenciais no polo · híbridos saúde",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "29/06/2026 a 11/07/2026"
+            }
+          ]
+        },
+        {
+          "label": "93",
+          "events": [
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/07/2026"
+            },
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "20/07/2026 a 26/09/2026"
+            },
+            {
+              "name": "Agendamento de prova presencial no polo",
+              "category": "calendario",
+              "first": "10/08/2026 a 21/08/2026",
+              "second": "14/09/2026 a 25/09/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova presencial no polo",
+              "category": "calendario",
+              "first": "17/08/2026 a 22/08/2026",
+              "second": "21/09/2026 a 26/09/2026",
+              "common": ""
+            },
+            {
+              "name": "Prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "20/07/2026 a 20/09/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "23/08/2026 a 28/08/2026",
+              "second": "27/09/2026 a 02/10/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "27/08/2026 a 29/08/2026",
+              "second": "01/10/2026 a 03/10/2026",
+              "common": ""
+            },
+            {
+              "name": "Lançamento de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "26/10/2026"
+            },
+            {
+              "name": "Solicitação de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/10/2026 a 03/11/2026"
+            },
+            {
+              "name": "Solicitação e agendamento de avaliação substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/10/2026 a 03/11/2026"
+            },
+            {
+              "name": "Realização de prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "03/11/2026 a 04/11/2026"
+            },
+            {
+              "name": "Realização de prova online substitutiva no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "02/11/2026 a 08/11/2026"
+            },
+            {
+              "name": "Publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/11/2026"
+            },
+            {
+              "name": "Solicitação de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "25/11/2026 a 01/12/2026"
+            },
+            {
+              "name": "Agendamento de aulas práticas presenciais no polo · híbridos saúde",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "07/09/2026 a 18/09/2026"
+            },
+            {
+              "name": "Realização de aulas práticas presenciais no polo · híbridos saúde",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "14/09/2026 a 26/09/2026"
+            }
+          ]
+        },
+        {
+          "label": "94",
+          "events": [
+            {
+              "name": "Aula inaugural · ingressantes",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "22/09/2026"
+            },
+            {
+              "name": "Período do módulo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/09/2026 a 05/12/2026"
+            },
+            {
+              "name": "Agendamento de prova presencial no polo",
+              "category": "calendario",
+              "first": "19/10/2026 a 30/10/2026",
+              "second": "23/11/2026 a 04/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de prova presencial no polo",
+              "category": "calendario",
+              "first": "26/10/2026 a 31/10/2026",
+              "second": "30/11/2026 a 05/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Prova online no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "28/09/2026 a 29/11/2026"
+            },
+            {
+              "name": "Agendamento de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "01/11/2026 a 06/11/2026",
+              "second": "06/12/2026 a 11/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Realização de avaliação presencial · 2ª oportunidade",
+              "category": "calendario",
+              "first": "05/11/2026 a 07/11/2026",
+              "second": "10/12/2026 a 12/12/2026",
+              "common": ""
+            },
+            {
+              "name": "Lançamento de notas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "22/12/2026"
+            },
+            {
+              "name": "Solicitação de cópia da prova presencial",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/01/2027 a 19/01/2027"
+            },
+            {
+              "name": "Solicitação e agendamento de avaliação substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "13/01/2027 a 19/01/2027"
+            },
+            {
+              "name": "Realização de prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/01/2027 a 20/01/2027"
+            },
+            {
+              "name": "Realização de prova online substitutiva no Studeo",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "18/01/2027 a 24/01/2027"
+            },
+            {
+              "name": "Publicação de notas substitutivas",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "08/02/2027"
+            },
+            {
+              "name": "Solicitação de cópia da prova presencial substitutiva",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "10/02/2027 a 16/02/2027"
+            },
+            {
+              "name": "Agendamento de aulas práticas presenciais no polo · híbridos saúde",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "16/11/2026 a 27/11/2026"
+            },
+            {
+              "name": "Realização de aulas práticas presenciais no polo · híbridos saúde",
+              "category": "calendario",
+              "first": "",
+              "second": "",
+              "common": "23/11/2026 a 05/12/2026"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,281 +1,156 @@
 (() => {
   'use strict';
-
-  const items = [
-    {
-      category: 'atividades', type: 'Atividades', course: 'Graduação · disciplinas de 10 semanas', title: 'Semana de Conhecimentos Gerais',
-      description: 'Período para realizar a atividade indicada no calendário acadêmico.',
-      dates: [['51/27', '09/03 a 12/04'], ['52/27', '18/05 a 21/06'], ['53/27', '03/08 a 06/09'], ['54/27', '13/10 a 15/11']],
-      search: 'semana conhecimento geral atividade calendário graduação 10 semanas processo 51 2026'
-    },
-    {
-      category: 'atividades', type: 'Atividades', course: 'Graduação · disciplinas de 5 semanas', title: 'Atividade de estudo · 1ª disciplina',
-      description: 'A atividade fica disponível no Studeo durante o período indicado.',
-      dates: [['51/27', '23/02 a 22/03'], ['52/27', '04/05 a 31/05'], ['53/27', '20/07 a 16/08'], ['54/27', '28/09 a 25/10']],
-      search: 'atividade de estudo primeira disciplina graduação calendário 5 semanas'
-    },
-    {
-      category: 'atividades', type: 'Atividades', course: 'Graduação · disciplinas de 5 semanas', title: 'Atividade de estudo · 2ª disciplina',
-      description: 'Consulte a sala da disciplina no Studeo para ver as orientações da atividade.',
-      dates: [['51/27', '30/03 a 19/04'], ['52/27', '08/06 a 28/06'], ['53/27', '24/08 a 13/09'], ['54/27', '02/11 a 22/11']],
-      search: 'atividade estudo segunda disciplina graduação calendário 5 semanas'
-    },
-    {
-      category: 'atividades', type: 'Atividades', course: 'Cursos profissionalizantes', title: 'Atividade de estudo · 1ª etapa',
-      description: 'Prazos previstos no calendário dos cursos profissionalizantes.',
-      dates: [['M71', '23/02 a 22/03'], ['M72', '04/05 a 31/05'], ['M73', '20/07 a 16/08'], ['M74', '28/09 a 25/10']],
-      search: 'profissionalizante cursos atividade estudo etapa 71 72 73 74'
-    },
-    {
-      category: 'atividades', type: 'Atividades', course: 'Cursos profissionalizantes', title: 'Atividade de estudo · 2ª etapa',
-      description: 'Prazos previstos no calendário dos cursos profissionalizantes.',
-      dates: [['M71', '30/03 a 19/04'], ['M72', '08/06 a 28/06'], ['M73', '24/08 a 13/09'], ['M74', '02/11 a 22/11']],
-      search: 'profissionalizante cursos atividade estudo etapa 71 72 73 74'
-    },
-    {
-      category: 'mapa', type: 'MAPA', course: 'Conexão Pedagógico · Processo 51/2027', title: 'Como o MAPA entra na nota',
-      description: 'No resumo da equipe, o MAPA vale 2,0 pontos na composição da nota.',
-      dates: [['A.E.01', '1,0 ponto'], ['A.E.02', '1,0 ponto'], ['MAPA', '2,0 pontos'], ['Avaliação presencial', '6,0 pontos']],
-      note: 'O prazo de entrega não é único para todos os cursos. Confira a data e as instruções na sala da disciplina no Studeo. Média mínima indicada no encontro: 7,0.',
-      search: 'mapa atividade avaliativa nota processo 51 2027 conexão pedagógico'
-    },
-    {
-      category: 'mapa', type: 'MAPA', course: 'Conexão Pedagógico · Processo 51/2027', title: 'Onde consultar o prazo',
-      description: 'O cronograma específico aparece dentro da disciplina no Studeo.',
-      dates: [['1', 'Abra a disciplina'], ['2', 'Acesse o MAPA'], ['3', 'Confira o prazo e as orientações']],
-      note: 'O calendário geral não apresenta uma data única para o MAPA. Não deixe para a última hora: cada disciplina pode ter um cronograma próprio.',
-      search: 'prazo entrega data consulta mapa studeo atividade disciplina'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Graduação · disciplinas de 10 semanas', title: 'Prova presencial · agendamento',
-      description: 'Agende a avaliação dentro da janela do seu módulo.',
-      dates: [['51/27', '20/04 a 01/05'], ['52/27', '29/06 a 10/07'], ['53/27', '14/09 a 25/09'], ['54/27', '23/11 a 04/12']],
-      search: 'prova presencial agendar agendamento graduação 10 semanas'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Graduação · disciplinas de 10 semanas', title: 'Provas presenciais · realização',
-      description: 'Confira o período de realização previsto para cada módulo.',
-      dates: [['51/27', '27/04 a 02/05'], ['52/27', '06/07 a 11/07'], ['53/27', '21/09 a 26/09'], ['54/27', '30/11 a 05/12']],
-      search: 'prova presencial realização graduação 10 semanas avaliação'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Graduação · disciplinas de 10 semanas', title: 'Prova online no Studeo',
-      description: 'Janela para realizar a avaliação online.',
-      dates: [['51/27', '27/04 a 03/05'], ['52/27', '06/07 a 12/07'], ['53/27', '21/09 a 27/09'], ['54/27', '30/11 a 06/12']],
-      search: 'prova online studeo graduação 10 semanas'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Graduação · disciplinas de 10 semanas', title: '2ª oportunidade · avaliação presencial',
-      description: 'O calendário separa o período de agendamento do período de realização.',
-      dates: [['Agendamento · 51/27–54/27', '03/05–08/05 · 12/07–17/07 · 27/09–02/10 · 06/12–11/12'], ['Realização · 51/27–54/27', '07/05–09/05 · 16/07–18/07 · 01/10–03/10 · 10/12–12/12']],
-      search: 'segunda oportunidade prova presencial agendamento realização'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Graduação · disciplinas de 5 semanas', title: 'Provas digitais · 1ª e 2ª disciplinas',
-      description: 'As avaliações são realizadas no Studeo, nas janelas de cada módulo.',
-      dates: [['1ª · 51/27–54/27', '23/03–29/03 · 01/06–07/06 · 17/08–23/08 · 26/10–01/11'], ['2ª · 51/27–54/27', '20/04–26/04 · 29/06–05/07 · 14/09–20/09 · 23/11–29/11']],
-      search: 'prova digital 5 semanas primeira segunda disciplina studeo'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Cursos técnicos', title: 'Provas presenciais · calendário técnico',
-      description: 'O agendamento e a realização variam conforme a disciplina.',
-      dates: [['Agendamento · 1ª disciplina', '16/03–27/03 · 25/05–05/06 · 10/08–21/08 · 19/10–30/10'], ['Agendamento · 2ª e 3ª', '20/04–01/05 · 29/06–10/07 · 14/09–25/09 · 23/11–04/12'], ['Realização · 1ª', '23/03–28/03 · 01/06–06/06 · 17/08–22/08 · 26/10–31/10'], ['Realização · 2ª e 3ª', '27/04–02/05 · 06/07–11/07 · 21/09–26/09 · 30/11–05/12']],
-      note: 'Para Enfermagem e Radiologia, confira a regra de realização na 10ª semana do módulo e as orientações específicas do curso.',
-      search: 'técnico tecnico prova presencial agendamento realização enfermagem radiologia'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Cursos técnicos', title: '2ª oportunidade · cursos técnicos',
-      description: 'Janelas de agendamento e realização informadas no calendário.',
-      dates: [['Agendamento · 1ª disciplina', '29/03–03/04 · 07/06–12/06 · 23/08–28/08 · 01/11–06/11'], ['Agendamento · 2ª e 3ª', '03/05–08/05 · 12/07–17/07 · 27/09–02/10 · 06/12–11/12'], ['Realização · 1ª', '02/04–04/04 · 11/06–13/06 · 27/08–29/08 · 05/11–07/11'], ['Realização · 2ª e 3ª', '07/05–09/05 · 16/07–18/07 · 01/10–03/10 · 10/12–12/12']],
-      search: 'técnico segunda oportunidade prova agendamento realização'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Cursos técnicos', title: 'Provas online · módulos 92 a 94',
-      description: 'A disponibilidade depende da disciplina e da programação do curso.',
-      dates: [['Módulo 92', '04/05 a 05/07'], ['Módulo 93', '20/07 a 20/09'], ['Módulo 94', '28/09 a 29/11']],
-      note: 'Confira no Studeo se a avaliação da sua disciplina está liberada no período.',
-      search: 'técnico prova online modulo 92 93 94'
-    },
-    {
-      category: 'provas', type: 'Provas', course: 'Cursos profissionalizantes', title: 'Provas digitais · 1ª e 2ª etapas',
-      description: 'Avaliações digitais dos módulos 71 a 74.',
-      dates: [['1ª etapa · M71–M74', '23/03–29/03 · 01/06–07/06 · 17/08–23/08 · 26/10–01/11'], ['2ª etapa · M71–M74', '20/04–26/04 · 29/06–05/07 · 14/09–20/09 · 23/11–29/11']],
-      search: 'profissionalizante prova digital etapa 71 72 73 74'
-    },
-    {
-      category: 'publicacoes', type: 'Publicação de notas', course: 'Graduação · disciplinas de 10 semanas', title: 'Notas por módulo',
-      description: 'Datas de lançamento indicadas no calendário acadêmico.',
-      dates: [['51/27', '29/05'], ['52/27', '14/08'], ['53/27', '26/10'], ['54/27', '22/12']],
-      search: 'publicação publicação de notas lançamento resultado graduação 10 semanas'
-    },
-    {
-      category: 'publicacoes', type: 'Publicação de notas', course: 'Graduação · disciplinas de 5 semanas', title: 'Fechamento e lançamento de notas',
-      description: 'Datas previstas para encerramento de cada módulo.',
-      dates: [['51/27', '27/04'], ['52/27', '06/07'], ['53/27', '21/09'], ['54/27', '30/11']],
-      search: 'publicação notas lançamento fechamento graduação 5 semanas'
-    },
-    {
-      category: 'publicacoes', type: 'Publicação de notas', course: 'Conexão Pedagógico · Processo 51/2027', title: 'Comunicado sobre o novo formato',
-      description: 'As disciplinas passam a considerar uma organização de 10 semanas, conforme a matriz do curso.',
-      dates: [['Encontros ao vivo', '1h30 · semanas alternadas entre as disciplinas'], ['Avaliações', 'Previsão para as semanas 9 e 10']],
-      note: 'A distribuição pode variar conforme o curso e a matriz. Confirme as orientações oficiais antes de repassar ao aluno.',
-      search: 'publicação comunicado conexão pedagógico processo 51 2027 disciplinas'
-    }
-  ];
-
+  const api = '/api/informa/calendar';
   const results = document.getElementById('results');
   const query = document.getElementById('query');
   const courseFilter = document.getElementById('courseFilter');
   const count = document.getElementById('resultCount');
   const heading = document.getElementById('resultsHeading');
   const empty = document.getElementById('empty');
-  let activeCategory = 'todos';
-
-  const categoryNames = { todos: 'Todas as informações', atividades: 'Atividades', mapa: 'MAPA', provas: 'Datas de provas', publicacoes: 'Publicação de notas' };
+  const toolbar = document.querySelector('.results-toolbar');
+  const topActions = document.querySelector('.top-actions');
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+  let calendar = null;
+  let activeCategory = 'todos';
+  let adminMode = false;
+  let statusNode = null;
 
-  function setupCourseFilter() {
-    const courses = [...new Set(items.map(item => item.course))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-    for (const course of courses) {
-      const option = document.createElement('option'); option.value = course; option.textContent = course; courseFilter.append(option);
-    }
+  function categoryOf(event) {
+    const name = normalize(event.name);
+    if (name.includes('atividade') || name.includes('conhecimentos gerais')) return 'atividades';
+    if (name.includes('nota') || name.includes('lancamento') || name.includes('fechamento')) return 'publicacoes';
+    return 'provas';
   }
-
+  function categoryLabel(category) {
+    return ({ atividades: 'Atividades', provas: 'Provas', publicacoes: 'Notas' })[category] || 'Calendário';
+  }
+  function field(value, label, courseId, moduleIndex, eventIndex, key) {
+    const input = document.createElement('input');
+    input.type = 'text'; input.className = 'date-editor'; input.value = value || '';
+    input.placeholder = 'DD/MM/AAAA ou período'; input.setAttribute('aria-label', `${label}: ${courseId}, módulo ${moduleIndex}, atividade ${eventIndex + 1}`);
+    input.dataset.course = courseId; input.dataset.module = moduleIndex; input.dataset.event = eventIndex; input.dataset.key = key;
+    return input;
+  }
+  function dateCell(value, shared, course, moduleIndex, eventIndex, key) {
+    const cell = document.createElement('td');
+    if (adminMode) cell.append(field(value, shared ? 'Data compartilhada' : key === 'first' ? course.disciplineLabels[0] : course.disciplineLabels[1], course.id, moduleIndex, eventIndex, key));
+    else cell.textContent = value || '—';
+    return cell;
+  }
   function render() {
+    if (!calendar) return;
     const terms = normalize(query.value).trim().split(/\s+/).filter(Boolean);
     const selectedCourse = courseFilter.value;
-    const matches = items.filter(item => {
-      if (activeCategory !== 'todos' && item.category !== activeCategory) return false;
-      if (selectedCourse !== 'todos' && item.course !== selectedCourse) return false;
-      const searchable = normalize([item.title, item.description, item.course, item.type, item.search, (item.dates || []).flat().join(' '), item.note].join(' '));
-      return terms.every(term => searchable.includes(term));
-    });
-
     results.replaceChildren();
-    const calendarCourseNames = new Set([
-      'Graduação · disciplinas de 10 semanas',
-      'Graduação · disciplinas de 5 semanas',
-      'Cursos profissionalizantes'
-    ]);
-    const calendarMatches = matches.filter(item => calendarCourseNames.has(item.course)
-      && ['atividades', 'provas', 'publicacoes'].includes(item.category));
-    if (calendarMatches.length) {
-      const byCourse = new Map();
-      for (const item of calendarMatches) {
-        if (!byCourse.has(item.course)) byCourse.set(item.course, new Map());
-        const modules = byCourse.get(item.course);
-        const disciplineMatch = item.title.match(/\s*[·–-]\s*(1ª|2ª)\s+(disciplina|etapa)$/i);
-        const activityTitle = disciplineMatch ? item.title.slice(0, disciplineMatch.index).trim() : item.title;
-        const moduleSeries = item.dates || [];
-        for (const [label, value] of moduleSeries) {
-          const range = label.match(/(51\/27)\s*[–-]\s*(54\/27)/i) || label.match(/(M71)\s*[–-]\s*(M74)/i);
-          if (range) {
-            const series = String(value).split(/\s*·\s*/);
-            const discipline = label.match(/(1ª|2ª)/i)?.[1];
-            const seriesModules = range[1].startsWith('M') ? ['M71', 'M72', 'M73', 'M74'] : ['51/27', '52/27', '53/27', '54/27'];
-            for (const [index, module] of seriesModules.entries()) {
-              const date = series[index];
-              if (!date) continue;
-              if (!modules.has(module)) modules.set(module, new Map());
-              const rowTitle = item.category === 'provas' ? item.title.replace(/\s*[·–-].*$/, '') : item.title;
-              const rows = modules.get(module);
-              if (!rows.has(rowTitle)) rows.set(rowTitle, { first: '', second: '', general: '' });
-              const row = rows.get(rowTitle);
-              if (discipline === '1ª') row.first = date;
-              else if (discipline === '2ª') row.second = date;
-              else row.general = date;
-            }
-            continue;
+    let shown = 0;
+    for (const course of calendar.courses) {
+      if (selectedCourse !== 'todos' && selectedCourse !== course.id) continue;
+      const matchingModules = course.modules.map((module, index) => ({ module, index, events: module.events.filter(event =>
+        (activeCategory === 'todos' || categoryOf(event) === activeCategory)
+        && terms.every(term => normalize([course.title, module.label, event.name, event.first, event.second, event.common].join(' ')).includes(term)))
+      })).filter(entry => entry.events.length);
+      if (!matchingModules.length) continue;
+      const group = document.createElement('section'); group.className = 'calendar-group';
+      const title = document.createElement('h3'); title.className = 'calendar-title'; title.textContent = course.title;
+      group.append(title);
+      const moduleList = document.createElement('div'); moduleList.className = 'module-list';
+      matchingModules.forEach(({ module, index: actualIndex, events: moduleEvents }) => {
+        const card = document.createElement('article'); card.className = 'module-card';
+        const wrap = document.createElement('div'); wrap.className = 'activity-table-wrap';
+        const table = document.createElement('table'); table.className = 'activity-calendar-table';
+        const thead = document.createElement('thead');
+        const titleRow = document.createElement('tr'); titleRow.className = 'module-title-row';
+        const moduleTitle = document.createElement('th'); moduleTitle.colSpan = 3; moduleTitle.scope = 'colgroup'; moduleTitle.textContent = `Módulo ${module.label}/${calendar.year}`;
+        titleRow.append(moduleTitle); thead.append(titleRow);
+        const headerRow = document.createElement('tr');
+        const activityHead = document.createElement('th'); activityHead.scope = 'col'; activityHead.textContent = 'Atividade'; headerRow.append(activityHead);
+        for (const label of course.disciplineLabels) { const th = document.createElement('th'); th.scope = 'col'; th.textContent = label; headerRow.append(th); }
+        thead.append(headerRow);
+        const tbody = document.createElement('tbody');
+        for (const event of moduleEvents) {
+          const eventIndex = module.events.indexOf(event);
+          const row = document.createElement('tr');
+          const name = document.createElement('th'); name.scope = 'row'; name.textContent = event.name; row.append(name);
+          if (event.common) {
+            row.append(dateCell(event.common, true, course, actualIndex, eventIndex, 'common'));
+            row.lastChild.colSpan = 2;
+          } else {
+            row.append(dateCell(event.first, false, course, actualIndex, eventIndex, 'first'));
+            row.append(dateCell(event.second, false, course, actualIndex, eventIndex, 'second'));
           }
-          if (!/^\d{2}\/\d{2}$/.test(label) && !/^M\d+$/i.test(label)) continue;
-          const module = label;
-          if (!modules.has(module)) modules.set(module, new Map());
-          const rows = modules.get(module);
-          if (!rows.has(activityTitle)) rows.set(activityTitle, { first: '', second: '', general: '' });
-          const row = rows.get(activityTitle);
-          if (!disciplineMatch) row.general = value;
-          else if (disciplineMatch[1] === '1ª') row.first = value;
-          else row.second = value;
+          tbody.append(row); shown++;
         }
-      }
-      for (const [courseName, modules] of byCourse) {
-        const group = document.createElement('section'); group.className = 'calendar-group';
-        const heading = document.createElement('h3'); heading.className = 'calendar-title'; heading.textContent = courseName;
-        const orderedModules = [...modules.keys()].sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }));
-        const moduleList = document.createElement('div'); moduleList.className = 'module-list';
-        for (const module of orderedModules) {
-          const moduleCard = document.createElement('section'); moduleCard.className = 'module-card';
-          const tableWrap = document.createElement('div'); tableWrap.className = 'activity-table-wrap';
-          const table = document.createElement('table'); table.className = 'activity-calendar-table';
-          const thead = document.createElement('thead');
-          const moduleRow = document.createElement('tr'); moduleRow.className = 'module-title-row';
-          const moduleTitle = document.createElement('th'); moduleTitle.colSpan = 3; moduleTitle.scope = 'colgroup'; moduleTitle.textContent = `Módulo ${module}`;
-          moduleRow.append(moduleTitle); thead.append(moduleRow);
-          const headerRow = document.createElement('tr');
-          const activityHeader = document.createElement('th'); activityHeader.scope = 'col'; activityHeader.setAttribute('aria-label', 'Atividade'); headerRow.append(activityHeader);
-          const stageLabel = courseName.toLocaleLowerCase('pt-BR').includes('profissionalizantes') ? 'etapa' : 'disciplina';
-          for (const label of [`1ª ${stageLabel}`, `2ª ${stageLabel}`]) {
-            const th = document.createElement('th'); th.scope = 'col'; th.textContent = label; headerRow.append(th);
-          }
-          thead.append(headerRow);
-          const tbody = document.createElement('tbody');
-          const moduleActivities = modules.get(module);
-          if (courseName === 'Graduação · disciplinas de 5 semanas' && (!terms.length || terms.some(term => term.includes('mapa')))) {
-            moduleActivities.set('MAPA', { first: 'Consulte o prazo no Studeo', second: 'Consulte o prazo no Studeo', general: '' });
-          }
-          for (const [activity, dates] of moduleActivities) {
-            const row = document.createElement('tr');
-            const name = document.createElement('th'); name.scope = 'row'; name.textContent = activity;
-            row.append(name);
-            if (dates.general) {
-              const cell = document.createElement('td'); cell.colSpan = 2; cell.textContent = dates.general; row.append(cell);
-            } else for (const date of [dates.first, dates.second]) {
-              const cell = document.createElement('td'); cell.textContent = date || '—'; row.append(cell);
-            }
-            tbody.append(row);
-          }
-          table.append(thead, tbody); tableWrap.append(table);
-          moduleCard.append(tableWrap); moduleList.append(moduleCard);
-        }
-        group.append(heading, moduleList); results.append(group);
-      }
+        table.append(thead, tbody); wrap.append(table); card.append(wrap); moduleList.append(card);
+      });
+      group.append(moduleList); results.append(group);
     }
-    for (const item of matches.filter(item => !calendarCourseNames.has(item.course) || !['atividades', 'provas', 'publicacoes'].includes(item.category))) {
-        const card = document.createElement('article'); card.className = `info-card tone-${item.category}`;
-        const top = document.createElement('div'); top.className = 'card-topline';
-        const tag = document.createElement('span'); tag.className = 'category-tag'; tag.textContent = item.type;
-        const course = document.createElement('span'); course.className = 'course-tag'; course.textContent = item.course;
-        top.append(tag, course);
-        const title = document.createElement('h3'); title.textContent = item.title;
-        const description = document.createElement('p'); description.className = 'card-description'; description.textContent = item.description;
-        const dates = document.createElement('div'); dates.className = 'date-list';
-        for (const [label, value] of item.dates || []) {
-          const row = document.createElement('div'); row.className = 'date-row';
-          const name = document.createElement('span'); name.textContent = label;
-          const date = document.createElement('strong'); date.textContent = value;
-          row.append(name, date); dates.append(row);
-        }
-        card.append(top, title, description, dates);
-        if (item.note) { const note = document.createElement('p'); note.className = 'card-note'; note.textContent = item.note; card.append(note); }
-        results.append(card);
+    if (activeCategory === 'todos' || activeCategory === 'mapa') {
+      const note = document.createElement('aside'); note.className = 'info-card tone-mapa mapa-note';
+      const title = document.createElement('h3'); title.textContent = 'MAPA';
+      const text = document.createElement('p'); text.className = 'card-description'; text.textContent = 'Os calendários gerais não informam uma data única para entrega. Confira o prazo na sala da disciplina no Studeo.';
+      const points = document.createElement('p'); points.className = 'card-description'; points.textContent = 'No resumo do Conexão Pedagógico, a composição apresentada foi: A.E.01 (1,0), A.E.02 (1,0), MAPA (2,0) e avaliação presencial (6,0). Confirme os critérios e prazos na orientação do seu curso.';
+      note.append(title, text, points); results.append(note);
     }
-
-    heading.textContent = categoryNames[activeCategory];
-    count.textContent = terms.length || activeCategory !== 'todos' || selectedCourse !== 'todos'
-      ? `${matches.length} ${matches.length === 1 ? 'informação' : 'informações'}`
-      : `${matches.length} informações para consulta`;
-    empty.classList.toggle('hidden', matches.length > 0);
+    heading.textContent = activeCategory === 'todos' ? 'Calendários acadêmicos' : ({atividades:'Atividades',provas:'Datas de provas',publicacoes:'Publicação de notas',mapa:'MAPA'})[activeCategory];
+    count.textContent = `${shown} ${shown === 1 ? 'prazo exibido' : 'prazos exibidos'} · calendário ${calendar.year}`;
+    empty.classList.toggle('hidden', shown > 0 || activeCategory === 'mapa');
     document.querySelectorAll('[data-category]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.category === activeCategory)));
+    updateAdminStatus();
+  }
+  function updateAdminStatus(message = '') {
+    if (statusNode) statusNode.textContent = message || (adminMode ? 'Edição ativa. Preencha as datas e salve para publicar.' : '');
+  }
+  async function loadCalendar() {
+    const response = await fetch(api, { credentials: 'same-origin', cache: 'no-store' });
+    if (!response.ok) throw new Error('Não foi possível carregar o calendário. Atualize a página.');
+    calendar = await response.json();
+    while (courseFilter.options.length > 1) courseFilter.remove(1);
+    for (const course of calendar.courses) {
+      const option = document.createElement('option'); option.value = course.id; option.textContent = course.title; courseFilter.append(option);
+    }
+    render();
+  }
+  function addAdminControls() {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'portal-link admin-toggle'; button.textContent = 'Editar datas'; button.hidden = true;
+    topActions.prepend(button);
+    const actions = document.createElement('div'); actions.className = 'admin-actions hidden';
+    const status = document.createElement('span'); status.className = 'admin-status'; statusNode = status;
+    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'admin-button secondary'; cancel.textContent = 'Cancelar';
+    const save = document.createElement('button'); save.type = 'button'; save.className = 'admin-button primary'; save.textContent = 'Salvar datas';
+    actions.append(status, cancel, save); toolbar.after(actions);
+    button.addEventListener('click', () => {
+      adminMode = !adminMode; button.textContent = adminMode ? 'Sair da edição' : 'Editar datas';
+      actions.classList.toggle('hidden', !adminMode); render();
+    });
+    cancel.addEventListener('click', async () => { adminMode = false; button.textContent = 'Editar datas'; actions.classList.add('hidden'); await loadCalendar(); updateAdminStatus('Alterações descartadas.'); });
+    save.addEventListener('click', async () => {
+      const next = structuredClone(calendar);
+      document.querySelectorAll('.date-editor').forEach(input => {
+        const course = next.courses.find(item => item.id === input.dataset.course);
+        const event = course?.modules[Number(input.dataset.module)]?.events[Number(input.dataset.event)];
+        if (event) event[input.dataset.key] = input.value.trim();
+      });
+      save.disabled = true; updateAdminStatus('Salvando…');
+      try {
+        const response = await fetch(api, { method: 'PUT', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: JSON.stringify(next) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Não foi possível salvar.');
+        calendar = result.calendar; render(); updateAdminStatus('Datas salvas. A consulta já está atualizada.');
+      } catch (error) { updateAdminStatus(error.message); }
+      finally { save.disabled = false; }
+    });
+    fetch('/api/portal/me', { credentials: 'same-origin', cache: 'no-store' }).then(response => response.json()).then(data => {
+      if (data.user?.isAdmin) button.hidden = false;
+      if (data.user?.isAdmin && location.hash === '#admin') button.click();
+    }).catch(() => {});
   }
 
   document.querySelectorAll('[data-category]').forEach(button => button.addEventListener('click', () => {
     activeCategory = activeCategory === button.dataset.category ? 'todos' : button.dataset.category;
-    render();
-    document.getElementById('resultsHeading').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    render(); document.getElementById('resultsHeading').scrollIntoView({behavior:'smooth',block:'nearest'});
   }));
   document.getElementById('searchForm').addEventListener('submit', event => { event.preventDefault(); render(); });
-  query.addEventListener('input', render);
-  courseFilter.addEventListener('change', render);
-  setupCourseFilter();
-  render();
+  query.addEventListener('input', render); courseFilter.addEventListener('change', render);
+  addAdminControls();
+  loadCalendar().catch(error => { empty.textContent = error.message; empty.classList.remove('hidden'); });
 })();
