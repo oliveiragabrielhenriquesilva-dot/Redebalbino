@@ -152,22 +152,50 @@
     });
 
     results.replaceChildren();
-    const activityMatches = matches.filter(item => item.category === 'atividades');
-    if (activityMatches.length) {
+    const calendarCourseNames = new Set([
+      'Graduação · disciplinas de 10 semanas',
+      'Graduação · disciplinas de 5 semanas',
+      'Cursos profissionalizantes'
+    ]);
+    const calendarMatches = matches.filter(item => calendarCourseNames.has(item.course)
+      && ['atividades', 'provas', 'publicacoes'].includes(item.category));
+    if (calendarMatches.length) {
       const byCourse = new Map();
-      for (const item of activityMatches) {
+      for (const item of calendarMatches) {
         if (!byCourse.has(item.course)) byCourse.set(item.course, new Map());
         const modules = byCourse.get(item.course);
         const disciplineMatch = item.title.match(/\s*[·–-]\s*(1ª|2ª)\s+(disciplina|etapa)$/i);
         const activityTitle = disciplineMatch ? item.title.slice(0, disciplineMatch.index).trim() : item.title;
-        for (const [module, date] of item.dates || []) {
+        const moduleSeries = item.dates || [];
+        for (const [label, value] of moduleSeries) {
+          const range = label.match(/(51\/27)\s*[–-]\s*(54\/27)/i) || label.match(/(M71)\s*[–-]\s*(M74)/i);
+          if (range) {
+            const series = String(value).split(/\s*·\s*/);
+            const discipline = label.match(/(1ª|2ª)/i)?.[1];
+            const seriesModules = range[1].startsWith('M') ? ['M71', 'M72', 'M73', 'M74'] : ['51/27', '52/27', '53/27', '54/27'];
+            for (const [index, module] of seriesModules.entries()) {
+              const date = series[index];
+              if (!date) continue;
+              if (!modules.has(module)) modules.set(module, new Map());
+              const rowTitle = item.category === 'provas' ? item.title.replace(/\s*[·–-].*$/, '') : item.title;
+              const rows = modules.get(module);
+              if (!rows.has(rowTitle)) rows.set(rowTitle, { first: '', second: '', general: '' });
+              const row = rows.get(rowTitle);
+              if (discipline === '1ª') row.first = date;
+              else if (discipline === '2ª') row.second = date;
+              else row.general = date;
+            }
+            continue;
+          }
+          if (!/^\d{2}\/\d{2}$/.test(label) && !/^M\d+$/i.test(label)) continue;
+          const module = label;
           if (!modules.has(module)) modules.set(module, new Map());
-          const activities = modules.get(module);
-          if (!activities.has(activityTitle)) activities.set(activityTitle, { first: '', second: '', general: '' });
-          const row = activities.get(activityTitle);
-          if (!disciplineMatch) row.general = date;
-          else if (disciplineMatch[1] === '1ª') row.first = date;
-          else row.second = date;
+          const rows = modules.get(module);
+          if (!rows.has(activityTitle)) rows.set(activityTitle, { first: '', second: '', general: '' });
+          const row = rows.get(activityTitle);
+          if (!disciplineMatch) row.general = value;
+          else if (disciplineMatch[1] === '1ª') row.first = value;
+          else row.second = value;
         }
       }
       for (const [courseName, modules] of byCourse) {
@@ -191,11 +219,17 @@
           }
           thead.append(headerRow);
           const tbody = document.createElement('tbody');
-          for (const [activity, dates] of modules.get(module)) {
+          const moduleActivities = modules.get(module);
+          if (courseName === 'Graduação · disciplinas de 5 semanas' && (!terms.length || terms.some(term => term.includes('mapa')))) {
+            moduleActivities.set('MAPA', { first: 'Consulte o prazo no Studeo', second: 'Consulte o prazo no Studeo', general: '' });
+          }
+          for (const [activity, dates] of moduleActivities) {
             const row = document.createElement('tr');
             const name = document.createElement('th'); name.scope = 'row'; name.textContent = activity;
             row.append(name);
-            for (const date of [dates.general || dates.first, dates.general || dates.second]) {
+            if (dates.general) {
+              const cell = document.createElement('td'); cell.colSpan = 2; cell.textContent = dates.general; row.append(cell);
+            } else for (const date of [dates.first, dates.second]) {
               const cell = document.createElement('td'); cell.textContent = date || '—'; row.append(cell);
             }
             tbody.append(row);
@@ -206,7 +240,7 @@
         group.append(heading, moduleList); results.append(group);
       }
     }
-    for (const item of matches.filter(item => item.category !== 'atividades')) {
+    for (const item of matches.filter(item => !calendarCourseNames.has(item.course) || !['atividades', 'provas', 'publicacoes'].includes(item.category))) {
         const card = document.createElement('article'); card.className = `info-card tone-${item.category}`;
         const top = document.createElement('div'); top.className = 'card-topline';
         const tag = document.createElement('span'); tag.className = 'category-tag'; tag.textContent = item.type;

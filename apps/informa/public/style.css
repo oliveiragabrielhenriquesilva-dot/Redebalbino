@@ -14,3 +14,5 @@
 @media(max-width:760px){.module-list{grid-template-columns:1fr}.activity-calendar-table th,.activity-calendar-table td{padding:8px 6px;font-size:10px}.activity-calendar-table tbody th{min-width:115px}.activity-calendar-table td{min-width:94px}}
 
 .activity-calendar-table .module-title-row th{padding:10px;border:0;border-radius:8px 8px 0 0;background:var(--navy);color:#fff;text-align:center;font-size:13px;font-weight:750}
+
+.module-list{grid-template-columns:1fr}
