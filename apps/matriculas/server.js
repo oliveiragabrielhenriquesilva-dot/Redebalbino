@@ -579,7 +579,8 @@ function painel(q, usuario) {
   const corte = q.ref ? (q.ate && q.ate < ref ? q.ate : ref) : (q.de || q.ate) ? (q.ate || '') : ref;
   const usaMeta = !q.tutor && !q.origem && !q.de && !q.ate;
   const { where: whereMat, params } = filtrosMatricula({ ...q, polo: poloFiltro || '', ate: corte, prazo_meta:usaMeta }, usuario);
-  const raConfirmado = conciliacaoMA.raPorMatricula(cicloId, q._cacheRa || {});
+  const cacheRa = q._cacheRa || {};
+  const raConfirmado = conciliacaoMA.raPorMatricula(cicloId, cacheRa);
   const idsRa = Object.keys(raConfirmado).map(Number).filter(Number.isFinite);
   const where = `${whereMat ? whereMat + ' AND' : 'WHERE'} m.id IN (${idsRa.length ? idsRa.join(',') : '0'})`;
   const totaisBrutos = all(`SELECT COUNT(*) n ${SQL_MAT_BASE} ${whereMat}`, ...params)[0]?.n || 0;
@@ -587,7 +588,7 @@ function painel(q, usuario) {
   const pendentesRa = Math.max(Number(totaisBrutos) - Number(totaisConfirmados), 0);
   const base = (sel, group, order = '') => all(`SELECT ${sel}, COUNT(*) qtd, COALESCE(SUM(m.valor),0) valor ${SQL_MAT_BASE} ${where} ${group ? 'GROUP BY ' + group : ''} ${order}`, ...params);
 
-  const cacheSede = {}, cacheRa = {};
+  const cacheSede = {};
   const ritmoAtualCalc = ritmo({ ciclo: cicloId, polo: poloFiltro, produto: q.produto, categoria: q.categoria, grupo: q.grupo, subgrupo: q.subgrupo, ref: q.ref, sede: usaMeta ? q.sede : '0', _cacheSede: cacheSede, _cacheRa: cacheRa, _serie: usaMeta }, usuario);
   const sedeR = ritmoAtualCalc.hoje_situacao.sede; // Sede/Digital do recorte (só com meta, sem filtros de tutor/origem/período)
   const sel = produtosSel(q);
