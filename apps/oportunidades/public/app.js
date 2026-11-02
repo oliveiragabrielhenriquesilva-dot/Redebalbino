@@ -30,7 +30,7 @@
     return '';
   }
   async function parseFollowupWorkbook(file){
-    const table=await readExcel(file),headIndex=table.findIndex(row=>row.some(v=>normalizeHeader(v)==='identificador aluno'));
+    const table=await readExcel(file),headIndex=table.findIndex(row=>row.some(v=>['identificador aluno','identificador','id aluno'].includes(normalizeHeader(v))));
     if(headIndex<0)throw new Error('Não encontrei a coluna “Identificador Aluno” na planilha.');
     const headers=table[headIndex].map(normalizeHeader),aliases={
       identificador:['identificador aluno','identificador','id aluno'],nome:['nome completo','nome'],cpf:['cpf'],telefone:['telefone','celular'],
