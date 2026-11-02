@@ -454,7 +454,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     const abertas=visiveis.filter(r=>r.ativo&&!String(r.ra||'').trim()&&r.etapa!=='perdido');
     const hoje=hojeISO();
     const resumo={abertas:abertas.length,novas:abertas.filter(r=>r.etapa==='novo').length,em_contato:abertas.filter(r=>['contato','negociacao','pendencia'].includes(r.etapa)).length,matriculadas:visiveis.filter(r=>r.ativo&&String(r.ra||'').trim()).length,perdidas:visiveis.filter(r=>r.ativo&&!String(r.ra||'').trim()&&r.etapa==='perdido').length,retornos_atrasados:abertas.filter(r=>r.proximo_contato&&r.proximo_contato<hoje).length};
-    return{ciclo:cicloId,ciclos:all('SELECT id,nome,ativo FROM ciclos ORDER BY id DESC'),etapas:[...etapasOportunidade],responsaveis:all("SELECT id,nome FROM usuarios WHERE ativo=1 ORDER BY nome"),resumo,lista:lista.slice(0,1000)};
+    return{ciclo:cicloId,ciclos:all('SELECT id,nome,ativo FROM ciclos ORDER BY id DESC'),etapas:[...etapasOportunidade],pode_editar:!!podeLancar(usuario),responsaveis:podeLancar(usuario)?all("SELECT id,nome FROM usuarios WHERE ativo=1 ORDER BY nome"):[],resumo,lista:lista.slice(0,1000)};
   }
   function salvarOportunidade(id,c,usuario){
     const row=get('SELECT id,ciclo_id,candidato,ra,polo_fonte,ativo FROM ma_lista_alunos WHERE id=?',id);
@@ -479,7 +479,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     const exigeLancar = () => { if (!podeLancar(usuario)) falha(403, 'Seu usuário não pode registrar posições oficiais'); };
     const exigeAdmin = () => { if (!ehAdmin(usuario)) falha(403, 'Apenas administradores'); };
     if(p==='/api/ma/oportunidades'&&m==='GET'){
-      exigeLancar();enviarJson(res,200,listaOportunidades(q,usuario));return true;
+      enviarJson(res,200,listaOportunidades(q,usuario));return true;
     }
     const oportunidade=p.match(/^\/api\/ma\/oportunidades\/(\d+)$/);
     if(oportunidade&&m==='PUT'){

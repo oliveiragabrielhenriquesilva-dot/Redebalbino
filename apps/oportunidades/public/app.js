@@ -34,7 +34,7 @@
       const phone=digits(r.telefone);
       const whatsapp=phone?'<a class="mini" target="_blank" rel="noopener" href="https://wa.me/'+esc(phone)+'">WhatsApp</a>':'';
       const badge=r.situacao==='matriculado'?'pill matriculado':r.etapa==='perdido'?'pill perdido':'pill';
-      return '<tr><td><span class="person">'+esc(r.nome||'Nome não informado')+'</span><span class="sub">Candidato '+esc(r.candidato||'—')+(r.ra?' · RA '+esc(r.ra):'')+'</span></td><td>'+esc(r.curso_nome||'Curso não informado')+'</td><td>'+esc(r.polo_fonte||'Polo não informado')+'</td><td>'+esc(r.telefone||'Sem celular')+'</td><td><span class="'+badge+'">'+esc(stageLabel(r))+'</span></td><td>'+esc(r.responsavel||'—')+'</td><td>'+esc(dateLabel(r.proximo_contato))+'</td><td><div class="table-actions">'+whatsapp+'<button class="mini" data-edit="'+esc(r.candidato_id)+'">Acompanhar</button></div></td></tr>';
+      return '<tr><td><span class="person">'+esc(r.nome||'Nome não informado')+'</span><span class="sub">Candidato '+esc(r.candidato||'—')+(r.ra?' · RA '+esc(r.ra):'')+'</span></td><td>'+esc(r.curso_nome||'Curso não informado')+'</td><td>'+esc(r.polo_fonte||'Polo não informado')+'</td><td>'+esc(r.telefone||'Sem celular')+'</td><td><span class="'+badge+'">'+esc(stageLabel(r))+'</span></td><td>'+esc(r.responsavel||'—')+'</td><td>'+esc(dateLabel(r.proximo_contato))+'</td><td><div class="table-actions">'+whatsapp+(state.data?.pode_editar?'<button class="mini" data-edit="'+esc(r.candidato_id)+'">Acompanhar</button>':'')+'</div></td></tr>';
     }).join('');
     document.querySelectorAll('[data-edit]').forEach(button=>button.addEventListener('click',()=>openEdit(Number(button.dataset.edit))));
   }
