@@ -36,6 +36,7 @@
       <div class="panel-heading">
         <div><h2>Candidatos</h2><p id="result-count">Carregando…</p></div>
         <div class="filters">
+          <label class="upload button primary"><input id="upload" type="file" accept=".xlsx,.csv">Importar acompanhamento</label>
           <label class="field search"><span>Buscar</span><input id="search" type="search" placeholder="Nome, curso, polo ou telefone"></label>
           <label class="field"><span>Mostrar</span><select id="view">
             <option value="abertas">Em aberto</option>
@@ -46,14 +47,15 @@
         </div>
       </div>
       <div id="error" class="error hidden" role="alert"></div>
+      <div id="notice" class="notice hidden" role="status"></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Candidato</th><th>Curso</th><th>Polo</th><th>Celular</th><th>Etapa</th><th>Responsável</th><th>Próximo contato</th><th></th></tr></thead>
-          <tbody id="rows"><tr><td colspan="8" class="empty">Carregando oportunidades…</td></tr></tbody>
+          <thead><tr><th>Candidato</th><th>Curso</th><th>Polo</th><th>Prioridade</th><th>Último atendimento</th><th>Etapa / situação</th><th>Responsável</th><th>Próximo contato</th><th></th></tr></thead>
+          <tbody id="rows"><tr><td colspan="9" class="empty">Carregando oportunidades…</td></tr></tbody>
         </table>
       </div>
     </section>
-    <p class="note">Os dados são atualizados pela importação do Mundo Azul. Quando o candidato receber RA, ele aparece como matriculado.</p>
+    <p class="note">Importe o Excel de acompanhamento para atualizar os leads. O Mundo Azul confirma o RA e a matrícula, conciliados pelo CPF. O arquivo é lido no navegador; o sistema guarda telefone, mas não e-mail.</p>
   </main>
   <dialog id="edit-dialog">
     <form id="edit-form" method="dialog">
