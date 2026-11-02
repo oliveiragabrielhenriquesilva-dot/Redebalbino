@@ -594,6 +594,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     return String(model).replace(/\{(\w+)\}/g,(m,k)=>Object.hasOwn(vars,k)?vars[k]:m);
   }
   async function enviarBoasVindasPendentes(){
+    if(String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim())return{enviados:0,erro:null};
     const token=welcomeChatToken();if(!token||!autoWelcomeEnabled())return{enviados:0,erro:null};
     const rows=all("SELECT id,ciclo_id,candidato,nome,ra,curso_cod,curso_nome,polo_fonte,celular,boas_vindas_chat_id FROM ma_lista_alunos WHERE ativo=1 AND ra<>'' AND celular IS NOT NULL AND celular<>'' AND boas_vindas_chat_status='PENDENTE' ORDER BY id LIMIT 100");
     if(!rows.length)return{enviados:0,erro:null};
@@ -607,6 +608,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     }catch(e){const msg=String(e.message||e).slice(0,300);for(const x of itens)run('UPDATE ma_lista_alunos SET boas_vindas_chat_erro=? WHERE boas_vindas_chat_id=?',msg,x.id_externo);return{enviados:0,erro:msg}}
   }
   async function sincronizarStatusBoasVindas(rows){
+    if(String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim())return;
     const token=welcomeChatToken(),ids=rows.map(r=>r.boas_vindas_chat_id).filter(Boolean);if(!token||!ids.length)return;
     try{const resp=await fetch(`${welcomeChatBase()}/api/integracao/boas-vindas/status?ids=${encodeURIComponent(ids.slice(0,100).join(','))}`,{headers:{'X-Token':token},signal:AbortSignal.timeout(8000)});if(!resp.ok)return;const data=await resp.json();for(const s of data.statuses||[]){const status=String(s.status||'').toLowerCase();if(status==='enviada')run("UPDATE ma_lista_alunos SET boas_vindas_chat_status='ENVIADA',boas_vindas_chat_erro=NULL,boas_vindas_em=COALESCE(boas_vindas_em,datetime('now','localtime')),boas_vindas_por=COALESCE(boas_vindas_por,'Balbino Chat') WHERE boas_vindas_chat_id=?",s.id_externo);else if(status==='erro')run("UPDATE ma_lista_alunos SET boas_vindas_chat_status='ERRO',boas_vindas_chat_erro=? WHERE boas_vindas_chat_id=?",String(s.erro||'Falha no envio').slice(0,300),s.id_externo);else run('UPDATE ma_lista_alunos SET boas_vindas_chat_status=?,boas_vindas_chat_erro=NULL WHERE boas_vindas_chat_id=?',status==='enviando'?'ENVIANDO':'NA_FILA',s.id_externo)}}catch{}
   }
@@ -942,5 +944,25 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     return { ref, linhas: linhas.map(l => ({ ...l, posicoes: det(l.posicoes) })), rede: rede ? { ...rede, posicoes: det(rede.posicoes) } : null };
   }
 
-  return { rotas, conciliacao, calcular, lerPosicao, norm, extrasSede, sedeLigada, quadroSede, classificarLista, listaResumo, previaLista, gravarLista, resetar, contarReset, raPorMatricula };
+  
+  function workerBoasVindasPendentes(limite=5){
+    if(!autoWelcomeEnabled())return{itens:[]};
+    const max=Math.max(1,Math.min(Number(limite)||5,20));
+    const rows=all("SELECT id,ciclo_id,nome,ra,curso_cod,curso_nome,polo_fonte,celular,boas_vindas_chat_id FROM ma_lista_alunos WHERE ativo=1 AND ra<>'' AND celular IS NOT NULL AND celular<>'' AND boas_vindas_chat_status='PENDENTE' ORDER BY id LIMIT ?",max);
+    return{itens:rows.map(r=>{const id=r.boas_vindas_chat_id||`matricula:${r.ciclo_id}:${r.id}`;if(!r.boas_vindas_chat_id)run('UPDATE ma_lista_alunos SET boas_vindas_chat_id=? WHERE id=?',id,r.id);return{id_externo:id,telefone:String(r.celular).replace(/\\D/g,''),nome:r.nome||'',mensagem:welcomeMessage(r)}})};
+  }
+  function workerBoasVindasResultado(c){
+    const id=String(c.id_externo||'').trim();
+    const status=String(c.status||'').toUpperCase();
+    if(!id||!['ENVIADA','ERRO'].includes(status))falha(400,'Informe o envio e o status ENVIADA ou ERRO.');
+    const row=get('SELECT id FROM ma_lista_alunos WHERE boas_vindas_chat_id=?',id);
+    if(!row)falha(404,'Envio não encontrado.');
+    if(status==='ENVIADA'){
+      run("UPDATE ma_lista_alunos SET boas_vindas_chat_status='ENVIADA',boas_vindas_chat_erro=NULL,boas_vindas_em=COALESCE(boas_vindas_em,datetime('now','localtime')),boas_vindas_por=COALESCE(boas_vindas_por,'Worker automático') WHERE id=?",row.id);
+    }else{
+      run("UPDATE ma_lista_alunos SET boas_vindas_chat_status='ERRO',boas_vindas_chat_erro=? WHERE id=?",String(c.erro||'Falha no envio').slice(0,300),row.id);
+    }
+    return{ok:true};
+  }
+return { rotas, conciliacao, calcular, lerPosicao, norm, extrasSede, sedeLigada, quadroSede, classificarLista, listaResumo, previaLista, gravarLista, resetar, contarReset, raPorMatricula, workerBoasVindasPendentes, workerBoasVindasResultado };
 };

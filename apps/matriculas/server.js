@@ -1495,6 +1495,22 @@ async function rotear(req, res) {
     return enviarJson(res, 200, { ok: true }, { 'Set-Cookie': 'sessao=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0' });
   }
 
+
+  // Fila privada para o emissor local de boas-vindas. A conexão é somente de saída:
+  // nenhum serviço precisa abrir portas no computador que envia as mensagens.
+  if (p === '/api/worker/boas-vindas' || p === '/api/worker/boas-vindas/status') {
+    const esperado=String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim();
+    const informado=String(req.headers.authorization||'').replace(/^Bearer\\s+/i,'').trim();
+    const a=Buffer.from(esperado),b=Buffer.from(informado);
+    if(!esperado||a.length!==b.length||!crypto.timingSafeEqual(a,b))return enviarJson(res,401,{error:'Token do emissor inválido.'});
+    if(p==='/api/worker/boas-vindas'&&m==='GET')return enviarJson(res,200,conciliacaoMA.workerBoasVindasPendentes(q.limite));
+    if(p==='/api/worker/boas-vindas/status'&&m==='POST'){
+      try{return enviarJson(res,200,conciliacaoMA.workerBoasVindasResultado(await lerCorpo(req)));}
+      catch(e){return enviarJson(res,e.status||400,{error:e.message||'Não foi possível atualizar o envio.'})}
+    }
+    return enviarJson(res,405,{error:'Método não permitido.'});
+  }
+
   // ---- autenticadas
   const usuario = usuarioDaSessao(req);
   if (!usuario) falha(401, 'Sessão expirada — entre novamente');
