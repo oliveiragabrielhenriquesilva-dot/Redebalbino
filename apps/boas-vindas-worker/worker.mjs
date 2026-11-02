@@ -25,7 +25,7 @@ const MIN_INTERVAL=Math.max(30,Number(process.env.BALBINO_WELCOME_MIN_INTERVAL_S
 const TIMEZONE=process.env.BALBINO_WELCOME_TIMEZONE||'America/Sao_Paulo';
 if(!TOKEN)throw new Error('Configure BALBINO_WELCOME_WORKER_TOKEN no arquivo .env.');
 fs.mkdirSync(SESSION,{recursive:true});
-let state={day:'',sentToday:0,lastSentAt:0};
+let state={day:'',sentToday:0,lastSentAt:0,sentIds:{}};
 try{state={...state,...JSON.parse(fs.readFileSync(STATE_FILE,'utf8'))}}catch{}
 const persist=()=>fs.writeFileSync(STATE_FILE,JSON.stringify(state,null,2),{mode:0o600});
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -68,14 +68,22 @@ async function processarFila(){
       if(wait)await sleep(wait);
       if(stopping||!connected||!autorizadoHorario())break;
       const id=String(item.id_externo||'');
+      if(state.sentIds?.[id]){
+        try{await registrarResultado(id,'ENVIADA');delete state.sentIds[id];persist();continue}
+        catch(error){console.error(`Mensagem ${id} já enviada; aguardando confirmação do servidor:`,error.message);break}
+      }
       try{
         const jid=jidFor(item.telefone);
         await socket.sendMessage(jid,{text:String(item.mensagem||'')});
-        state.sentToday++;state.lastSentAt=Date.now();persist();
+        state.sentToday++;state.lastSentAt=Date.now();state.sentIds??={};state.sentIds[id]=Date.now();
+        const ids=Object.keys(state.sentIds);for(const oldId of ids.slice(0,Math.max(0,ids.length-5000)))delete state.sentIds[oldId];
+        persist();
         await registrarResultado(id,'ENVIADA');
+        delete state.sentIds[id];persist();
         console.log(`Boas-vindas enviada automaticamente para ${item.nome||jid}.`);
       }catch(error){
         console.error(`Falha no envio ${id}:`,error.message);
+        if(state.sentIds?.[id]){console.error('A mensagem foi enviada; vou tentar apenas confirmar o status na próxima consulta.');break}
         try{await registrarResultado(id,'ERRO',error.message)}catch(reportError){console.error('Não foi possível registrar o erro:',reportError.message)}
       }
     }
