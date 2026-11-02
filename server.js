@@ -13,9 +13,7 @@ const RUNTIME = path.resolve(process.env.BALBINO_RUNTIME_DIR || path.join(os.hom
 const portal = createPortalAuth(RUNTIME);
 const PORT = Number(process.env.PORT || 3000);
 const apps = [
-  { key: 'matriculas', prefix: '/matriculas', server: null, status: 'starting', error: null },
-  { key: 'artes', prefix: '/artes', server: null, status: 'starting', error: null },
-  { key: 'chat', prefix: '/chat', server: null, status: 'starting', error: null }
+  { key: 'matriculas', prefix: '/matriculas', server: null, status: 'starting', error: null }
 ];
 
 function walkForDatabase(root, filename, depth = 0, out = []) {
@@ -80,29 +78,16 @@ function recoverNestedDatabase(dir, filename, kind) {
   return { recovered: true, stats: best.stats };
 }
 function prepareRuntime() {
-  fs.mkdirSync(RUNTIME, { recursive: true });
-  for (const [key, filename] of [['matriculas', 'matriculas.db'], ['artes', 'sistema.db']]) {
-    const dir = path.join(RUNTIME, key);
-    fs.mkdirSync(dir, { recursive: true });
-    recoverNestedDatabase(dir, filename, key);
-  }
-  for (const part of ['data', 'uploads', 'sessions', 'backups']) fs.mkdirSync(path.join(RUNTIME, 'chat', part), { recursive: true });
+  const dir=path.join(RUNTIME,'matriculas');
+  fs.mkdirSync(dir,{recursive:true});
+  recoverNestedDatabase(dir,'matriculas.db','matriculas');
 }
 async function startApps() {
   prepareRuntime();
   process.env.NODE_ENV = 'production';
   process.env.HOSTED = '1';
   process.env.CENTRAL_BALBINO_EMBEDDED = '1';
-  process.env.CLOUD_CHROMIUM = '1';
-  process.env.ARTES_ADMIN_PASSWORD = process.env.ARTES_ADMIN_PASSWORD || '';
-  process.env.GOCHAT_ADMIN_USER = process.env.GOCHAT_ADMIN_USER || 'admin';
   process.env.MATRICULAS_DATA_DIR = path.join(RUNTIME, 'matriculas');
-  process.env.ARTES_DATA_DIR = path.join(RUNTIME, 'artes');
-  process.env.BALBINO_RUNTIME_DIR = path.join(RUNTIME, 'chat');
-  process.env.BALBINO_DATA_DIR = path.join(RUNTIME, 'chat', 'data');
-  process.env.BALBINO_UPLOADS_DIR = path.join(RUNTIME, 'chat', 'uploads');
-  process.env.BALBINO_SESSIONS_DIR = path.join(RUNTIME, 'chat', 'sessions');
-  process.env.BALBINO_BACKUPS_DIR = path.join(RUNTIME, 'chat', 'backups');
 
   const portOriginal = process.env.PORT;
   try {
@@ -117,20 +102,6 @@ async function startApps() {
       app.server = mod.servidor; mod.iniciarRotinasHospedadas();
       const stats = inspectDatabase(path.join(RUNTIME, 'matriculas', 'matriculas.db'), 'matriculas');
       console.log(`[matriculas] banco ativo: ${JSON.stringify(stats || { erro: 'estrutura não reconhecida' })}`);
-    });
-    await boot('artes', async app => {
-      if (!process.env.ARTES_ADMIN_PASSWORD || process.env.ARTES_ADMIN_PASSWORD.length < 12) throw new Error('ARTES_ADMIN_PASSWORD ausente ou menor que 12 caracteres.');
-      process.env.PORT = '3112';
-      const mod = require(path.join(ROOT, 'apps', 'artes', 'server.js'));
-      app.server = mod.servidor; app.shutdown = mod.gracefulShutdown; app.health = mod.healthStatus; mod.iniciarRotinasHospedadas();
-      const stats = inspectDatabase(path.join(RUNTIME, 'artes', 'sistema.db'), 'artes');
-      console.log(`[artes] banco ativo: ${JSON.stringify(stats || { erro: 'estrutura não reconhecida' })}`);
-    });
-    await boot('chat', async app => {
-      if (!process.env.GOCHAT_ADMIN_PASSWORD || process.env.GOCHAT_ADMIN_PASSWORD.length < 12) throw new Error('GOCHAT_ADMIN_PASSWORD ausente ou menor que 12 caracteres.');
-      process.env.PORT = '3113';
-      const mod = await import(pathToFileURL(path.join(ROOT, 'apps', 'chat', 'server.js')).href);
-      app.server = mod.server; app.shutdown = mod.gracefulShutdown; app.health = mod.healthStatus;
     });
   } finally {
     if (portOriginal == null) delete process.env.PORT;
@@ -441,7 +412,7 @@ function serveInforma(req, res, url) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
-  if (url.pathname.startsWith('/api/informa/')) { informaApi(req, res, url).catch(error => jsonReply(res, error.status || 500, { error: error.message || 'Falha ao processar o calendário.' })); return; }
+  if (url.pathname.startsWith('/api/informa/')) return jsonReply(res, 410, { error: 'Balbino Informa está temporariamente desativado.' });
   if (url.pathname.startsWith('/api/portal/')) {
     portalApi(req, res, url).catch(error => jsonReply(res, error.status || 400, { error: error.message || 'Falha ao processar a solicitação.' }));
     return;
@@ -461,7 +432,29 @@ const server = http.createServer((req, res) => {
     });
     return res.end(JSON.stringify({ ok: appHealth.every(app => app.status === 'ready' && app.loaded), apps: appHealth }));
   }
-  if (url.pathname === '/informa' || url.pathname.startsWith('/informa/')) return serveInforma(req, res, url);
+  if (url.pathname === '/informa' || url.pathname.startsWith('/informa/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Balbino Informa está temporariamente desativado.');
+  if (url.pathname === '/artes' || url.pathname.startsWith('/artes/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Gerador de Artes está temporariamente desativado.');
+  if (url.pathname === '/chat' || url.pathname.startsWith('/chat/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Balbino Chat está temporariamente desativado.');
+  if (url.pathname === '/oportunidades' || url.pathname.startsWith('/oportunidades/')) {
+    const access=portal.forApp(req,'matriculas');
+    if(access.status!=='allowed'){
+      if(url.pathname.includes('/api/')||access.status==='forbidden')return jsonReply(res,access.status==='forbidden'?403:401,{error:access.status==='forbidden'?'Seu acesso não inclui Matrículas.':'Entre no portal para continuar.'});
+      res.writeHead(302,{Location:`/?next=${encodeURIComponent(url.pathname+url.search)}`,'Cache-Control':'no-store'});return res.end();
+    }
+    if(url.pathname==='/oportunidades'){res.writeHead(308,{Location:'/oportunidades/'+url.search});return res.end()}
+    const base=apps.find(a=>a.key==='matriculas');
+    const alias={...base,prefix:'/oportunidades'};
+    if(url.pathname.startsWith('/oportunidades/api/')){
+      if(!base?.server)return jsonReply(res,503,{error:'Sistema de Matrículas ainda está iniciando.'});
+      return proxy(req,res,alias,url.pathname.slice('/oportunidades'.length)+url.search);
+    }
+    const files={'/oportunidades/':['index.html','text/html; charset=utf-8'],'/oportunidades/index.html':['index.html','text/html; charset=utf-8'],'/oportunidades/app.js':['app.js','text/javascript; charset=utf-8'],'/oportunidades/style.css':['style.css','text/css; charset=utf-8']};
+    const asset=files[url.pathname];
+    if(!asset)return res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'}).end('Arquivo não encontrado.');
+    const content=fs.readFileSync(path.join(ROOT,'apps','oportunidades','public',asset[0]));
+    res.writeHead(200,{'Content-Type':asset[1],'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':\"default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'\"});
+    return res.end(content);
+  }
   const brandAssets = {
     '/brand/rede-balbino-branco.webp': 'rede-balbino-branco.webp',
     '/brand/monograma-rede-balbino.webp': 'monograma-rede-balbino.webp',
@@ -507,7 +500,7 @@ server.on('upgrade', (req, socket, head) => {
   app.server.emit('upgrade', req, socket, head);
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /artes, /informa`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /matriculas, /oportunidades`));
 startApps().catch(error => {
   console.error('Não foi possível preparar os sistemas:', error);
 });

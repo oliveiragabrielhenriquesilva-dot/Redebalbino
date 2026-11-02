@@ -93,8 +93,22 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
       criado_em TEXT NOT NULL DEFAULT (datetime('now','localtime')), atualizado_em TEXT,
       UNIQUE (ciclo_id, candidato));
     CREATE INDEX IF NOT EXISTS ix_ma_lista_ciclo ON ma_lista_alunos(ciclo_id, ativo);
+    CREATE TABLE IF NOT EXISTS ma_oportunidades (
+      id INTEGER PRIMARY KEY,
+      ciclo_id INTEGER NOT NULL REFERENCES ciclos(id),
+      candidato TEXT NOT NULL,
+      etapa TEXT NOT NULL DEFAULT 'novo',
+      responsavel_id INTEGER REFERENCES usuarios(id),
+      proximo_contato TEXT,
+      observacao TEXT,
+      atualizado_por TEXT,
+      criado_em TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      atualizado_em TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+      UNIQUE (ciclo_id, candidato)
+    );
+    CREATE INDEX IF NOT EXISTS ix_ma_oportunidades_ciclo ON ma_oportunidades(ciclo_id, etapa);
     `);
-    // 30.1: celular (só de quem tem R.A.) para gerar contatos do Google; quando foi exportado
+    // 30.1: celular informado no arquivo do Mundo Azul para contatos e acompanhamento
     const colsLista = all('PRAGMA table_info(ma_lista_alunos)').map(c => c.name);
     if (!colsLista.includes('celular')) db.exec('ALTER TABLE ma_lista_alunos ADD COLUMN celular TEXT');
     if (!colsLista.includes('contato_exportado_em')) db.exec('ALTER TABLE ma_lista_alunos ADD COLUMN contato_exportado_em TEXT');
@@ -415,11 +429,62 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
       .map(p => { const pp = lerPosicao(p.id); const cc = recortarParaUsuario(pp, calcular(pp, pp.linhas, null), usuario); return { ...resumoPosicao(pp,usuario,cc), substitui_id: p.substitui_id, substituida_por: p.substituida_por, motivo: filtroUsuario(usuario)&&pp.escopo_tipo!=='polo' ? null : p.motivo, obs: filtroUsuario(usuario)&&pp.escopo_tipo!=='polo' ? null : p.obs, status_em: p.status_em, status_por: p.status_por, linhas: filtroUsuario(usuario) ? cc.unidades.length : pp.linhas.length, totais: cc.totais }; });
   }
 
+
+  const etapasOportunidade=new Set(['novo','contato','negociacao','pendencia','perdido']);
+  function listaOportunidades(q,usuario){
+    const cicloId=Number(q.ciclo)||Number(get('SELECT id FROM ciclos WHERE ativo=1 ORDER BY id DESC LIMIT 1')?.id)||0;
+    if(!cicloId)falha(400,'Não há processo ativo para consultar.');
+    const situacao=['abertas','perdidas','matriculadas','todas'].includes(String(q.situacao||''))?String(q.situacao):'abertas';
+    const rows=all(`SELECT ml.id candidato_id,ml.ciclo_id,ml.candidato,ml.ra,ml.nome,ml.cpf,ml.curso_cod,ml.curso_nome,ml.polo_fonte,ml.celular,ml.data_inscricao,ml.inscrito_por,ml.ativo,
+      COALESCE(o.etapa,'novo') etapa,o.responsavel_id,u.nome responsavel,o.proximo_contato,o.observacao,o.atualizado_em
+      FROM ma_lista_alunos ml LEFT JOIN ma_oportunidades o ON o.ciclo_id=ml.ciclo_id AND o.candidato=ml.candidato
+      LEFT JOIN usuarios u ON u.id=o.responsavel_id
+      WHERE ml.ciclo_id=? ORDER BY COALESCE(o.proximo_contato,'9999-12-31'),ml.nome,ml.id LIMIT 10000`,cicloId);
+    const restrito=filtroUsuario(usuario),termo=String(q.q||'').trim().toLocaleLowerCase('pt-BR');
+    const visiveis=rows.filter(r=>!restrito||poloDaFonte(r.polo_fonte)===restrito);
+    const lista=visiveis.filter(r=>{
+      const matriculado=!!String(r.ra||'').trim();
+      if(situacao==='abertas'&&(matriculado||!r.ativo||r.etapa==='perdido'))return false;
+      if(situacao==='perdidas'&&(matriculado||!r.ativo||r.etapa!=='perdido'))return false;
+      if(situacao==='matriculadas'&&!matriculado)return false;
+      if(situacao==='todas'&&!r.ativo)return false;
+      if(termo&&!['nome','candidato','cpf','curso_nome','polo_fonte','celular'].some(k=>String(r[k]||'').toLocaleLowerCase('pt-BR').includes(termo)))return false;
+      return true;
+    }).map(r=>({...r,telefone:r.celular||'',situacao:String(r.ra||'').trim()?'matriculado':r.ativo?'oportunidade':'fora_da_lista'}));
+    const abertas=visiveis.filter(r=>r.ativo&&!String(r.ra||'').trim()&&r.etapa!=='perdido');
+    const hoje=hojeISO();
+    const resumo={abertas:abertas.length,novas:abertas.filter(r=>r.etapa==='novo').length,em_contato:abertas.filter(r=>['contato','negociacao','pendencia'].includes(r.etapa)).length,matriculadas:visiveis.filter(r=>r.ativo&&String(r.ra||'').trim()).length,perdidas:visiveis.filter(r=>r.ativo&&!String(r.ra||'').trim()&&r.etapa==='perdido').length,retornos_atrasados:abertas.filter(r=>r.proximo_contato&&r.proximo_contato<hoje).length};
+    return{ciclo:cicloId,ciclos:all('SELECT id,nome,ativo FROM ciclos ORDER BY id DESC'),etapas:[...etapasOportunidade],responsaveis:all("SELECT id,nome FROM usuarios WHERE ativo=1 ORDER BY nome"),resumo,lista:lista.slice(0,1000)};
+  }
+  function salvarOportunidade(id,c,usuario){
+    const row=get('SELECT id,ciclo_id,candidato,ra,polo_fonte,ativo FROM ma_lista_alunos WHERE id=?',id);
+    if(!row)falha(404,'Candidato não encontrado.');
+    const restrito=filtroUsuario(usuario);if(restrito&&poloDaFonte(row.polo_fonte)!==restrito)falha(404,'Candidato não encontrado.');
+    const etapa=String(c.etapa||'novo');if(!etapasOportunidade.has(etapa))falha(400,'Etapa inválida.');
+    const responsavel=c.responsavel_id===''||c.responsavel_id==null?null:Number(c.responsavel_id);
+    if(responsavel!==null&&!get('SELECT id FROM usuarios WHERE id=? AND ativo=1',responsavel))falha(400,'Responsável inválido.');
+    const proximo=String(c.proximo_contato||'').trim();if(proximo&&!/^\d{4}-\d{2}-\d{2}$/.test(proximo))falha(400,'Data de retorno inválida.');
+    const observacao=String(c.observacao||'').trim().slice(0,2000);
+    run(`INSERT INTO ma_oportunidades(ciclo_id,candidato,etapa,responsavel_id,proximo_contato,observacao,atualizado_por,atualizado_em)
+      VALUES(?,?,?,?,?,?,?,datetime('now','localtime'))
+      ON CONFLICT(ciclo_id,candidato) DO UPDATE SET etapa=excluded.etapa,responsavel_id=excluded.responsavel_id,proximo_contato=excluded.proximo_contato,observacao=excluded.observacao,atualizado_por=excluded.atualizado_por,atualizado_em=excluded.atualizado_em`,
+      row.ciclo_id,row.candidato,etapa,responsavel,proximo||null,observacao||null,usuario.login);
+    registrar(usuario,'atualizou oportunidade',`Candidato ${row.candidato} — ${etapa}`);
+    return{ok:true};
+  }
+
   // ------------------------------------------------------------------ rotas /api/ma/*
   async function rotas(req, res, p, m, q, usuario) {
     if (!p.startsWith('/api/ma/')) return false;
     const exigeLancar = () => { if (!podeLancar(usuario)) falha(403, 'Seu usuário não pode registrar posições oficiais'); };
     const exigeAdmin = () => { if (!ehAdmin(usuario)) falha(403, 'Apenas administradores'); };
+    if(p==='/api/ma/oportunidades'&&m==='GET'){
+      exigeLancar();enviarJson(res,200,listaOportunidades(q,usuario));return true;
+    }
+    const oportunidade=p.match(/^\/api\/ma\/oportunidades\/(\d+)$/);
+    if(oportunidade&&m==='PUT'){
+      exigeLancar();enviarJson(res,200,salvarOportunidade(Number(oportunidade[1]),await lerCorpo(req),usuario));return true;
+    }
     if (p === '/api/ma/conciliacao' && m === 'GET') { enviarJson(res, 200, conciliacao(q, usuario)); return true; }
     if (p === '/api/ma/sede' && m === 'GET') { enviarJson(res, 200, quadroSede(q, usuario)); return true; }
     if (p === '/api/ma/resetar' && m === 'GET') { exigeAdmin(); const k = contarReset(q); delete k.pos; enviarJson(res, 200, k); return true; }
@@ -550,7 +615,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
       ra: String(l.ra ?? '').trim().slice(0, 30), nome: String(l.nome ?? '').trim().slice(0, 160), cpf: soDig(l.cpf).slice(0, 11) || null,
       curso_cod: String(l.curso_cod ?? '').trim().slice(0, 60), curso_nome: String(l.curso_nome ?? '').trim().slice(0, 160), polo_fonte: String(l.polo_fonte ?? '').trim().slice(0, 120),
       data_pagto: dataBRparaISO(l.data_pagto), data_inscricao: dataBRparaISO(l.data_inscricao), inscrito_por: String(l.inscrito_por ?? '').trim().slice(0, 120),
-      celular: String(l.ra ?? '').trim() && /^\+55 \d{2} 9\d{4}-\d{4}$/.test(String(l.celular ?? '').trim()) ? String(l.celular).trim() : null };
+      celular: /^\+55 \d{2} 9\d{4}-\d{4}$/.test(String(l.celular ?? '').trim()) ? String(l.celular).trim() : null };
   }
   const produtoDoCurso = () => Object.fromEntries(all('SELECT curso_cod, produto_id FROM ma_lista_cursos WHERE produto_id IS NOT NULL').map(r => [r.curso_cod, r.produto_id]));
   function sugerirProdutoCurso(curso_cod, curso_nome, unidade) {

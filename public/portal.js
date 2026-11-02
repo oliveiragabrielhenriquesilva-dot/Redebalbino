@@ -3,6 +3,7 @@
   const $ = id => document.getElementById(id);
   const apps = {
     matriculas: { title: 'Acompanhamento de Matrículas', desc: 'Acompanhe matrículas, metas, polos, tutores e relatórios.', href: '/matriculas/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5.5 7.5h8a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4h-8v-14Z"/><path d="M26.5 7.5h-8a4 4 0 0 0-1 0v18a4 4 0 0 1 4-4h5v-14Z"/><path d="m10 13 2.2 2.2L15 12"/></svg>', color: 'blue' },
+    oportunidades: { title: 'Balbino Oportunidades', desc: 'Acompanhe candidatos, contatos e inscrições em andamento.', href: '/oportunidades/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="13" cy="11" r="5"/><path d="M4 27v-2a8 8 0 0 1 8-8h2M21 8v8M17 12h8M20 25h8M24 21v8"/></svg>', color: 'violet' },
     artes: { title: 'Gerador de Artes', desc: 'Crie peças de divulgação usando os modelos da equipe.', href: '/artes/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="4"/><circle cx="12" cy="12" r="2.2"/><path d="m7 24 7-7 4 4 3-3 4 4M22.5 5.5l4 4M20 8l-9 9-1 4 4-1 9-9"/></svg>', color: 'violet' },
     chat: { title: 'Balbino Chat', desc: 'Centralize os atendimentos acadêmicos pelo WhatsApp.', href: '/chat/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M26.5 15.3a10.5 10.5 0 0 1-15.7 9.1L5 26l1.7-5.3a10.5 10.5 0 1 1 19.8-5.4Z"/><path d="M11 12.5c.5 3.5 3 6 6.5 6.5M12 11l2 2-1.2 1.6M20.7 19l-2-2 1.6-1.2"/></svg>', color: 'teal' },
     informa: { title: 'Balbino Informa', desc: 'Consulte calendários acadêmicos, datas de provas e orientações da equipe.', href: '/informa/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M6 7.5h20v17H6z"/><path d="M10 4.5v6M22 4.5v6M6 12.5h20M10 17h4M18 17h4M10 21h4"/></svg>', color: 'cyan' }
@@ -29,13 +30,13 @@
     $('userName').textContent = me.name;
     show($('manageUsersBtn'), me.isAdmin);
     const grid = $('appGrid'); grid.replaceChildren();
-    const availableApps = [...new Set([...(me.apps || []), 'informa'])];
+    const allowed=new Set(me.apps||[]); const availableApps=(me.isAdmin||allowed.has('matriculas'))?['matriculas','oportunidades']:[];
     for (const key of availableApps) {
       const app = apps[key]; if (!app) continue;
       const card = document.createElement('article'); card.className = `app-card app-${key}`;
       const top = document.createElement('div'); top.className = 'app-card-top';
       const icon = document.createElement('div'); icon.className = 'app-icon'; icon.setAttribute('aria-hidden', 'true'); icon.innerHTML = app.icon;
-      const label = document.createElement('span'); label.className = 'app-number'; label.textContent = app.color === 'blue' ? 'MATRÍCULAS' : app.color === 'violet' ? 'CRIAÇÃO' : app.color === 'cyan' ? 'CONSULTAS' : 'ATENDIMENTO';
+      const label = document.createElement('span'); label.className = 'app-number'; label.textContent = key === 'matriculas' ? 'CAPTAÇÃO' : key === 'oportunidades' ? 'LEADS E INSCRIÇÕES' : app.color === 'violet' ? 'CRIAÇÃO' : 'ATENDIMENTO';
       const title = document.createElement('h2'); title.textContent = app.title;
       const desc = document.createElement('p'); desc.textContent = app.desc;
       const link = document.createElement('a'); link.className = 'app-link'; link.href = app.href; link.textContent = 'Acessar sistema';
@@ -58,7 +59,7 @@
       const data = await request('/api/portal/login', { method: 'POST', body: JSON.stringify({ username: $('loginUsername').value, password: $('loginPassword').value }) });
       me = data.user; $('loginPassword').value = ''; render();
       const next = new URL(location.href).searchParams.get('next');
-      if (next) { try { const target = new URL(next, location.origin); if (target.origin === location.origin && /^\/(matriculas|artes|chat|informa)(?:\/|$)/.test(target.pathname)) location.assign(target.href); } catch {} }
+      if (next) { try { const target = new URL(next, location.origin); if (target.origin === location.origin && /^\/(matriculas|oportunidades)(?:\/|$)/.test(target.pathname)) location.assign(target.href); } catch {} }
     } catch (err) { error.textContent = err.message; show(error, true); }
     finally { button.disabled = false; }
   });

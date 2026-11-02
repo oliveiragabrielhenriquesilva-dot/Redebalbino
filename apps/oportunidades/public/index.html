@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10294f">
+  <title>Balbino Oportunidades</title>
+  <link rel="stylesheet" href="/oportunidades/style.css">
+  <script defer src="/oportunidades/app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/oportunidades/" aria-label="Balbino Oportunidades">
+      <span class="brand-mark">B</span>
+      <span><small>REDE</small><strong>Balbino Oportunidades</strong></span>
+    </a>
+    <nav><a href="/matriculas/">Matrículas</a><button id="logout" class="button ghost">Sair</button></nav>
+  </header>
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">INSCRIÇÕES EM ANDAMENTO</p>
+        <h1>Balbino Oportunidades</h1>
+        <p class="lead">Acompanhe quem começou a inscrição e ainda não recebeu RA.</p>
+      </div>
+      <label class="field cycle-field"><span>Processo</span><select id="cycle"></select></label>
+    </section>
+    <section class="metrics" aria-label="Resumo de oportunidades">
+      <article><span>Em aberto</span><strong id="metric-open">—</strong></article>
+      <article><span>Novas</span><strong id="metric-new">—</strong></article>
+      <article><span>Em acompanhamento</span><strong id="metric-contact">—</strong></article>
+      <article><span>Com RA</span><strong id="metric-enrolled">—</strong></article>
+      <article class="alert"><span>Retorno atrasado</span><strong id="metric-overdue">—</strong></article>
+    </section>
+    <section class="panel">
+      <div class="panel-heading">
+        <div><h2>Candidatos</h2><p id="result-count">Carregando…</p></div>
+        <div class="filters">
+          <label class="field search"><span>Buscar</span><input id="search" type="search" placeholder="Nome, curso, polo ou telefone"></label>
+          <label class="field"><span>Mostrar</span><select id="view">
+            <option value="abertas">Em aberto</option>
+            <option value="perdidas">Perdidas</option>
+            <option value="matriculadas">Com RA</option>
+            <option value="todas">Todas na lista</option>
+          </select></label>
+        </div>
+      </div>
+      <div id="error" class="error hidden" role="alert"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Candidato</th><th>Curso</th><th>Polo</th><th>Celular</th><th>Etapa</th><th>Responsável</th><th>Próximo contato</th><th></th></tr></thead>
+          <tbody id="rows"><tr><td colspan="8" class="empty">Carregando oportunidades…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+    <p class="note">Os dados são atualizados pela importação do Mundo Azul. Quando o candidato receber RA, ele aparece como matriculado.</p>
+  </main>
+  <dialog id="edit-dialog">
+    <form id="edit-form" method="dialog">
+      <div class="dialog-head"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2 id="edit-title">Candidato</h2></div><button type="button" id="close-dialog" class="icon-button" aria-label="Fechar">×</button></div>
+      <input id="candidate-id" type="hidden">
+      <div class="form-grid">
+        <label class="field"><span>Etapa</span><select id="stage">
+          <option value="novo">Novo</option>
+          <option value="contato">Contato iniciado</option>
+          <option value="negociacao">Em negociação</option>
+          <option value="pendencia">Inscrição pendente</option>
+          <option value="perdido">Perdida</option>
+        </select></label>
+        <label class="field"><span>Responsável</span><select id="owner"><option value="">Sem responsável</option></select></label>
+        <label class="field"><span>Próximo contato</span><input id="follow-up" type="date"></label>
+        <label class="field full"><span>Anotações</span><textarea id="notes" rows="5" maxlength="2000" placeholder="Registre o que foi combinado e o próximo passo."></textarea></label>
+      </div>
+      <div class="dialog-actions"><span id="save-error" class="save-error"></span><button type="button" class="button" id="cancel-edit">Cancelar</button><button class="button primary" id="save" type="submit">Salvar</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
