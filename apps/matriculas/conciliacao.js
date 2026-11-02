@@ -475,7 +475,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     const abertas=visiveis.filter(r=>r.etapa!=='perdido'&&porCpf.get(cpfChave(r.cpf))?.size!==1);
     const hoje=hojeISO();
     const resumo={abertas:abertas.length,novas:abertas.filter(r=>r.etapa==='novo').length,em_contato:abertas.filter(r=>['contato','negociacao','pendencia'].includes(r.etapa)).length,matriculadas:visiveis.filter(r=>porCpf.get(cpfChave(r.cpf))?.size===1).length,perdidas:visiveis.filter(r=>r.etapa==='perdido'&&porCpf.get(cpfChave(r.cpf))?.size!==1).length,retornos_atrasados:abertas.filter(r=>(r.proximo_contato||r.data_retorno_origem)&&String(r.proximo_contato||r.data_retorno_origem)<hoje).length};
-    return{ciclo:cicloId,ciclos:all('SELECT id,nome,ativo FROM ciclos ORDER BY id DESC'),etapas:[...etapasOportunidade],pode_editar:!!podeLancar(usuario),responsaveis:podeLancar(usuario)?all("SELECT id,nome FROM usuarios WHERE ativo=1 ORDER BY nome"):[],resumo,lista:rows.slice(0,1000)};
+    return{ciclo:cicloId,ciclos:all('SELECT id,nome,padrao FROM ciclos ORDER BY id DESC'),etapas:[...etapasOportunidade],pode_editar:!!podeLancar(usuario),responsaveis:podeLancar(usuario)?all("SELECT id,nome FROM usuarios WHERE ativo=1 ORDER BY nome"):[],resumo,lista:rows.slice(0,1000)};
   }
   function importarOportunidades(c,usuario){
     const cicloId=Number(c.ciclo);
