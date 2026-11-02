@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 function loadEnv(file) {
   try {
-    for (const line of fs.readFileSync(file, 'utf8').split(/\\r?\\n/)) {
+    for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
       const item=line.trim();
       if(!item||item.startsWith('#'))continue;
       const i=item.indexOf('=');
@@ -15,7 +15,7 @@ function loadEnv(file) {
 }
 const DIR=path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.join(DIR,'.env'));
-const BASE=String(process.env.MATRICULAS_API_URL||'https://redebalbino.com.br/matriculas').replace(/\\/$/,'');
+const BASE=String(process.env.MATRICULAS_API_URL||'https://redebalbino.com.br/matriculas').replace(/\/$/,'');
 const TOKEN=String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim();
 const DATA=path.resolve(process.env.BALBINO_WELCOME_DATA_DIR||path.join(os.homedir(),'.central-balbino','boas-vindas'));
 const SESSION=path.join(DATA,'whatsapp-session');
@@ -46,7 +46,7 @@ async function api(route,options={}){
   return body;
 }
 function jidFor(phone){
-  const digits=String(phone||'').replace(/\\D/g,'');
+  const digits=String(phone||'').replace(/\D/g,'');
   if(digits.length===10||digits.length===11)return '55'+digits+'@s.whatsapp.net';
   if(digits.length>=12&&digits.length<=13&&digits.startsWith('55'))return digits+'@s.whatsapp.net';
   throw new Error('Telefone inválido ou sem DDD.');
@@ -100,7 +100,7 @@ async function connect(){
   socket.ev.on('connection.update',async update=>{
     if(update.qr){
       const qr=await qrModule.toString(update.qr,{type:'terminal',small:true}).catch(()=>update.qr);
-      console.log('Leia este QR Code no WhatsApp > Aparelhos conectados:\\n'+qr);
+      console.log('Leia este QR Code no WhatsApp > Aparelhos conectados:\n'+qr);
     }
     if(update.connection==='open'){connected=true;console.log('WhatsApp conectado. O envio automático está ativo.');processarFila()}
     if(update.connection==='close'){
