@@ -578,11 +578,18 @@ function painel(q, usuario) {
   // corte: com período escolhido (De/Até), vale o período; senão, conta só até a posição do painel
   const corte = q.ref ? (q.ate && q.ate < ref ? q.ate : ref) : (q.de || q.ate) ? (q.ate || '') : ref;
   const usaMeta = !q.tutor && !q.origem && !q.de && !q.ate;
-  const { where, params } = filtrosMatricula({ ...q, polo: poloFiltro || '', ate: corte, prazo_meta:usaMeta }, usuario);
+  const { where: whereMat, params } = filtrosMatricula({ ...q, polo: poloFiltro || '', ate: corte, prazo_meta:usaMeta }, usuario);
+  const cacheRa = q._cacheRa || {};
+  const raConfirmado = conciliacaoMA.raPorMatricula(cicloId, cacheRa);
+  const idsRa = Object.keys(raConfirmado).map(Number).filter(Number.isFinite);
+  const where = `${whereMat ? whereMat + ' AND' : 'WHERE'} m.id IN (${idsRa.length ? idsRa.join(',') : '0'})`;
+  const totaisBrutos = all(`SELECT COUNT(*) n ${SQL_MAT_BASE} ${whereMat}`, ...params)[0]?.n || 0;
+  const totaisConfirmados = all(`SELECT COUNT(*) n ${SQL_MAT_BASE} ${where}`, ...params)[0]?.n || 0;
+  const pendentesRa = Math.max(Number(totaisBrutos) - Number(totaisConfirmados), 0);
   const base = (sel, group, order = '') => all(`SELECT ${sel}, COUNT(*) qtd, COALESCE(SUM(m.valor),0) valor ${SQL_MAT_BASE} ${where} ${group ? 'GROUP BY ' + group : ''} ${order}`, ...params);
 
   const cacheSede = {};
-  const ritmoAtualCalc = ritmo({ ciclo: cicloId, polo: poloFiltro, produto: q.produto, categoria: q.categoria, grupo: q.grupo, subgrupo: q.subgrupo, ref: q.ref, sede: usaMeta ? q.sede : '0', _cacheSede: cacheSede, _serie: usaMeta }, usuario);
+  const ritmoAtualCalc = ritmo({ ciclo: cicloId, polo: poloFiltro, produto: q.produto, categoria: q.categoria, grupo: q.grupo, subgrupo: q.subgrupo, ref: q.ref, sede: usaMeta ? q.sede : '0', _cacheSede: cacheSede, _cacheRa: cacheRa, _serie: usaMeta }, usuario);
   const sedeR = ritmoAtualCalc.hoje_situacao.sede; // Sede/Digital do recorte (só com meta, sem filtros de tutor/origem/período)
   const sel = produtosSel(q);
   const metaProd = metasPorProduto(cicloId, poloFiltro, sel);
@@ -619,7 +626,7 @@ function painel(q, usuario) {
   const ritmoPolo = {};
   const porPolo = polos.map(p => {
     const rs = porPoloCat.filter(r => r.polo_id === p.id);
-    const rp = usaMeta ? ritmo({ ciclo: cicloId, polo: p.id, produto: q.produto, categoria: q.categoria, grupo: q.grupo, subgrupo: q.subgrupo, ref: q.ref, sede: q.sede, _cacheSede: cacheSede }, { papel: 'admin' }) : null;
+    const rp = usaMeta ? ritmo({ ciclo: cicloId, polo: p.id, produto: q.produto, categoria: q.categoria, grupo: q.grupo, subgrupo: q.subgrupo, ref: q.ref, sede: q.sede, _cacheSede: cacheSede, _cacheRa: cacheRa }, { papel: 'admin' }) : null;
     ritmoPolo[p.id] = rp;
     const proxP = rp ? rp.spaces.find(s => s.proximo) : null;
     const ms = metasPolo.filter(r => r.polo_id === p.id);
@@ -771,7 +778,7 @@ function painel(q, usuario) {
   Object.assign(tot, rpvGrupo(() => true, (po, pr) => okSel(pr)));
   const ritmoAtual = ritmoAtualCalc;
   const serie = ritmoAtual.serie || [];
-  return { externasRecebidas, total_credito_tutores:{qtd:porTutor.reduce((n,t)=>n+t.qtd,0),valor:porTutor.reduce((n,t)=>n+t.valor,0)}, produtosEquipe:all('SELECT id,nome FROM produtos ORDER BY ordem,nome').filter(p=>porProduto.some(x=>x.id===p.id)||porTutor.some(t=>t.produtos[p.id])), sede: { ligada: !!sedeR.ligada, total: tot.sede || 0, fonte: sedeR.fonte || null, posicoes: sedeR.posicoes || [], sem_detalhe_produto: !!sedeR.sem_detalhe_produto }, tem_meta_ticket: temTicket, rpvSemanas, totais: tot, categorias, porCategoria, porProduto, porOrigem, porPolo, porTutor, porDia, usaMeta, ritmo: ritmoAtual, serie: serie.slice(-90),
+  return { pendentes_ra: pendentesRa, externasRecebidas, total_credito_tutores:{qtd:porTutor.reduce((n,t)=>n+t.qtd,0),valor:porTutor.reduce((n,t)=>n+t.valor,0)}, produtosEquipe:all('SELECT id,nome FROM produtos ORDER BY ordem,nome').filter(p=>porProduto.some(x=>x.id===p.id)||porTutor.some(t=>t.produtos[p.id])), sede: { ligada: !!sedeR.ligada, total: tot.sede || 0, fonte: sedeR.fonte || null, posicoes: sedeR.posicoes || [], sem_detalhe_produto: !!sedeR.sem_detalhe_produto }, tem_meta_ticket: temTicket, rpvSemanas, totais: tot, categorias, porCategoria, porProduto, porOrigem, porPolo, porTutor, porDia, usaMeta, ritmo: ritmoAtual, serie: serie.slice(-90),
     tem_meta_tutor: temMetaTutor && porTutor.some(t => t.meta != null), ref, segunda,
     vendas: { dia: Object.values(vendasDia).reduce((a, n) => a + n, 0), semana: Object.values(vendasSemana).reduce((a, n) => a + n, 0) } };
 }
@@ -808,7 +815,9 @@ function ritmo(q, usuario) {
   const metaCat = {};
   for (const [pid, qn] of Object.entries(metaProd)) metaCat[prodCat[pid]] = (metaCat[prodCat[pid]] || 0) + qn;
 
-  const filtroPolo = (poloId ? 'AND m.polo_id = ? ' : '') + (sel ? `AND m.produto_id IN (${sel.length ? sel.join(',') : 0})` : '');
+  const raConfirmado = conciliacaoMA.raPorMatricula(cicloId, q._cacheRa || {});
+  const idsRa = Object.keys(raConfirmado).map(Number).filter(Number.isFinite);
+  const filtroPolo = (poloId ? 'AND m.polo_id = ? ' : '') + `AND m.id IN (${idsRa.length ? idsRa.join(',') : '0'})` + (sel ? ` AND m.produto_id IN (${sel.length ? sel.join(',') : 0})` : '');
   const pp = poloId ? [poloId] : [];
   const realPorCatAte = (data) => Object.fromEntries(all(`SELECT pr.categoria_id, COUNT(*) n FROM matriculas m JOIN produtos pr ON pr.id = m.produto_id
       WHERE m.ciclo_id = ? AND m.data <= ? ${filtroPolo} GROUP BY pr.categoria_id`, cicloId, data, ...pp).map(r => [r.categoria_id, r.n]));
