@@ -667,7 +667,7 @@ function linhasListaMA(tabela) {
   const data = (v) => { const t = String(v ?? '').trim(); if (/^\d{5}(\.\d+)?$/.test(t)) { const d = new Date(Date.UTC(1899, 11, 30) + Math.floor(Number(t)) * 864e5); return d.toISOString().slice(0, 10); } return t; };
   // só o celular (normalizado) de quem tem R.A. vai para o sistema; fixo, e-mail e endereço ficam de fora
   return tabela.slice(iCab + 1).filter(l => l[idx.candidato]).map(l => { const o = Object.fromEntries(Object.entries(idx).map(([k, i]) => [k, i < 0 ? '' : (/^data_/.test(k) ? data(l[i]) : String(l[i] ?? '').trim())]));
-    o.celular = o.ra ? celularMA(o.celular, o.fone) || '' : ''; delete o.fone; return o; });
+    o.celular = celularMA(o.celular, o.fone) || ''; delete o.fone; return o; });
 }
 function modalListaMA(ciclo, depois) {
   const md = abrirModal('<div id="ml"></div>', 1000), box = $('#ml', md);
@@ -676,7 +676,7 @@ function modalListaMA(ciclo, depois) {
     <div class="info">No Mundo Azul: <b>Captação › Consultar candidatos</b>, escolha a Unidade de Ensino e o Período, <b>Aplicar Filtros</b> e <b>Gerar Excel</b>. Pode escolher <b>vários arquivos de uma vez</b> (ex.: Graduação e Técnico).<br>
     Conta como matrícula quem tem <b>R.A.</b> Quem tem R.A. e não está lançado no sistema vira <b>Sede/Digital</b> no polo e no produto. Importar de novo <b>não soma</b>: o número do candidato é a chave.</div>
     <label class="campo"><span>Arquivos do Mundo Azul (.xlsx ou .csv)</span><input type="file" id="ml-arq" accept=".xlsx,.csv" multiple></label>
-    <p class="muted" style="font-size:12px">O arquivo é lido aqui no navegador. Do aluno com R.A. o sistema guarda nome, CPF, R.A., curso, polo, datas e o celular (para os contatos do Google). Telefone fixo, e-mail e endereço não são enviados nem guardados.</p>
+    <p class="muted" style="font-size:12px">O arquivo é lido aqui no navegador. O sistema guarda nome, CPF, R.A., curso, polo, datas e celular para acompanhar oportunidades e inscrições. E-mail e endereço não são enviados nem guardados.</p>
     <div id="ml-prev"></div></div>
     <footer><button class="btn" data-fechar>Cancelar</button><button class="btn prim" id="ml-ok" disabled>Importar</button></footer>`;
   $$('[data-fechar]', box).forEach(b => { b.onclick = fecharModal; });
