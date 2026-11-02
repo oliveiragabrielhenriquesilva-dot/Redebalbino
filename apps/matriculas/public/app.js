@@ -628,8 +628,8 @@ async function telaPainel(c, aba) {
   ${etiquetas.length ? `<div class="etiquetas">${etiquetas.map(([k, t]) => `<button class="etiqueta" data-tira="${k}" title="Remover filtro">${esc(t)} <span aria-hidden="true">×</span></button>`).join('')}<button class="btn peq" id="f-limpar">Limpar tudo</button></div>` : ''}
   ${d.usaMeta && R.aguardando_spaces ? avisoSpaces() : ''}
   ${d.usaMeta && R.inicio_estimado && eAdmin() ? `<div class="aviso">O processo está sem data de início — o ritmo está sendo medido a partir de ${dataBR(R.inicio)}. <a href="#/cadastros/metas">Cadastre o início em Metas e Spaces</a>.</div>` : ''}
-  ${d.pendentes_ra ? `<div class="aviso">Há <b>${int(d.pendentes_ra)} lançamento(s) sem R.A. confirmado no Mundo Azul</b>. Eles continuam na lista de matrículas, mas ficam fora do realizado, das metas, do SAVE/GAP e do RPV até a confirmação. <a href="#/mundo-azul/oficial">Conferir pendências</a>.</div>` : ''}
-  ${d.sede && d.sede.total ? `<div class="info">Realizado inclui <b>${int(d.sede.total)} matrícula(s) Sede/Digital</b> (Mundo Azul − lançadas pelos tutores) — marcadas como <small class="sede-tag">incl. N S/D</small> (o número já está somado).</div>` : ''}
+  ${d.pendentes_ra ? `<div class="aviso">Há <b>${int(d.pendentes_ra)} lançamento(s) sem R.A. confirmado no Mundo Azul</b>. Eles continuam na lista de matrículas, mas ficam fora do realizado e do RPV; por isso, não avançam o atingimento nem o SAVE/GAP até a confirmação. <a href="#/mundo-azul/oficial">Conferir pendências</a>.</div>` : ''}
+  ${d.sede && d.sede.total ? `<div class="info">Realizado inclui <b>${int(d.sede.total)} matrícula(s) Sede/Digital</b> (Mundo Azul − lançadas pelos tutores) — marcadas como <small class="sede-tag">incl. N S/D</small> (o número já está somado; confirmado pelo R.A. oficial).</div>` : ''}
   
   <nav class="abas">${abas.map(([id, n]) => `<a href="#/painel/${id}" class="${id === aba ? 'ativo' : ''}">${n}</a>`).join('')}</nav>
   ${conteudoAba()}`;
