@@ -450,7 +450,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
   const cpfChave=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=10&&d.length<=11?d.padStart(11,'0'):''};
   const dataOportunidade=v=>{const d=String(v||'').trim();return /^\d{4}-\d{2}-\d{2}$/.test(d)?d:null};
   function listaOportunidades(q,usuario){
-    const cicloId=Number(q.ciclo)||Number(get('SELECT id FROM ciclos WHERE ativo=1 ORDER BY id DESC LIMIT 1')?.id)||0;
+    const cicloId=Number(q.ciclo)||Number(get('SELECT id FROM ciclos WHERE padrao=1 ORDER BY id DESC LIMIT 1')?.id)||0;
     if(!cicloId)falha(400,'Não há processo ativo para consultar.');
     const situacao=['abertas','perdidas','matriculadas','todas'].includes(String(q.situacao||''))?String(q.situacao):'abertas';
     const leads=all(`SELECT o.*,u.nome responsavel FROM ma_oportunidades o
