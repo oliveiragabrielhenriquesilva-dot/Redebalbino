@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1730">
   <title>Balbino Oportunidades</title>
-  <link rel="stylesheet" href="/oportunidades/style.css">
+  <link rel="stylesheet" href="/oportunidades/style.css?v=20261103-tutor-filter">
   <link rel="stylesheet" href="/brand/balbino.css">
-  <script defer src="/oportunidades/app.js"></script>
+  <script defer src="/oportunidades/app.js?v=20261103-tutor-filter"></script>
 </head>
 <body>
   <header class="topbar">
@@ -57,8 +57,9 @@
         <label class="field"><span>Inscrição até</span><input type="date" data-f="insc_ate"></label>
         <label class="field"><span>Atendimento de</span><input type="date" data-f="atend_de"></label>
         <label class="field"><span>Atendimento até</span><input type="date" data-f="atend_ate"></label>
-        <label class="field"><span>Tutor do relatório</span><select data-f="tutor" data-opt="tutores_relatorio"></select></label>
+        <label class="field"><span>Tutor indicado na planilha</span><select data-f="tutor" data-opt="tutores_relatorio"></select></label>
         <label class="field"><span>Responsável atual</span><select data-f="resp" data-opt="responsaveis_filtro"></select></label>
+        <label class="field"><span>Quem registrou atendimento</span><select data-f="autor" data-opt="autores_atendimento" aria-describedby="autor-filter-help"></select><small id="autor-filter-help" class="muted">Filtra os atendimentos registrados no sistema.</small></label>
         <label class="field"><span>Curso</span><select data-f="curso" data-opt="cursos"></select></label>
         <label class="field"><span>Produto</span><select data-f="produto" data-opt="produtos"></select></label>
         <label class="field"><span>Etapa interna</span><select data-f="etapa" data-opt="etapas"></select></label>
@@ -130,7 +131,7 @@
           <dt>Retorno</dt><dd>Usa o próximo contato definido no sistema; se não houver, a data de retorno da planilha. Vencido = antes de hoje. Só vale para oportunidades em aberto.</dd>
           <dt>Período de inscrição</dt><dd>Filtra pela data de registro da planilha. Oportunidades sem essa data ficam fora quando o período é informado.</dd>
           <dt>Período de atendimento</dt><dd>Inclui oportunidades com atendimento registrado no sistema no período ou com último atendimento da planilha no período. O volume atendido conta apenas os registros do sistema.</dd>
-          <dt>Tutor do relatório × responsável atual × autor</dt><dd>Tutor do relatório vem da planilha. Responsável atual é definido no sistema e cada troca fica no histórico. Autor é quem registrou cada atendimento.</dd>
+          <dt>Tutor da planilha, responsável atual e autor do atendimento</dt><dd><b>Tutor indicado na planilha</b> é o nome que veio no arquivo importado. <b>Responsável atual</b> é quem está encarregado da oportunidade no sistema. <b>Quem registrou atendimento</b> filtra as interações salvas no sistema pelo nome do autor; combine com “Atendimento de/até” para limitar as datas.</dd>
           <dt>Funil por etapa</dt><dd>“Na etapa ou adiante” usa a etapa atual de cada oportunidade na ordem Novo → Concluído (Sem interesse fica fora). Não reconstrói etapas passadas.</dd>
           <dt>Polo não identificado</dt><dd>Nome de polo da planilha sem vínculo com o cadastro. Aparece só para a administração; tutores veem apenas as oportunidades do próprio polo.</dd>
         </dl>
