@@ -88,7 +88,8 @@
         const s2 = document.createElement('small'); s2.textContent = sub;
         a.append(l, v, s2); grid.append(a);
       }
-      $('todayTitle').textContent = `Processo ${d.ciclo.nome}${d.polo_restrito ? ' · ' + d.polo_restrito : ''}`;
+      const processoNome = String(d.ciclo.nome || '').replace(/^\\s*ciclo\\s+/i, '').trim();
+      $('todayTitle').textContent = `Processo ${processoNome || '51/2027'}${d.polo_restrito ? ' · ' + d.polo_restrito : ''}`;
       $('todayMeta').textContent = `Matrículas com RA confirmado, como no painel do Matrículas${d.pendentes_ra ? ` · ${n(d.pendentes_ra)} lançada(s) aguardando RA` : ''}`;
       show(panel, true);
     } catch { show(panel, false); }
