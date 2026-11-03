@@ -1,4 +1,4 @@
-:root{color-scheme:dark;--navy:#0b0e12;--surface:#11161d;--surface2:#151b23;--ink:#edf2f7;--muted:#9aa7b7;--line:rgba(177,197,230,.16);--blue:#3b82f6;--cyan:#5aa7ff;--red:#ff737c}
+:root{color-scheme:dark;--navy:#0b1730;--surface:#182a49;--surface2:#0f1d35;--ink:#edf2f7;--muted:#9aa7b7;--line:rgba(177,197,230,.16);--blue:#3b82f6;--cyan:#5aa7ff;--red:#ff737c}
 *{box-sizing:border-box}
 html{min-height:100%;background:var(--navy)}
 body{min-height:100vh;margin:0;font:15px/1.5 Inter,"Segoe UI",Arial,sans-serif;color:var(--ink);background:radial-gradient(ellipse at 10% 12%,rgba(37,99,235,.19),transparent 34%),radial-gradient(ellipse at 82% 86%,rgba(20,184,166,.12),transparent 32%),linear-gradient(145deg,#0b1730 0%,#101e3b 54%,#0b1730 100%)}
@@ -93,3 +93,6 @@ main:has(.dashboard:not(.hidden)){justify-content:flex-start}
 :root[data-theme="light"] .today-tile small,:root[data-theme="light"] footer{color:#536983}
 :root[data-theme="light"] .today-tile span{color:#415a78}
 :root[data-theme="light"] .app-icon{border-color:#c9d7e8}
+
+:root[data-theme="dark"] .login-card,:root[data-theme="dark"] .app-card{background:linear-gradient(150deg,rgba(24,42,73,.92),rgba(15,29,53,.94))}
+:root[data-theme="light"] .login-card,:root[data-theme="light"] .app-card{background:linear-gradient(150deg,#fff,#f6f9ff);border-color:rgba(25,55,95,.16);box-shadow:0 16px 40px rgba(30,64,120,.08)}
