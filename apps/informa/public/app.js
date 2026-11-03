@@ -534,7 +534,7 @@
   async function loadMarco() {
     const res = await fetch('/api/informa/marco', { credentials: 'same-origin', cache: 'no-store' });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `Falha ao carregar o Processo 51/2027 (${res.status}).`);
-    M.data = await res.json(); renderMarco();
+    M.data = await res.json(); S.marco = M.data; renderMarco();
   }
   async function load() {
     await loadMarco();
