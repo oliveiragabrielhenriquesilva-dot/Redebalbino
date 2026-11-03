@@ -97,20 +97,23 @@
     $('understood').classList.remove('hidden');
     const rows = matches(q).sort((a, b) => score(a) - score(b) || a.ordem_categoria - b.ordem_categoria);
     const box = $('answer'); box.classList.remove('hidden');
-    if (!rows.length) {
-      box.innerHTML = `<div class="answer-empty"><h2>Não encontrei esse evento no calendário.</h2><p>O Calendário Administrativo traz períodos letivos, captação, geração de RA e as rotinas cadastradas pela secretaria. Tente por produto, módulo, mês ou nome do evento.</p></div>`;
-      return;
-    }
-    const tops = rows.slice(0, 3);
+    const marco = marcoBusca(text);
+    const calendarioRelevante = rows.length && (q.termos.length || q.produtos.size || q.modulos.size || q.de || !marco.length);
     const frase = o => {
       const st = status(o);
       const quando = q.foco === 'fim' ? `termina em <b>${br(o.fim)}</b>` : q.foco === 'inicio' ? `começa em <b>${br(o.inicio)}</b>` : o.inicio === o.fim ? `é em <b>${br(o.inicio)}</b>` : `vai de <b>${br(o.inicio)}</b> a <b>${br(o.fim)}</b>`;
       return `<article class="direct st-${st}"><span class="st st-${st}">${statusLabel[st]}</span><h3>${esc(o.evento)}</h3><p>${esc(prodName(o.produto))} · ${esc(modLabel(o.produto, o.modulo))} ${quando}.</p><small>${esc(relative(o))}${o.categoria !== o.evento ? ' · ' + esc(o.categoria) : ''}</small></article>`;
     };
-    box.innerHTML = `<div class="section-head"><div><p class="eyebrow">Resposta</p><h2>${rows.length === 1 ? 'Encontrei 1 data' : `Encontrei ${rows.length} datas`}</h2></div><button type="button" class="mini" id="clearAsk">Limpar busca</button></div>
-      <div class="direct-grid">${tops.map(frase).join('')}</div>
-      ${rows.length > 3 ? `<details class="more" ${rows.length <= 12 ? 'open' : ''}><summary>Ver todas as ${rows.length} datas</summary>${listTable(rows)}</details>` : ''}`;
-    $('clearAsk').addEventListener('click', () => ask(''));
+    const blocoMarco = marco.length ? `<div class="section-head"><div><p class="eyebrow">Marco Regulatório – 51/2027</p><h2>${marco.length === 1 ? '1 resposta' : marco.length + ' respostas'} da apresentação</h2></div>${calendarioRelevante ? '' : '<button type="button" class="mini" id="clearAsk">Limpar busca</button>'}</div><div class="direct-grid">${marco.map(m => m.html).join('')}</div><p class="sub marco-link"><button type="button" class="mini" data-area-go="marco">Abrir o Marco Regulatório completo</button></p>` : '';
+    const blocoCal = calendarioRelevante ? `<div class="section-head${marco.length ? ' spaced' : ''}"><div><p class="eyebrow">Calendário acadêmico</p><h2>${rows.length === 1 ? 'Encontrei 1 data' : `Encontrei ${rows.length} datas`}</h2></div><button type="button" class="mini" id="clearAsk">Limpar busca</button></div>
+      <div class="direct-grid">${rows.slice(0, 3).map(frase).join('')}</div>
+      ${rows.length > 3 ? `<details class="more" ${rows.length <= 12 ? 'open' : ''}><summary>Ver todas as ${rows.length} datas</summary>${listTable(rows)}</details>` : ''}` : '';
+    if (!blocoMarco && !blocoCal) {
+      box.innerHTML = `<div class="answer-empty"><h2>Não encontrei isso no calendário nem no Marco Regulatório.</h2><p>Tente por produto, módulo, mês ou evento (ex.: “geração de RA do módulo 54”) ou por um tema do Marco Regulatório (média mínima, ASM, presencialidade, aproveitamento, nome do curso).</p></div>`;
+      return;
+    }
+    box.innerHTML = blocoMarco + blocoCal;
+    $('clearAsk')?.addEventListener('click', () => ask(''));
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   function listTable(rows) {
@@ -162,14 +165,91 @@
     $('yearSel').innerHTML = S.data.anos.map(a => `<option ${a === S.year ? 'selected' : ''}>${esc(a)}</option>`).join('');
   }
   function renderSuggestions() {
-    const sug = ['O que acontece esta semana?', 'Qual módulo está em andamento?', 'Quando termina a captação?', 'Geração de RA do próximo módulo', 'Pós-graduação em dezembro', 'O que começa no mês que vem?'];
+    const sug = ['O que acontece esta semana?', 'Qual módulo está em andamento?', 'Quando termina a captação?', 'Geração de RA do próximo módulo', 'Média mínima para aprovação em 2027', 'ASM e presencialidade de Farmácia', 'Regras de aproveitamento de estudos'];
     const grad = S.data.ocorrencias.filter(o => o.produto === 'graduacao' && /geracao de ra/.test(norm(o.evento)) && status(o) !== 'encerrado').sort((a, b) => a.inicio.localeCompare(b.inicio))[0];
     if (grad) sug[3] = `Geração de RA do módulo ${grad.modulo}`;
     $('suggestions').innerHTML = sug.map(s => `<button type="button" data-ask="${esc(s)}">${esc(s)}</button>`).join('');
   }
 
   // ------------------------------------------------------------ carga
+  // ------------------------------------------------------------ Marco Regulatório – 51/2027 (dados em apps/informa/marco-regulatorio-51-2027.json)
+  const M = { data: null, grupo: 0, portQ: '', mod: 0 };
+  const ok = v => v ? '<span class="yes" aria-label="Sim">✓</span>' : '<span class="no" aria-label="Não">✕</span>';
+  function gradeHtml(g) {
+    const mz = M.data.matriz_cursos, n = Math.max(...Object.values(g.grade).map(a => a.length));
+    return `<div class="table-wrap"><table class="grade"><thead><tr><th>Atividade</th>${Array.from({ length: n }, (_, i) => `<th>${i + 1}º ano<span class="sub">${esc(mz.fases[i] || '')}</span></th>`).join('')}</tr></thead><tbody>${mz.linhas.map(l => `<tr><td><b>${esc(l.rotulo)}</b>${l.detalhe ? `<span class="sub">${esc(l.detalhe)}</span>` : ''}</td>${(g.grade[l.id] || []).map(v => `<td class="c ${v ? 'is-yes' : 'is-no'}">${ok(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${g.nota ? `<p class="sub">${esc(g.nota)}</p>` : ''}`;
+  }
+  function resumoCurso(g) {
+    const sim = (id) => g.grade[id].map((v, i) => v ? i + 1 : null).filter(Boolean);
+    const anos = l => !l.length ? 'nenhum ano' : l.length === g.grade.provas.length ? 'todos os anos' : l.map(x => x + 'º').join(', ') + ' ano' + (l.length > 1 ? 's' : '');
+    return `Aulas ao vivo: ${anos(sim('aulas'))}. Presencialidade: ${anos(sim('presencialidade'))}. ASM: ${anos(sim('asm'))}. Extensão e provas: ${anos(sim('provas'))}.`;
+  }
+  function marcoBusca(text) {
+    if (!M.data) return [];
+    const n = ' ' + norm(text) + ' ', out = [];
+    const tem = k => new RegExp(`(^| )${norm(k).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}( |$)`).test(n);
+    const grupos = M.data.matriz_cursos.grupos.filter(g => [g.nome, ...g.cursos].some(c => { const c2 = norm(c).replace(/^engenharia (de )?/, ''); return tem(c) || (c2.length > 4 && tem(c2)); }));
+    for (const g of grupos.slice(0, 2)) out.push({ score: 5, html: `<article class="direct marco-card"><span class="st st-proximo">Atividades do curso</span><h3>${esc(g.nome)}</h3><p>${esc(resumoCurso(g))}</p>${g.nota ? `<small>${esc(g.nota)}</small>` : ''}</article>` });
+    for (const f of M.data.perguntas) { const hits = f.chaves.filter(tem).length; if (hits) out.push({ score: hits, html: `<article class="direct marco-card"><span class="st st-ativo">Marco 51/2027</span><h3>${esc(f.pergunta)}</h3><p>${esc(f.resposta)}</p></article>` }); }
+    if (!out.length && /\b(marco|regulatorio|51\/2027|2027)\b/.test(n)) for (const d of M.data.destaques) out.push({ score: 1, html: `<article class="direct marco-card"><span class="st st-ativo">Marco 51/2027</span><h3>${esc(d.rotulo)}: ${esc(d.valor)}</h3><p>${esc(d.detalhe)}</p></article>` });
+    return out.sort((a, b) => b.score - a.score).slice(0, 4);
+  }
+  function renderPortfolio() {
+    const pf = M.data.portfolio, mod = pf.modalidades[M.mod], q = norm(M.portQ);
+    const areas = mod.areas.map(a => ({ ...a, cursos: a.cursos.filter(([c]) => !q || norm(c).includes(q) || norm(a.area).includes(q)) })).filter(a => a.cursos.length);
+    $('portList').innerHTML = areas.length ? areas.map(a => `<article class="port-area"><h4>${esc(a.area)}</h4><ul>${a.cursos.map(([c, t]) => `<li><span>${esc(c)}</span><em class="tipo t-${t}">${esc(pf.tipos[t])}</em></li>`).join('')}</ul></article>`).join('') : '<p class="empty">Nenhum curso com esse nome nesta modalidade.</p>';
+    $('portCount').textContent = `${areas.reduce((n, a) => n + a.cursos.length, 0)} curso(s)`;
+  }
+  function renderMarco() {
+    const d = M.data, el = $('area-marco');
+    const secao = s => `<section class="card marco-sec" id="m-${esc(s.id)}"><header><h3>${esc(s.titulo)}</h3>${s.subtitulo ? `<p>${esc(s.subtitulo)}</p>` : ''}</header>
+      ${s.itens ? `<div class="m-itens">${s.itens.map(i => `<div class="m-item"><b>${esc(i.titulo)}</b><p>${esc(i.texto)}</p></div>`).join('')}</div>` : ''}
+      ${s.tabela ? `<div class="m-tabela"><h4>${esc(s.tabela.titulo)}</h4><div class="table-wrap"><table><thead><tr>${s.tabela.colunas.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${s.tabela.linhas.map((l, i, all) => `<tr class="${i === all.length - 1 ? 'total' : ''}">${l.map((c, j) => `<td class="${j ? 'n' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="sub">${esc(s.tabela.nota || '')}</p></div>` : ''}
+      ${s.cartoes ? `<div class="m-cartoes">${s.cartoes.map(c => `<article class="m-cartao"><h4>${esc(c.titulo)}</h4><span class="chip">${esc(c.selo)}</span><ul>${c.pontos.map(p => `<li>${esc(p)}</li>`).join('')}</ul><p><b>Frequência:</b> ${esc(c.frequencia)}</p><p><b>Agendamento:</b> ${esc(c.agendamento)}</p></article>`).join('')}</div>` : ''}
+      ${s.nota ? `<p class="sub">${esc(s.nota)}</p>` : ''}</section>`;
+    const mz = d.matriz_cursos;
+    el.innerHTML = `
+      <div class="section-head"><div><p class="eyebrow">Início de processo 51/2027</p><h2 id="marcoTitle">${esc(d.titulo)}</h2><p class="sub">${esc(d.fonte)}</p></div></div>
+      <div class="fonte-aviso">${esc(d.aviso)}</div>
+      <div class="m-destaques">${d.destaques.map(x => `<article class="now"><span class="now-prod">${esc(x.rotulo)}</span><strong>${esc(x.valor)}</strong><small>${esc(x.detalhe)}</small></article>`).join('')}</div>
+      <nav class="m-indice" aria-label="Tópicos">${d.secoes.map(s => `<a href="#m-${esc(s.id)}">${esc(s.titulo)}</a>`).join('')}<a href="#m-cursos">Atividades por curso</a><a href="#m-portfolio">Portfólio</a></nav>
+      ${d.secoes.slice(0, 2).map(secao).join('')}
+      <section class="card marco-sec" id="m-cursos"><header><h3>${esc(mz.titulo)}</h3><p>Escolha o curso para ver o que acontece em cada ano.</p></header>
+        <label class="field m-curso"><span>Curso</span><select id="cursoSel">${mz.grupos.map((g, i) => `<optgroup label="${esc(g.nome)}">${g.cursos.map(c => `<option value="${i}">${esc(c)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+        <div id="gradeBox"></div><p class="sub">${esc(mz.nota)}</p></section>
+      ${d.secoes.slice(2).map(secao).join('')}
+      <section class="card marco-sec" id="m-portfolio"><header><h3>Portfólio de cursos</h3><p>${esc(d.portfolio.nota)}</p></header>
+        <div class="cal-controls"><div class="segmented" id="portMod">${d.portfolio.modalidades.map((m, i) => `<button type="button" data-mod="${i}" class="${i === M.mod ? 'active' : ''}">${esc(m.nome)}</button>`).join('')}</div>
+        <label class="field"><span>Buscar curso</span><input id="portQ" type="search" placeholder="Ex.: Pedagogia, Gestão, Dados"></label><span class="sub" id="portCount"></span></div>
+        <div class="port-grid" id="portList"></div></section>`;
+    const showGrade = () => { $('gradeBox').innerHTML = gradeHtml(mz.grupos[Number($('cursoSel').value)]); };
+    $('cursoSel').addEventListener('change', showGrade); showGrade();
+    el.querySelectorAll('[data-mod]').forEach(b => b.addEventListener('click', () => { M.mod = Number(b.dataset.mod); el.querySelectorAll('[data-mod]').forEach(x => x.classList.toggle('active', x === b)); renderPortfolio(); }));
+    $('portQ').addEventListener('input', e => { M.portQ = e.target.value; renderPortfolio(); });
+    renderPortfolio();
+  }
+  function setArea(area, scroll = false) {
+    document.querySelectorAll('.area-tab').forEach(b => { const on = b.dataset.area === area; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+    $('area-calendario').classList.toggle('hidden', area !== 'calendario');
+    $('area-marco').classList.toggle('hidden', area !== 'marco');
+    if (area === 'marco' && location.hash !== '#marco') history.replaceState(null, '', location.pathname + location.search + '#marco');
+    if (area === 'calendario' && location.hash === '#marco') history.replaceState(null, '', location.pathname + location.search);
+    if (scroll) $('area-' + area).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  document.querySelectorAll('.area-tab').forEach(b => b.addEventListener('click', () => setArea(b.dataset.area)));
+  document.addEventListener('click', ev => { const g = ev.target.closest('[data-area-go]'); if (g) setArea(g.dataset.areaGo, true); });
+  window.addEventListener('hashchange', () => { if (location.hash === '#marco') setArea('marco', true); });
+
+  async function loadMarco() {
+    try {
+      const r = await fetch('/api/informa/marco', { credentials: 'same-origin', cache: 'no-store' });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `Falha ao carregar (${r.status})`);
+      M.data = await r.json(); renderMarco();
+    } catch (e) { $('area-marco').innerHTML = `<div class="erro">Não foi possível carregar o Marco Regulatório: ${esc(e.message)}</div>`; }
+  }
   async function load() {
+    await loadMarco();
+    if (location.hash === '#marco') setArea('marco');
     const res = await fetch('/api/informa/calendario', { credentials: 'same-origin', cache: 'no-store' });
     if (res.status === 401) { location.assign('/?next=' + encodeURIComponent('/informa/')); return; }
     const data = await res.json().catch(() => ({}));

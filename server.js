@@ -224,10 +224,15 @@ function jsonReply(res, status, data, headers = {}) {
 const informaFonte = require('./apps/informa/fonte').criarFonte(RUNTIME);
 // Balbino Informa: somente leitura, dados do Calendário Administrativo Unicesumar (ver apps/informa/fonte.js).
 async function informaApi(req, res, url) {
-  if (url.pathname !== '/api/informa/calendario') return jsonReply(res, 404, { error: 'Endpoint não encontrado.' });
+  if (!['/api/informa/calendario', '/api/informa/marco'].includes(url.pathname)) return jsonReply(res, 404, { error: 'Endpoint não encontrado.' });
   const user = portal.current(req);
-  if (!user) return jsonReply(res, 401, { error: 'Entre no portal para consultar o calendário.' });
+  if (!user) return jsonReply(res, 401, { error: 'Entre no portal para consultar o Balbino Informa.' });
   if (req.method !== 'GET') return jsonReply(res, 405, { error: 'Método não permitido.' }, { Allow: 'GET' });
+  // Marco Regulatório 51/2027: conteúdo em arquivo de dados (apps/informa/marco-regulatorio-51-2027.json).
+  if (url.pathname === '/api/informa/marco') {
+    try { return jsonReply(res, 200, JSON.parse(fs.readFileSync(path.join(ROOT, 'apps', 'informa', 'marco-regulatorio-51-2027.json'), 'utf8'))); }
+    catch (error) { return jsonReply(res, 500, { error: 'Não foi possível ler o Marco Regulatório: ' + error.message }); }
+  }
   try { return jsonReply(res, 200, await informaFonte.calendario({ forcar: url.searchParams.get('atualizar') === '1' && Boolean(user.is_admin) })); }
   catch (error) { return jsonReply(res, 500, { error: 'Não foi possível montar o calendário: ' + error.message }); }
 }
