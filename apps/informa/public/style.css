@@ -58,3 +58,28 @@ td{padding:10px 12px;border-top:1px solid rgba(177,197,230,.10);font-size:13px;c
 .site-foot{display:flex;justify-content:space-between;gap:16px;padding:21px 0 27px;border-top:1px solid var(--line);color:var(--muted2);font-size:11px}.site-foot strong{color:#b7c6dc;font-weight:650}
 @media(max-width:800px){.grid-2{grid-template-columns:1fr}}
 @media(max-width:560px){.topbar,main,.site-foot{width:calc(100% - 32px)}.topbar nav a:last-child{display:none}main{padding-top:26px}.ask{flex-wrap:wrap;padding:8px}.ask svg{display:none}.ask input{flex-basis:100%;padding:0 8px}.ask button{width:100%}.site-foot{flex-direction:column}.answer{padding:16px}}
+/* Áreas do Informa e Marco Regulatório – 51/2027 */
+.areas{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:22px;overflow-x:auto}
+.area-tab{border:0;background:transparent;padding:12px 16px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-size:14px;display:inline-flex;gap:8px;align-items:center}
+.area-tab:hover{color:var(--ink)}.area-tab.active{color:#fff;border-bottom-color:var(--cyan)}
+.novo{padding:2px 7px;border-radius:999px;background:rgba(119,217,208,.16);color:var(--teal);font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+.section-head.spaced{margin-top:26px}.marco-link{margin:12px 0 0}
+.m-destaques{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:16px 0}
+.m-indice{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}.m-indice a{padding:6px 12px;border:1px solid var(--line2);border-radius:999px;color:var(--ink2);text-decoration:none;font-size:12.5px}.m-indice a:hover{border-color:rgba(116,169,255,.68);background:rgba(74,137,255,.12);color:#fff}
+.marco-sec{margin-bottom:16px;scroll-margin-top:16px}.marco-sec header h3{font-size:18px}
+.m-itens{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.m-item{padding:13px 15px;border:1px solid var(--line);border-radius:13px;background:rgba(5,14,30,.28)}.m-item b{display:block;color:#fff;font-size:14px}.m-item p{margin:5px 0 0;color:var(--ink2);font-size:13.5px}
+.m-tabela{margin-top:14px;max-width:520px}.m-tabela h4{margin:0 0 8px;font-size:14px}.m-tabela td.n{text-align:right;font-variant-numeric:tabular-nums}.m-tabela tr.total td{font-weight:800;color:#fff;background:rgba(255,255,255,.04)}
+.m-cartoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.m-cartao{padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(5,14,30,.28)}.m-cartao h4{margin:0 0 8px;font-size:16px;color:#fff}.m-cartao ul{margin:12px 0;padding-left:18px;color:var(--ink2);font-size:13px}.m-cartao p{margin:6px 0 0;font-size:13px;color:var(--ink2)}.m-cartao p b{color:#fff}
+.m-curso{max-width:420px;margin-bottom:12px}.m-curso select{color:#f4f8ff;background:var(--field);border:1px solid rgba(170,195,229,.24);border-radius:10px;padding:9px 10px}.m-curso optgroup{background:#101e37;color:var(--teal)}.m-curso option{color:#f4f8ff}
+.grade{min-width:560px}.grade th .sub{text-transform:none;letter-spacing:0;font-weight:500}.grade td.c{text-align:center;font-size:16px;font-weight:800}
+.grade td.is-yes{background:rgba(66,215,181,.10)}.grade td.is-no{background:rgba(255,115,124,.07)}.yes{color:var(--ok)}.no{color:#ff9aa0}
+.field input{color:#f4f8ff;background:var(--field);border:1px solid rgba(170,195,229,.24);border-radius:10px;padding:8px 10px}
+.port-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:14px}
+.port-area{padding:14px 16px;border:1px solid var(--line);border-radius:13px;background:rgba(5,14,30,.28)}.port-area h4{margin:0 0 8px;color:var(--teal);font-size:12px;letter-spacing:1px;text-transform:uppercase}
+.port-area ul{list-style:none;margin:0;padding:0;display:grid;gap:5px}.port-area li{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:#e6eef9}
+.tipo{font-style:normal;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;align-self:flex-start}.t-B{background:rgba(75,140,255,.16);color:#a9ccff}.t-T{background:rgba(255,255,255,.07);color:var(--ink2)}.t-L{background:rgba(119,217,208,.14);color:var(--teal)}
+.marco-card h3{font-size:16px}
+.m-curso{width:min(420px,100%);max-width:100%}.m-curso select{width:100%;min-width:0;max-width:100%;text-overflow:ellipsis}
+.field{min-width:0}
