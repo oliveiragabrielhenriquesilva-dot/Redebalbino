@@ -1,0 +1,1210 @@
+{
+  "id": "marco-51-2027",
+  "titulo": "Marco Regulatório – 51/2027",
+  "fonte": "Conexão Especial de Início de Processo 51/2027 – Pedagógico (UniCesumar | Vitru). Conteúdo extraído dos slides apresentados no vídeo.",
+  "aviso": "Resumo dos slides da transmissão. Em caso de dúvida, vale o material oficial da instituição e as orientações no Studeo. Portfólio sujeito a alteração.",
+  "destaques": [
+    {
+      "rotulo": "Duração das disciplinas",
+      "valor": "10 semanas",
+      "detalhe": "Todas as disciplinas EaD, com a mesma organização da jornada de aprendizagem."
+    },
+    {
+      "rotulo": "Média mínima para aprovação",
+      "valor": "7,0",
+      "detalhe": "Era 6,0 até 2026; passa a 7,0 a partir de 2027."
+    },
+    {
+      "rotulo": "Avaliação presencial",
+      "valor": "6,0 pontos",
+      "detalhe": "1 questão discursiva (2,0) + 8 objetivas (4,0), nas semanas 9 e 10 do módulo."
+    },
+    {
+      "rotulo": "Aproveitamento de estudos",
+      "valor": "Res. 321/2026",
+      "detalhe": "Histórico oficial, equivalência mínima de 75% e estudos com menos de 10 anos."
+    }
+  ],
+  "secoes": [
+    {
+      "id": "mudancas-ead",
+      "titulo": "Mudanças no modelo para todos os cursos EaD",
+      "subtitulo": "A partir de 2027 · para todas as disciplinas, independentemente do momento de ingresso do estudante",
+      "itens": [
+        {
+          "titulo": "Duração das disciplinas",
+          "texto": "Todas as disciplinas passam a ter 10 semanas de duração, com a mesma organização da jornada de aprendizagem."
+        },
+        {
+          "titulo": "Avaliação presencial",
+          "texto": "Composta por 1 questão discursiva (2,0 pontos) e 8 questões objetivas (4,0 pontos). As avaliações das disciplinas estão concentradas nas semanas 9 e 10 do módulo."
+        },
+        {
+          "titulo": "Média mínima para aprovação",
+          "texto": "A média mínima para aprovação será elevada de 6,0 (até 2026) para 7,0 pontos (a partir de 2027)."
+        }
+      ],
+      "tabela": {
+        "titulo": "Composição da média por disciplina",
+        "colunas": [
+          "Atividade",
+          "Pontos"
+        ],
+        "linhas": [
+          [
+            "A.E. 01 (objetiva)",
+            "1,0"
+          ],
+          [
+            "A.E. 02 (objetiva)",
+            "1,0"
+          ],
+          [
+            "M.A.P.A.",
+            "2,0"
+          ],
+          [
+            "Avaliação presencial",
+            "6,0"
+          ],
+          [
+            "Total da disciplina",
+            "10,0"
+          ]
+        ],
+        "nota": "Disciplinas de natureza prática, estágios e TCC podem apresentar composições diferentes."
+      }
+    },
+    {
+      "id": "atividades",
+      "titulo": "Tipos de atividade nos cursos semipresenciais",
+      "subtitulo": "O que é cada encontro, onde acontece e se conta frequência",
+      "cartoes": [
+        {
+          "titulo": "Presencialidade no Polo de Apoio",
+          "selo": "3 horas por encontro · NO POLO",
+          "pontos": [
+            "Pode ter natureza teórica ou prática",
+            "Avaliações e simulados",
+            "Atendimentos e orientações",
+            "Atividades práticas em laboratórios e sala de aula",
+            "Uso da infraestrutura acadêmica"
+          ],
+          "frequencia": "Requer presença com registro de frequência para aprovação.",
+          "agendamento": "Requer agendamento via Studeo, conforme orientações nos ambientes das disciplinas do curso."
+        },
+        {
+          "titulo": "Atividade Síncrona Mediada (ASM)",
+          "selo": "3 horas por encontro · ONLINE",
+          "pontos": [
+            "Em tempo real",
+            "Participação simultânea dos alunos",
+            "Mediada por um docente ou mediador pedagógico",
+            "Promove aprendizagem interativa"
+          ],
+          "frequencia": "Requer participação com registro de frequência para aprovação.",
+          "agendamento": "Requer agendamento via Studeo, conforme orientações nos ambientes das disciplinas do curso."
+        },
+        {
+          "titulo": "Aulas ao vivo",
+          "selo": "1,5 hora por encontro · ONLINE",
+          "pontos": [
+            "Em tempo real e de forma síncrona",
+            "Ministradas por um docente",
+            "Promovem aprendizagem interativa",
+            "Aulas via Teams, 1h30 por disciplina"
+          ],
+          "frequencia": "A participação é essencial para o ritmo de aprendizagem, mas não registra nem conta frequência para aprovação.",
+          "agendamento": "Não requer agendamento: seguir o ensalamento e as informações do mural de avisos e do calendário da disciplina, no Studeo."
+        }
+      ]
+    },
+    {
+      "id": "agendamento",
+      "titulo": "Como funcionará o agendamento",
+      "subtitulo": "ASM e Presencialidade",
+      "itens": [
+        {
+          "titulo": "Onde agendar",
+          "texto": "No Studeo (site ou aplicativo), dentro da disciplina, em “Informações sobre a disciplina”, nas opções de agendamento das atividades síncronas mediadas e da presencialidade."
+        },
+        {
+          "titulo": "O que mostrar ao aluno",
+          "texto": "Em cada agendamento aparecem o espaço, o dia, o horário e o período de agendamento; o aluno pode confirmar ou cancelar a participação."
+        },
+        {
+          "titulo": "Aulas ao vivo",
+          "texto": "Não são agendadas: o aluno segue o ensalamento e o calendário da disciplina."
+        }
+      ]
+    },
+    {
+      "id": "jornada",
+      "titulo": "Organização do módulo de 10 semanas (semipresenciais)",
+      "subtitulo": "Modelo acadêmico operacional · resumo semanal da jornada discente",
+      "itens": [
+        {
+          "titulo": "Semanas 1 a 8",
+          "texto": "Atividades das duas disciplinas do módulo (aulas ao vivo, ASM e/ou presencialidade, conforme o ano do curso)."
+        },
+        {
+          "titulo": "Semanas 9 e 10",
+          "texto": "Provas presenciais."
+        },
+        {
+          "titulo": "Automação Industrial e Manutenção Industrial",
+          "texto": "ASM e presencialidade da disciplina 01 nas semanas 1 a 4 e da disciplina 02 nas semanas 5 a 8. A presencialidade é teórica e prática, em sala de aula e no laboratório do curso. Em Manutenção Industrial, no módulo 51 uma das disciplinas tem 24 horas de ASM."
+        },
+        {
+          "titulo": "Farmácia – 5º ano",
+          "texto": "Cada módulo é composto por 2 disciplinas de natureza distinta: 1 de estágio curricular supervisionado e 1 de natureza comum."
+        }
+      ],
+      "nota": "A distribuição das atividades pode variar conforme o curso e a matriz curricular."
+    },
+    {
+      "id": "aproveitamento",
+      "titulo": "Aproveitamento de estudos",
+      "subtitulo": "Resolução nº 321/2026, assinada pela Reitora em 16/09/2026",
+      "itens": [
+        {
+          "titulo": "1. Documentação obrigatória",
+          "texto": "A análise do aproveitamento está condicionada à apresentação do histórico escolar oficial."
+        },
+        {
+          "titulo": "2. Critério de equivalência",
+          "texto": "A equivalência entre componentes curriculares depende da compatibilidade mínima de 75% da carga horária."
+        },
+        {
+          "titulo": "3. Prazo de validade",
+          "texto": "Só entram componentes cursados com aprovação há menos de 10 (dez) anos."
+        }
+      ]
+    },
+    {
+      "id": "calouro",
+      "titulo": "Espaço Calouro",
+      "subtitulo": "Página “Boas-vindas da UniCesumar” no site e no aplicativo",
+      "itens": [
+        {
+          "titulo": "O que tem",
+          "texto": "Ambientação com vídeos de boas-vindas, detalhes do curso e diferenciais da UniCesumar, disponível no computador e no celular."
+        }
+      ]
+    }
+  ],
+  "matriz_cursos": {
+    "titulo": "Atividades ao longo do curso (semipresenciais)",
+    "linhas": [
+      {
+        "id": "aulas",
+        "rotulo": "Aulas ao vivo",
+        "detalhe": "Encontros síncronos com professores"
+      },
+      {
+        "id": "presencialidade",
+        "rotulo": "Presencialidade",
+        "detalhe": "Atividades presenciais conforme o curso e o calendário acadêmico"
+      },
+      {
+        "id": "asm",
+        "rotulo": "ASM",
+        "detalhe": "Atividade Síncrona Mediada"
+      },
+      {
+        "id": "extensao",
+        "rotulo": "Extensão",
+        "detalhe": ""
+      },
+      {
+        "id": "provas",
+        "rotulo": "Provas",
+        "detalhe": "Avaliações presenciais conforme o calendário acadêmico"
+      }
+    ],
+    "fases": [
+      "Início da jornada",
+      "Aprofundamento",
+      "Ampliação de experiências",
+      "Consolidação",
+      "Especificidades e vivência profissional"
+    ],
+    "grupos": [
+      {
+        "nome": "Licenciaturas",
+        "cursos": [
+          "Artes Visuais",
+          "Ciências Biológicas",
+          "Dança",
+          "Educação Especial",
+          "Geografia",
+          "História",
+          "Letras – Libras",
+          "Letras Português – Inglês",
+          "Matemática",
+          "Música",
+          "Pedagogia",
+          "Sociologia"
+        ],
+        "anos": 4,
+        "nota": "Todas as licenciaturas têm 4 anos, exceto Letras Português – Inglês (5 anos; o 5º ano segue o mesmo padrão).",
+        "grade": {
+          "aulas": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "presencialidade": [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          "asm": [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "anos_exibidos": 5
+      },
+      {
+        "nome": "Acompanhamento do Transtorno do Espectro Autista",
+        "cursos": [
+          "Acompanhamento do Transtorno do Espectro Autista"
+        ],
+        "anos": 3,
+        "nota": "Presencialidade de natureza teórica.",
+        "grade": {
+          "aulas": [
+            1,
+            0,
+            0
+          ],
+          "presencialidade": [
+            0,
+            1,
+            1
+          ],
+          "asm": [
+            0,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "nome": "Psicopedagogia",
+        "cursos": [
+          "Psicopedagogia"
+        ],
+        "anos": 4,
+        "grade": {
+          "aulas": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "presencialidade": [
+            0,
+            1,
+            1,
+            1
+          ],
+          "asm": [
+            0,
+            1,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "nome": "Engenharias e Agronomia",
+        "cursos": [
+          "Engenharia Ambiental e Sanitária",
+          "Engenharia Civil",
+          "Engenharia Elétrica",
+          "Engenharia Mecânica",
+          "Engenharia Mecatrônica",
+          "Engenharia de Produção",
+          "Agronomia"
+        ],
+        "anos": 5,
+        "grade": {
+          "aulas": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "presencialidade": [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          "asm": [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "nome": "Automação Industrial",
+        "cursos": [
+          "Automação Industrial"
+        ],
+        "anos": 3,
+        "nota": "Sem aulas ao vivo; presencialidade teórica e prática, em sala e no laboratório.",
+        "grade": {
+          "aulas": [
+            0,
+            0,
+            0
+          ],
+          "presencialidade": [
+            1,
+            1,
+            1
+          ],
+          "asm": [
+            1,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "nome": "Manutenção Industrial",
+        "cursos": [
+          "Manutenção Industrial"
+        ],
+        "anos": 3,
+        "nota": "No módulo 51, uma das disciplinas tem 24 horas de ASM.",
+        "grade": {
+          "aulas": [
+            0,
+            0,
+            0
+          ],
+          "presencialidade": [
+            1,
+            1,
+            1
+          ],
+          "asm": [
+            1,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "nome": "Educação Física",
+        "cursos": [
+          "Educação Física"
+        ],
+        "anos": 4,
+        "grade": {
+          "aulas": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "presencialidade": [
+            0,
+            1,
+            1,
+            0
+          ],
+          "asm": [
+            0,
+            1,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "nome": "Biomedicina",
+        "cursos": [
+          "Biomedicina"
+        ],
+        "anos": 4,
+        "nota": "No 2º e no 4º ano, as duas disciplinas do módulo têm ASM nas semanas 1 a 8.",
+        "grade": {
+          "aulas": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "presencialidade": [
+            0,
+            0,
+            1,
+            0
+          ],
+          "asm": [
+            0,
+            1,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "nome": "Farmácia",
+        "cursos": [
+          "Farmácia"
+        ],
+        "anos": 5,
+        "nota": "No 5º ano, cada módulo tem 1 disciplina de estágio curricular supervisionado e 1 de natureza comum.",
+        "grade": {
+          "aulas": [
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "presencialidade": [
+            0,
+            0,
+            1,
+            1,
+            0
+          ],
+          "asm": [
+            0,
+            1,
+            1,
+            1,
+            1
+          ],
+          "extensao": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "provas": [
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        }
+      }
+    ],
+    "nota": "Mostramos só os cursos cujo quadro apareceu na apresentação. Para os demais, consulte a matriz do curso."
+  },
+  "portfolio": {
+    "nota": "Portfólio sujeito a alteração.",
+    "modalidades": [
+      {
+        "nome": "Cursos EaD",
+        "areas": [
+          {
+            "area": "Gestão e Negócios",
+            "cursos": [
+              [
+                "Administração",
+                "B"
+              ],
+              [
+                "Ciências Contábeis",
+                "B"
+              ],
+              [
+                "Ciências Econômicas",
+                "B"
+              ],
+              [
+                "Comércio Exterior",
+                "T"
+              ],
+              [
+                "Gestão Comercial",
+                "T"
+              ],
+              [
+                "Gestão da Produção Industrial",
+                "T"
+              ],
+              [
+                "Gestão da Qualidade",
+                "T"
+              ],
+              [
+                "Gestão da Saúde Mental no Trabalho",
+                "T"
+              ],
+              [
+                "Gestão de Cooperativas",
+                "T"
+              ],
+              [
+                "Gestão de Farmácia",
+                "T"
+              ],
+              [
+                "Gestão de Negócios Imobiliários",
+                "T"
+              ],
+              [
+                "Gestão de Recursos Humanos",
+                "T"
+              ],
+              [
+                "Gestão do Agronegócio",
+                "T"
+              ],
+              [
+                "Gestão Financeira",
+                "T"
+              ],
+              [
+                "Gestão Pública",
+                "T"
+              ],
+              [
+                "Investimentos e Mercado Financeiro",
+                "T"
+              ],
+              [
+                "Logística",
+                "T"
+              ],
+              [
+                "Marketing",
+                "T"
+              ],
+              [
+                "Mídias Sociais Digitais",
+                "T"
+              ],
+              [
+                "Negócios e Customer Experience",
+                "T"
+              ],
+              [
+                "Processos Gerenciais",
+                "T"
+              ],
+              [
+                "Psicologia Aplicada às Organizações e Inovação Humana",
+                "T"
+              ],
+              [
+                "Secretariado",
+                "T"
+              ]
+            ]
+          },
+          {
+            "area": "Artes, Design e Humanidades",
+            "cursos": [
+              [
+                "Biblioteconomia",
+                "B"
+              ],
+              [
+                "Ciência da Felicidade",
+                "T"
+              ],
+              [
+                "Cinema e Audiovisual",
+                "B"
+              ],
+              [
+                "Design de Animação",
+                "T"
+              ],
+              [
+                "Design de Interiores",
+                "T"
+              ],
+              [
+                "Design de Moda",
+                "T"
+              ],
+              [
+                "Design de Produto",
+                "T"
+              ],
+              [
+                "Design Gráfico",
+                "T"
+              ],
+              [
+                "Design Musical",
+                "T"
+              ],
+              [
+                "Teologia",
+                "B"
+              ]
+            ]
+          },
+          {
+            "area": "Tecnologia",
+            "cursos": [
+              [
+                "Análise e Desenvolvimento de Sistemas",
+                "T"
+              ],
+              [
+                "Banco de Dados",
+                "T"
+              ],
+              [
+                "Ciência da Computação",
+                "B"
+              ],
+              [
+                "Engenharia de Software",
+                "B"
+              ],
+              [
+                "Gestão da Tecnologia da Informação",
+                "T"
+              ],
+              [
+                "Inteligência Artificial e Machine Learning",
+                "T"
+              ],
+              [
+                "Inteligência Artificial",
+                "B"
+              ],
+              [
+                "Jogos Digitais",
+                "T"
+              ],
+              [
+                "Redes de Computadores",
+                "T"
+              ],
+              [
+                "Segurança Cibernética",
+                "T"
+              ]
+            ]
+          },
+          {
+            "area": "Alimentos, Turismo e Lazer",
+            "cursos": [
+              [
+                "Gastronomia",
+                "T"
+              ],
+              [
+                "Gestão de Turismo",
+                "T"
+              ]
+            ]
+          },
+          {
+            "area": "Comunicação",
+            "cursos": [
+              [
+                "Ciência da Criatividade",
+                "T"
+              ],
+              [
+                "Fotografia",
+                "T"
+              ],
+              [
+                "Jornalismo",
+                "B"
+              ],
+              [
+                "Publicidade e Propaganda",
+                "B"
+              ],
+              [
+                "Relações Públicas",
+                "B"
+              ]
+            ]
+          },
+          {
+            "area": "Jurídico e Segurança",
+            "cursos": [
+              [
+                "Criminologia",
+                "T"
+              ],
+              [
+                "Investigação e Perícia Judicial",
+                "T"
+              ],
+              [
+                "Gestão de Serviços Judiciais e Notariais",
+                "T"
+              ],
+              [
+                "Segurança do Trabalho",
+                "T"
+              ],
+              [
+                "Segurança Privada",
+                "T"
+              ],
+              [
+                "Segurança Pública",
+                "T"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "nome": "Cursos semipresenciais",
+        "areas": [
+          {
+            "area": "Licenciaturas",
+            "cursos": [
+              [
+                "Artes Visuais",
+                "L"
+              ],
+              [
+                "Ciências Biológicas",
+                "L"
+              ],
+              [
+                "Dança",
+                "L"
+              ],
+              [
+                "Educação Especial",
+                "L"
+              ],
+              [
+                "Educação Física",
+                "L"
+              ],
+              [
+                "Geografia",
+                "L"
+              ],
+              [
+                "História",
+                "L"
+              ],
+              [
+                "Letras – Libras",
+                "L"
+              ],
+              [
+                "Letras Português – Inglês",
+                "L"
+              ],
+              [
+                "Matemática",
+                "L"
+              ],
+              [
+                "Música",
+                "L"
+              ],
+              [
+                "Pedagogia",
+                "L"
+              ],
+              [
+                "Sociologia",
+                "L"
+              ]
+            ]
+          },
+          {
+            "area": "Educação",
+            "cursos": [
+              [
+                "Acompanhamento do Transtorno do Espectro Autista",
+                "T"
+              ],
+              [
+                "Psicopedagogia",
+                "B"
+              ]
+            ]
+          },
+          {
+            "area": "Segundas licenciaturas",
+            "cursos": [
+              [
+                "Filosofia",
+                "L"
+              ],
+              [
+                "Geografia",
+                "L"
+              ],
+              [
+                "História",
+                "L"
+              ],
+              [
+                "Matemática",
+                "L"
+              ],
+              [
+                "Sociologia",
+                "L"
+              ]
+            ]
+          },
+          {
+            "area": "Engenharias",
+            "cursos": [
+              [
+                "Engenharia Ambiental e Sanitária",
+                "B"
+              ],
+              [
+                "Engenharia Civil",
+                "B"
+              ],
+              [
+                "Engenharia Elétrica",
+                "B"
+              ],
+              [
+                "Engenharia Mecânica",
+                "B"
+              ],
+              [
+                "Engenharia Mecatrônica",
+                "B"
+              ],
+              [
+                "Engenharia de Produção",
+                "B"
+              ]
+            ]
+          },
+          {
+            "area": "Agrárias",
+            "cursos": [
+              [
+                "Agronomia",
+                "B"
+              ]
+            ]
+          },
+          {
+            "area": "Tecnólogos da área de Engenharia",
+            "cursos": [
+              [
+                "Automação Industrial",
+                "T"
+              ],
+              [
+                "Manutenção Industrial",
+                "T"
+              ]
+            ]
+          },
+          {
+            "area": "Saúde e Bem-estar",
+            "cursos": [
+              [
+                "Biomedicina",
+                "B"
+              ],
+              [
+                "Educação Física",
+                "B"
+              ],
+              [
+                "Farmácia",
+                "B"
+              ],
+              [
+                "Fisioterapia",
+                "B"
+              ],
+              [
+                "Fonoaudiologia",
+                "B"
+              ],
+              [
+                "Nutrição",
+                "B"
+              ],
+              [
+                "Terapia Ocupacional",
+                "B"
+              ],
+              [
+                "Serviço Social",
+                "B"
+              ]
+            ]
+          },
+          {
+            "area": "Tecnólogos da área de Saúde",
+            "cursos": [
+              [
+                "Bem-estar Animal",
+                "T"
+              ],
+              [
+                "Estética e Cosmética",
+                "T"
+              ],
+              [
+                "Gerontologia",
+                "T"
+              ],
+              [
+                "Gestão Hospitalar",
+                "T"
+              ],
+              [
+                "Radiologia",
+                "T"
+              ],
+              [
+                "Podologia",
+                "T"
+              ],
+              [
+                "Saúde e Estética Capilar",
+                "T"
+              ],
+              [
+                "Terapias Integrativas e Complementares",
+                "T"
+              ]
+            ]
+          }
+        ]
+      }
+    ],
+    "tipos": {
+      "B": "Bacharelado",
+      "T": "Tecnólogo",
+      "L": "Licenciatura"
+    }
+  },
+  "perguntas": [
+    {
+      "chaves": [
+        "media",
+        "media minima",
+        "nota minima",
+        "aprovacao",
+        "aprovar",
+        "7,0"
+      ],
+      "pergunta": "Qual a média mínima para aprovação?",
+      "resposta": "A partir de 2027, a média mínima para aprovação nas disciplinas EaD passa de 6,0 para 7,0."
+    },
+    {
+      "chaves": [
+        "semanas",
+        "duracao",
+        "10 semanas"
+      ],
+      "pergunta": "Quantas semanas tem cada disciplina?",
+      "resposta": "A partir de 2027, todas as disciplinas EaD têm 10 semanas, com as avaliações concentradas nas semanas 9 e 10 do módulo."
+    },
+    {
+      "chaves": [
+        "avaliacao presencial",
+        "prova presencial",
+        "provas presenciais",
+        "discursiva",
+        "objetiva",
+        "objetivas"
+      ],
+      "pergunta": "Como é a avaliação presencial?",
+      "resposta": "Vale 6,0 pontos: 1 questão discursiva (2,0) e 8 questões objetivas (4,0). Acontece nas semanas 9 e 10 do módulo."
+    },
+    {
+      "chaves": [
+        "composicao",
+        "mapa",
+        "a e 01",
+        "atividade de estudo",
+        "nota da disciplina",
+        "pontos"
+      ],
+      "pergunta": "Como é composta a nota da disciplina?",
+      "resposta": "A.E. 01 (1,0) + A.E. 02 (1,0) + M.A.P.A. (2,0) + Avaliação presencial (6,0) = 10,0. Disciplinas práticas, estágios e TCC podem ter composição diferente."
+    },
+    {
+      "chaves": [
+        "asm",
+        "sincrona",
+        "mediada"
+      ],
+      "pergunta": "O que é ASM?",
+      "resposta": "Atividade Síncrona Mediada: encontro online de 3 horas, em tempo real, mediado por docente ou mediador pedagógico. Exige agendamento no Studeo e conta frequência para aprovação."
+    },
+    {
+      "chaves": [
+        "presencialidade",
+        "polo",
+        "laboratorio",
+        "frequencia"
+      ],
+      "pergunta": "O que é a presencialidade?",
+      "resposta": "Encontro de 3 horas no polo de apoio (teórico ou prático: avaliações, simulados, orientações, laboratório). Exige agendamento no Studeo e presença com registro de frequência para aprovação."
+    },
+    {
+      "chaves": [
+        "aula ao vivo",
+        "aulas ao vivo",
+        "teams",
+        "ao vivo"
+      ],
+      "pergunta": "Aula ao vivo conta frequência?",
+      "resposta": "Não. A aula ao vivo (1h30, online, via Teams) é essencial para o ritmo de aprendizagem, mas não registra frequência para aprovação e não precisa de agendamento."
+    },
+    {
+      "chaves": [
+        "agendar",
+        "agendamento",
+        "studeo"
+      ],
+      "pergunta": "Como o aluno agenda ASM e presencialidade?",
+      "resposta": "Pelo Studeo (site ou app), dentro da disciplina, em “Informações sobre a disciplina”, nas opções de agendamento. Aulas ao vivo não são agendadas."
+    },
+    {
+      "chaves": [
+        "aproveitamento",
+        "dispensa",
+        "equivalencia",
+        "historico",
+        "321"
+      ],
+      "pergunta": "Quais as regras de aproveitamento de estudos?",
+      "resposta": "Resolução 321/2026: exige histórico escolar oficial, equivalência mínima de 75% da carga horária e disciplinas aprovadas há menos de 10 anos."
+    },
+    {
+      "chaves": [
+        "calouro",
+        "boas vindas",
+        "ambientacao"
+      ],
+      "pergunta": "O que é o Espaço Calouro?",
+      "resposta": "A página “Boas-vindas da UniCesumar”, no site e no app, com ambientação, detalhes do curso e diferenciais da instituição."
+    }
+  ]
+}
