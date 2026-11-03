@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1730">
-  <meta name="description" content="Consulta do Calendário Administrativo Unicesumar para a equipe da Rede Balbino.">
+  <meta name="description" content="Consulte o Calendário Acadêmico Unicesumar e as orientações do Processo 51/2027.">
   <title>Balbino Informa</title>
   <link rel="icon" href="/brand/monograma-rede-balbino.webp" type="image/webp">
-  <link rel="stylesheet" href="/informa/style.css?v=20261103f">
-  <script src="/informa/app.js?v=20261103g" defer></script>
+  <link rel="stylesheet" href="/informa/style.css?v=20261103i">
+  <script src="/informa/app.js?v=20261103i" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -16,78 +16,86 @@
       <span class="brand-mark" aria-hidden="true"><img src="/brand/monograma-rede-balbino-branco.webp" alt=""></span>
       <span><small>REDE BALBINO</small><strong>Informa</strong></span>
     </a>
-    <nav><a href="/">Portal da Rede</a></nav>
+    <div class="top-actions">
+      <label class="field product-select"><span class="visually-hidden">Meu produto</span><select id="myProduct"></select></label>
+      <nav class="main-nav" aria-label="Navegação do Informa">
+        <button type="button" class="active" data-area="calendario" aria-pressed="true" aria-controls="area-calendario">Calendário</button>
+        <button type="button" data-area="marco" aria-pressed="false" aria-controls="area-marco">Processo 51/2027</button>
+        <a href="/">Portal</a>
+      </nav>
+    </div>
   </header>
 
   <main>
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
         <p class="eyebrow"><span id="today">Consulta acadêmica</span></p>
-        <h1 id="heroTitle">Informações acadêmicas <span>mais organizadas</span></h1>
-        <p class="hero-description">Consulte o Calendário Acadêmico 2026 ou acesse em destaque as mudanças do Processo 51/2027.</p>
+        <h1 id="heroTitle">O que você precisa <span>saber?</span></h1>
+        <p class="hero-description" id="heroContext">Consulte prazos do Calendário Acadêmico ou orientações do Processo 51/2027.</p>
       </div>
       <div class="hero-consult">
-        <p class="consult-title">O que você precisa consultar?</p>
         <form class="ask" id="askForm" role="search">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
-          <label class="visually-hidden" for="q">Busque no Calendário Acadêmico ou no Processo 51/2027</label>
-          <input id="q" type="search" autocomplete="off" placeholder="Ex.: prova presencial, atividade de estudo, média mínima">
-          <button type="submit">Buscar</button>
+          <label class="visually-hidden" for="q">Busque no calendário ou no Processo 51/2027</label>
+          <input id="q" type="search" autocomplete="off" placeholder="Ex.: nota da 2ª disciplina do módulo 54">
+          <button type="submit">Consultar</button>
         </form>
         <div class="understood hidden" id="understood" aria-live="polite"></div>
-        <div class="suggestions-head"><strong>Atalhos de consulta</strong><span>Escolha um assunto</span></div>
-        <div class="suggestions" id="suggestions" aria-label="Atalhos de consulta"></div>
+        <div class="suggestions-head"><strong>Buscas rápidas</strong><span>Selecione uma pergunta</span></div>
+        <div class="suggestions" id="suggestions" aria-label="Buscas rápidas"></div>
       </div>
-    </section>
-
-    <section class="area-picker" aria-labelledby="areasTitle">
-      <div class="area-picker-head">
-        <div><p class="eyebrow">ÁREAS DE CONSULTA</p><h2 id="areasTitle">Escolha o que você precisa</h2></div>
-        <p>O calendário de 2026 e as mudanças para 2027 ficam em áreas separadas.</p>
-      </div>
-      <nav class="areas" aria-label="Áreas do Balbino Informa">
-        <button type="button" class="area-tab area-featured" data-area="marco" aria-pressed="false" aria-controls="area-marco">
-          <span class="area-card-badge">MUDANÇAS PARA O PROCESSO 51/2027</span>
-          <strong>Processo 51/2027</strong>
-          <span class="area-card-desc">Mudanças acadêmicas, critérios de avaliação e orientações deste processo.</span>
-          <span class="area-card-action">Consultar mudanças <b aria-hidden="true">→</b></span>
-        </button>
-        <button type="button" class="area-tab active" data-area="calendario" aria-pressed="true" aria-controls="area-calendario">
-          <span class="area-card-badge">CONSULTA DE PRAZOS</span>
-          <strong id="calendarCardTitle">Calendário acadêmico 2026</strong>
-          <span class="area-card-desc">Atividades, avaliações e datas organizadas por produto e módulo.</span>
-          <span class="area-card-action">Abrir calendário <b aria-hidden="true">→</b></span>
-        </button>
-      </nav>
     </section>
 
     <div class="erro hidden" id="erro" role="alert"></div>
-
     <section id="answer" class="answer hidden" aria-live="polite"></section>
 
     <div id="area-calendario" class="area">
-    <div class="fonte-aviso hidden" id="fonteAviso" role="status"></div>
-    <section id="agora" aria-labelledby="agoraTitle">
-      <div class="section-head"><div><p class="eyebrow">Agora</p><h2 id="agoraTitle">Em que módulo estamos</h2></div></div>
-      <div class="now-grid" id="nowGrid"></div>
-      <div class="grid-2">
-        <article class="card"><header><h3>Acontecendo hoje</h3><p>Prazos e rotinas em andamento.</p></header><ul class="events" id="activeList"></ul></article>
-        <article class="card"><header><h3>Próximos 30 dias</h3><p>O que começa ou termina em breve.</p></header><ol class="agenda" id="upcomingList"></ol></article>
-      </div>
-    </section>
+      <div class="fonte-aviso hidden" id="fonteAviso" role="status"></div>
 
-    <section id="calendario" aria-labelledby="calTitle">
-      <div class="section-head"><div><p class="eyebrow">Calendário completo</p><h2 id="calTitle">Todos os eventos por módulo</h2></div>
-        <div class="cal-controls"><div class="segmented" id="productTabs" role="tablist" aria-label="Produto"></div><label class="field"><span>Ano</span><select id="yearSel"></select></label></div>
-      </div>
-      <div class="legend"><span class="st st-ativo">Em andamento</span><span class="st st-proximo">Próximo</span><span class="st st-encerrado">Encerrado</span></div>
-      <div class="matrix-wrap" id="matrix"></div>
-    </section>
+      <section id="agora" aria-labelledby="agoraTitle">
+        <div class="section-head"><div><p class="eyebrow">AGORA</p><h2 id="agoraTitle">Em que módulo estamos</h2><p class="sub">O produto escolhido fica em destaque; os demais aparecem resumidos.</p></div></div>
+        <div class="now-grid" id="nowGrid"></div>
+      </section>
 
-    <p class="fonte" id="fonte"></p>
+      <section id="assuntos" aria-labelledby="assuntosTitle">
+        <div class="section-head"><div><p class="eyebrow">CONSULTA POR ASSUNTO</p><h2 id="assuntosTitle">O que você procura?</h2><p class="sub">Escolha uma categoria para ver os eventos do módulo atual e dos demais módulos.</p></div></div>
+        <nav class="category-shortcuts" id="categoryShortcuts" aria-label="Categorias do calendário"></nav>
+        <div class="category-results hidden" id="categoryResults" aria-live="polite"></div>
+      </section>
+
+      <section id="agenda" aria-labelledby="agendaTitle">
+        <div class="section-head"><div><p class="eyebrow">AGENDA</p><h2 id="agendaTitle">Prazos por data</h2><p class="sub">Cada atividade aparece uma vez por data; quando vale para vários produtos, eles ficam agrupados.</p></div></div>
+        <div class="agenda-grid">
+          <article class="card"><header><h3>Hoje</h3><p id="todayLabel"></p></header><ul class="agenda" id="todayList"></ul></article>
+          <article class="card"><header><h3>Esta semana</h3><p id="weekLabel"></p></header><ul class="agenda" id="weekList"></ul></article>
+          <article class="card agenda-wide"><header><h3>Próximas 4 semanas</h3><p id="monthLabel"></p></header><ul class="agenda" id="monthList"></ul></article>
+        </div>
+      </section>
+
+      <details class="card full-calendar" id="fullCalendar">
+        <summary><span><b>Ver calendário completo</b><small>Todos os eventos e módulos, organizados por categoria.</small></span><i aria-hidden="true"></i></summary>
+        <div class="full-calendar-body">
+          <div class="calendar-tools">
+            <label class="field"><span>Filtrar eventos</span><input id="matrixSearch" type="search" placeholder="Digite parte do nome do evento"></label>
+            <label class="field"><span>Ano</span><select id="yearSel"></select></label>
+            <label class="check-field"><input id="currentOnly" type="checkbox"><span>Só o módulo atual</span></label>
+          </div>
+          <div class="legend"><span class="st st-ativo">Em andamento</span><span class="st st-proximo">Próximo</span><span class="st st-encerrado">Encerrado</span></div>
+          <div class="matrix-wrap" id="matrix"></div>
+        </div>
+      </details>
+
+      <p class="fonte" id="fonte"></p>
     </div>
+
     <div id="area-marco" class="area hidden" aria-labelledby="marcoTitle"></div>
   </main>
-  <footer class="site-foot"><span><strong>Rede Balbino</strong> · Balbino Informa</span><span>Confira também o Studeo: prazos de disciplina podem variar por curso.</span></footer>
+
+  <dialog id="eventDialog" class="event-dialog" aria-labelledby="eventTitle">
+    <div class="dialog-head"><div><p class="eyebrow">DETALHES DO EVENTO</p><h2 id="eventTitle"></h2></div><button type="button" class="mini" id="closeEvent" aria-label="Fechar detalhes">Fechar</button></div>
+    <div id="eventBody"></div>
+  </dialog>
+
+  <footer class="site-foot"><span><strong>Rede Balbino</strong> · Balbino Informa</span><span>Fonte do calendário: Calendário Administrativo Unicesumar. Confira orientações oficiais no Studeo.</span></footer>
 </body>
 </html>
