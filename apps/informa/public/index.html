@@ -7,8 +7,8 @@
   <meta name="description" content="Consulte o Calendário Acadêmico Unicesumar e as orientações do Processo 51/2027.">
   <title>Balbino Informa</title>
   <link rel="icon" href="/brand/monograma-rede-balbino.webp" type="image/webp">
-  <link rel="stylesheet" href="/informa/style.css?v=20261103i">
-  <script src="/informa/app.js?v=20261103i" defer></script>
+  <link rel="stylesheet" href="/informa/style.css?v=20261103j">
+  <script src="/informa/app.js?v=20261103j" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -17,10 +17,11 @@
       <span><small>REDE BALBINO</small><strong>Informa</strong></span>
     </a>
     <div class="top-actions">
-      <label class="field product-select"><span class="visually-hidden">Meu produto</span><select id="myProduct"></select></label>
+      <label class="field product-select hidden"><span class="visually-hidden">Meu produto</span><select id="myProduct"></select></label>
       <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="true" aria-label="Alternar para tema claro">☾ <span>Claro</span></button>
       <nav class="main-nav" aria-label="Navegação do Informa">
-        <button type="button" class="active" data-area="calendario" aria-pressed="true" aria-controls="area-calendario">Calendário</button>
+        <button type="button" class="active" data-area="inicio" aria-pressed="true" aria-controls="area-inicio">Início</button>
+        <button type="button" data-area="calendario" aria-pressed="false" aria-controls="area-calendario">Calendário 2026</button>
         <button type="button" data-area="marco" aria-pressed="false" aria-controls="area-marco">Processo 51/2027</button>
         <a href="/">Portal</a>
       </nav>
@@ -28,6 +29,7 @@
   </header>
 
   <main>
+    <div id="area-inicio" class="area">
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
         <p class="eyebrow"><span id="today">Consulta acadêmica</span></p>
@@ -49,8 +51,11 @@
 
     <div class="erro hidden" id="erro" role="alert"></div>
     <section id="answer" class="answer hidden" aria-live="polite"></section>
+    <section class="home-choices" aria-labelledby="chooseAreaTitle"><div><p class="eyebrow">ESCOLHA UMA ÁREA</p><h2 id="chooseAreaTitle">O que você quer consultar?</h2></div><div class="home-choice-grid"><article class="home-area-card"><span class="home-number">01</span><h3>Calendário Acadêmico 2026</h3><p>Datas de atividades, avaliações e prazos por produto e módulo.</p><button type="button" data-area-go="calendario">Abrir calendário <span aria-hidden="true">→</span></button></article><article class="home-area-card home-process"><span class="home-number">02</span><h3>Processo 51/2027</h3><p>Escolha o curso para ver regras, avaliação e atividades aplicáveis.</p><button type="button" data-area-go="marco">Consultar o Processo <span aria-hidden="true">→</span></button></article></div></section>
+    </div>
 
-    <div id="area-calendario" class="area">
+    <div id="area-calendario" class="area hidden" aria-labelledby="calendarTitle">
+      <section class="calendar-heading"><p class="eyebrow">CONSULTA DE PRAZOS</p><h1 id="calendarTitle">Calendário Acadêmico 2026</h1><p>Escolha o produto e consulte os prazos por data, assunto ou módulo.</p></section>
       <div class="fonte-aviso hidden" id="fonteAviso" role="status"></div>
 
       <section id="agora" aria-labelledby="agoraTitle">
