@@ -17,12 +17,24 @@ const ls = {
   set(k, v) { try { localStorage.setItem('mat:' + k, JSON.stringify(v)); } catch { /* ignore */ } },
 };
 
+async function fetchJsonComLimite(url, opts = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const r = await fetch(url, { ...opts, signal: controller.signal });
+    let dados = null;
+    try { dados = await r.json(); } catch { /* sem corpo */ }
+    return { r, dados };
+  } catch (e) {
+    if (controller.signal.aborted) throw new Error(`O servidor não respondeu em 15 segundos (${url}).`);
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+
 async function api(url, opts = {}) {
   const o = { method: opts.method || 'GET', headers: {} };
   if (opts.body !== undefined) { o.headers['Content-Type'] = 'application/json'; o.body = JSON.stringify(opts.body); }
-  const r = await fetch(url, o);
-  let dados = null;
-  try { dados = await r.json(); } catch { /* sem corpo */ }
+  const { r, dados } = await fetchJsonComLimite(url, o);
   if (r.status === 401 && B && !url.includes('/api/login')) { B = null; fecharModal(); iniciar(); throw new Error('Sessão expirada'); }
   if (!r.ok) throw new Error((dados && dados.erro) || `Erro ${r.status}`);
   return dados;
@@ -110,13 +122,13 @@ async function recarregarBootstrap() {
 async function iniciar() {
   const app = $('#app');
   try {
-    const st = await (await fetch('/api/estado')).json();
+    const { dados: st } = await fetchJsonComLimite('/api/estado');
     if (st.precisa_configurar) return telaPrimeiroAcesso(st);
     try { await recarregarBootstrap(); } catch { return telaLogin(st); }
     montarShell();
     rotear();
   } catch (e) {
-    app.innerHTML = `<div class="carregando">Não foi possível falar com o servidor. Verifique se ele está ligado.<br><small>${esc(e.message)}</small></div>`;
+    app.innerHTML = `<div class="carregando">A resposta do servidor demorou ou falhou. Tente novamente em instantes.<br><small>${esc(e.message)}</small></div>`;
   }
 }
 
