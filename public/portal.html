@@ -7,7 +7,7 @@
   <meta name="description" content="Portal seguro dos sistemas da Rede Balbino.">
   <title>Rede Balbino — Portal de Acesso</title>
   <link rel="stylesheet" href="/portal.css?v=20261103-palette-contrast">
-  <link rel="stylesheet" href="/brand/balbino.css?v=20261103-palette-contrast>
+  <link rel="stylesheet" href="/brand/balbino.css?v=20261103-palette-contrast">
   <script src="/portal.js?v=20261103b" defer></script>
 </head>
 <body>
@@ -29,7 +29,7 @@
           <h1>Acesse os sistemas<br><span>da Rede Balbino.</span></h1>
           <p>Entre com seu usuário e senha para continuar.</p>
         </div>
-        <form class="login-card" id="loginForm">
+        <form class="login-card" id="loginForm" method="post" action="/api/portal/login">
           <div class="login-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><use href="#rede-balbino-mark"/></svg></div>
           <p class="card-kicker">REDE BALBINO</p>
           <h2 id="loginTitle">Entrar na sua conta</h2>
