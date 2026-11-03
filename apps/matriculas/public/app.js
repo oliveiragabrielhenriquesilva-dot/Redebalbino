@@ -204,7 +204,7 @@ function montarShell() {
       <section class="conteudo" id="conteudo"></section>
     </div>
   </div>`;
-  const atualizarTema = () => { const escuro = document.documentElement.dataset.tema === 'escuro'; $('#b-tema').textContent = escuro ? '☀️ Tema claro' : '🌙 Tema escuro'; };
+  const atualizarTema = () => { const escuro = document.documentElement.dataset.tema === 'escuro'; $('#b-tema').textContent = escuro ? '☀️ Tema claro' : '🌙 Tema escuro'; const logo = $('.side .marca .marca-oficial'); if (logo) logo.src = '/brand/' + (escuro ? 'monograma-rede-balbino-branco.webp' : 'monograma-rede-balbino.webp'); };
   atualizarTema();
   $('#b-tema').onclick = () => { const tema = document.documentElement.dataset.tema === 'escuro' ? 'claro' : 'escuro'; document.documentElement.dataset.tema = tema; ls.set('tema', tema); atualizarTema(); };
   $('#sel-ciclo').value = estado.ciclo || '';
