@@ -517,7 +517,8 @@ async function telaPainel(c, aba) {
   };
 
   const maxOrigem = Math.max(1, ...d.porOrigem.map(o => o.qtd));
-  const abas = [['resumo', 'Resumo'], ...(umPolo ? [] : [['produtos', 'Produtos × Polos'], ['polos', 'Ranking de polos']]), ['rpv', 'Ticket e RPV'], ['equipe', 'Equipe'], ['origens', 'Origens'], ['spaces', 'Spaces']];
+  // RPV está temporariamente suspenso na interface; dados e APIs são preservados.
+  const abas = [['resumo', 'Resumo'], ...(umPolo ? [] : [['produtos', 'Produtos × Polos'], ['polos', 'Ranking de polos']]), ['equipe', 'Equipe'], ['origens', 'Origens'], ['spaces', 'Spaces']];
   if (!abas.some(x => x[0] === aba)) aba = 'resumo';
   const avisoVazio = (o) => `<div class="card mt"><div class="vazio">Nenhuma matrícula lançada ${umPolo ? 'neste polo ' : ''}neste processo ainda. ${o}</div></div>`;
   const tabMatriz = () => {
@@ -902,7 +903,7 @@ function painelGestor(d, o) {
     <div class="g-kpi"><span>Acumulado</span><b>${int(T.qtd)}${sedeTxt(T)}<small> / ${o.temMeta ? int(T.meta) : '—'}</small></b>${o.temMeta ? `${barra(T.qtd, T.meta, pctEsp)}<em>${pctTxt(pct(T.qtd, T.meta))} da meta · marca = esperado na data</em>` : '<em>sem meta neste recorte</em>'}</div>
     <div class="g-kpi"><span>SAVE / GAP em ${dataBR(R.hoje).slice(0, 5)}</span><b>${o.temMeta ? saveGap(H.total.saldo) : '—'}</b><em>${o.temMeta ? `esperado até ${dataBR(R.hoje).slice(0, 5)}: ${int(H.total.esperado)} (${pctTxt(pctEsp)})` : ''}</em></div>
     <div class="g-kpi"><span>${prox ? `Até o ${esc(prox.nome)} · ${dataBR(prox.data).slice(0, 5)}` : 'Próximo Space'}</span>${prox && o.temMeta ? `<b>${prox.total.falta ? `faltam ${int(prox.total.falta)}` : '<span class="pos">✓ alcançado</span>'}</b><em>${prox.total.falta ? `precisa <strong>${precisaTxt(prox.total.por_dia, modo)}</strong> · ${prox.dias} ${o.nomeDias}` : `esperado ${int(prox.total.esperado)}`}</em>` : '<b class="muted">—</b><em>nenhum Space futuro</em>'}</div>
-    <div class="g-kpi"><span>RPV (receita)</span><b>${brl(T.rpv_real)}</b><em>ticket médio ${qtdT(T) ? brl(T.valor / qtdT(T)) : '—'}${T.ticket_meta != null ? ` ${difTicket(T.ticket_dif)}` : ''}</em>${T.meta_rpv_parcial ? '<em>Meta de RPV incompleta</em>' : T.rpv_ating != null ? `<em>${pctTxt(T.rpv_ating * 100)} da meta de RPV</em>` : ''}</div>
+
   </div>`;
 
   // ---- 2) polos (rede) ou equipe (polo) num quadro só
@@ -1002,7 +1003,7 @@ function painelGestor(d, o) {
     <div class="card mt"><div class="card-cab"><h2>Evolução acumulada</h2><span class="muted">realizado × esperado (calculado com as metas e Spaces atuais)</span></div><div class="corpo">${grafico()}</div></div>
     <details class="card mt"><summary class="g-sum">Produtos — realizado, meta e SAVE/GAP</summary><div class="corpo sem-pad"><table class="t"><thead><tr><th>Produto</th><th class="num">Realizado</th><th class="num">Meta</th><th>Atingido</th><th class="num">Esperado</th><th>SAVE/GAP</th><th class="num">Ticket</th></tr></thead><tbody>${tabela}
       <tr class="total"><td>Total</td><td class="num">${int(T.qtd)}</td><td class="num">${int(T.meta)}</td><td>${miniBarra(T.qtd, T.meta)}</td><td class="num">${int(H.total.esperado)}</td><td>${saveGap(H.total.saldo)}</td><td class="num">${qtdT(T) ? brl(T.valor / qtdT(T)) : '—'}</td></tr></tbody></table></div></details>
-    <details class="card mt"><summary class="g-sum">Detalhamento completo — Spaces, ticket e RPV por produto</summary><div class="corpo sem-pad">${o.tabProdutos()}</div></details>
+    <details class="card mt"><summary class="g-sum">Detalhamento completo — Spaces e metas por produto</summary><div class="corpo sem-pad">${o.tabProdutos()}</div></details>
     <p class="nota-rodape">SAVE/GAP = realizado − esperado até hoje (o % de cada Space é distribuído por ${MODO_TXT[modo] || modo}). Polos e rede são arredondados separadamente; a soma dos polos pode diferir da rede em 1–2.</p>`;
 }
 
@@ -2722,13 +2723,7 @@ async function telaMetas(c) {
     <tr class="total"><td>Meta geral</td>${prods.map(pr => `<td class="num" data-tot-prod="${pr.id}"></td>`).join('')}<td class="num" data-tot-geral></td></tr>
     </tbody></table></div></div>
 
-  <div class="card mt"><div class="card-cab"><h2>Meta de ticket de ${esc(ciclo.nome)} — mensalidade média com desconto (R$)</h2><button class="btn" id="rpv-colar">Colar do Excel</button><button class="btn prim" id="rpv-salvar">Salvar meta de ticket</button></div>
-    <div class="info" style="margin:12px 18px 0">A linha <b>Padrão</b> vale para todos os polos. Preencha um polo só quando a meta dele for diferente do padrão.</div>
-    <div class="corpo sem-pad"><table class="t"><thead><tr><th>Polo</th>${prods.map(p => `<th class="num">${esc(p.nome)}</th>`).join('')}</tr></thead><tbody>
-    ${[{ id: 0, nome: 'Padrão (todos os polos)', produtos: prods.map(p => p.id) }, ...polos].map(po => `<tr class="${po.id === 0 ? 'linha-padrao' : ''}"><td>${esc(po.nome)}</td>${prods.map(pr => (po.produtos.includes(pr.id) || gradeRpv[`${po.id}-${pr.id}`] != null)
-      ? `<td class="num"><input class="qtd rpv" type="text" inputmode="decimal" data-r="${po.id}-${pr.id}" value="${fmtR(gradeRpv[`${po.id}-${pr.id}`])}" placeholder="${po.id && gradeRpv[`0-${pr.id}`] != null ? fmtR(gradeRpv[`0-${pr.id}`]) : '—'}"></td>`
-      : '<td class="num muted">—</td>').join('')}</tr>`).join('')}
-    </tbody></table></div></div>
+  <!-- Painel de meta de ticket suspenso temporariamente; registros existentes preservados. -->
 
   <div class="card mt" id="mtt-card"></div>`;
 
@@ -2746,16 +2741,6 @@ async function telaMetas(c) {
   $('#mt-colar').onclick = () => modalColarMetas(polos, prods, (k, v) => {
     grade[k] = v; const i = $(`[data-k="${k}"]`); if (i) i.value = v || '';
   }, recalcular);
-  $$('[data-r]').forEach(i => { i.oninput = () => { gradeRpv[i.dataset.r] = i.value; }; });
-  const polosRpv = [{ id: 0, nome: 'Padrão', produtos: prods.map(p => p.id) }, ...polos];
-  $('#rpv-colar').onclick = () => modalColarMetas(polosRpv, prods, (k, v) => {
-    gradeRpv[k] = v; const i = $(`[data-r="${k}"]`); if (i) i.value = fmtR(v || '');
-  }, () => {}, true);
-  $('#rpv-salvar').onclick = async () => {
-    const itens = [];
-    for (const po of polosRpv) for (const pr of prods) itens.push({ polo_id: po.id, produto_id: pr.id, valor: parseValorBR(gradeRpv[`${po.id}-${pr.id}`]) });
-    try { await api('/api/metas-rpv?ciclo=' + ciclo.id, { method: 'PUT', body: { itens } }); toast('Meta de ticket salva'); } catch (e) { toast(e.message, true); }
-  };
   $('#mt-salvar').onclick = async () => {
     const itens = [];
     for (const po of polos) for (const pr of prods) itens.push({ polo_id: po.id, produto_id: pr.id, quantidade: Number(grade[`${po.id}-${pr.id}`] || 0) });
