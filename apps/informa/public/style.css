@@ -183,3 +183,7 @@ main{padding:36px 0 60px}.eyebrow{display:flex;align-items:center;gap:10px;margi
 :root[data-theme="light"] .annual-overview>summary{background:#f3f7fc;color:#294666}
 @media(max-width:650px){.weekly-plan{padding:12px}.weekly-plan>header{align-items:stretch;flex-direction:column}.year-field{width:100%}.weekly-table{min-width:680px}}
 
+
+
+.main-nav a.portal-link{background:#eaf2ff;border-color:#c5d8f4;color:#174ea6;font-weight:750}
+.main-nav a.portal-link:hover{background:#dceaff;border-color:#9bbcf0;color:#123d87}

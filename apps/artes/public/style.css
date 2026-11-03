@@ -156,3 +156,7 @@ nav a.ativo { background: #3b82f6; color: #081322; }
   .barra { padding: 10px 16px; }
   .marca img.marca-oficial { height: 40px; max-width: 52vw; }
 }
+
+
+.barra nav a.portal-link{display:inline-flex;align-items:center;background:#eaf2ff;color:#174ea6;border:1px solid #c5d8f4;font-weight:750}
+.barra nav a.portal-link:hover{background:#dceaff;color:#123d87;border-color:#9bbcf0}

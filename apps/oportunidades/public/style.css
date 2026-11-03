@@ -111,3 +111,8 @@ details summary{cursor:pointer;color:var(--ink2)}
   .filter-grid{grid-template-columns:1fr 1fr}.filter-grid .wide{grid-column:1/-1}.compare-row .field{width:calc(50% - 6px)}
   .bar-row{grid-template-columns:1fr auto}.bar-track{grid-column:1/-1;grid-row:2}
   .card{padding:14px}.dialog-body{padding:16px}.form-grid,.facts{grid-template-columns:1fr}.prose dl{grid-template-columns:1fr}.prose dd{margin-bottom:8px}.site-foot{flex-direction:column}}
+
+
+.topbar nav a.portal-link{display:inline-flex;align-items:center;justify-content:center;background:#eaf2ff;border-color:#c5d8f4;color:#174ea6;font-weight:750}
+.topbar nav a.portal-link:hover{background:#dceaff;border-color:#9bbcf0;color:#123d87}
+@media(max-width:900px){.topbar nav a.portal-link{display:inline-flex}}

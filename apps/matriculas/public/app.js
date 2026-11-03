@@ -192,6 +192,7 @@ function montarShell() {
       <header class="topo">
         <button class="btn icone menu-btn" id="b-menu" aria-label="Menu">${icone('menu').replace('fill="currentColor"', 'fill="none"')}</button>
         <h1 id="titulo"></h1>
+        <a class="btn portal-link" href="/" aria-label="Voltar ao Portal da Rede Balbino">Portal</a>
         <button class="btn" id="b-tema" type="button" title="Alternar tema"></button>
         <select class="sel-topo" id="sel-ciclo" title="Processo">${B.ciclos.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('')}</select>
         <select class="sel-topo" id="sel-polo" title="Polo" ${poloTravado() ? 'disabled' : ''}>

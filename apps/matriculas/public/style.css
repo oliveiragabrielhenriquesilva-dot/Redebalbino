@@ -725,3 +725,8 @@ html[data-tema="escuro"] .sede-tag { color:#e9d5ff; background:#4c1d95; }
 .rel .rel-pagina.fechamento-analitico table.t th:first-child,.rel .rel-pagina.fechamento-analitico table.t td:first-child{min-width:0!important}.rel .rel-pagina.fechamento-analitico table.t{table-layout:auto}.rel .rel-pagina.fechamento-analitico th{white-space:normal;line-height:1.4}.rel .rel-pagina.fechamento-analitico td{overflow-wrap:normal;word-break:normal}
 
 .id-aluno { font-size: 11px; color: var(--muted, #64748b); font-family: var(--mono, monospace); white-space: nowrap; margin-top: 1px; }
+
+
+/* Atalho permanente para voltar ao Portal da Rede Balbino. */
+.topo .portal-link{background:#eaf2ff;border-color:#c5d8f4;color:#174ea6;font-weight:700}
+.topo .portal-link:hover{background:#dceaff;border-color:#9bbcf0;color:#123d87}
