@@ -25,6 +25,7 @@
     for (const [k, v] of Object.entries({ ...base, ...extra })) if (v !== '' && v != null) p.set(k, v);
     return p;
   }
+  const nomeProcesso = nome => String(nome || '').replace(/^Ciclo\s+/i, 'Processo ');
   const showError = (msg = '') => { $('error').textContent = msg; $('error').classList.toggle('hidden', !msg); if (msg) $('error').scrollIntoView({ block: 'nearest' }); };
   const showNotice = (msg = '') => { $('notice').textContent = msg; $('notice').classList.toggle('hidden', !msg); };
 
@@ -32,9 +33,9 @@
   async function loadOpcoes() {
     const o = await api(`${API}/opcoes?ciclo=${encodeURIComponent(state.ciclo || '')}`);
     state.opts = o; state.ciclo = String(o.ciclo);
-    $('cycle').innerHTML = o.ciclos.map(c => `<option value="${esc(c.id)}">${esc(c.nome)}${c.padrao ? ' (atual)' : ''}</option>`).join('');
+    $('cycle').innerHTML = o.ciclos.map(c => `<option value="${esc(c.id)}">${esc(nomeProcesso(c.nome))}${c.padrao ? ' (atual)' : ''}</option>`).join('');
     $('cycle').value = state.ciclo;
-    $('cmp-ciclo').innerHTML = '<option value="">Não comparar</option>' + o.ciclos.filter(c => String(c.id) !== state.ciclo).map(c => `<option value="${esc(c.id)}">${esc(c.nome)}</option>`).join('');
+    $('cmp-ciclo').innerHTML = '<option value="">Não comparar</option>' + o.ciclos.filter(c => String(c.id) !== state.ciclo).map(c => `<option value="${esc(c.id)}">${esc(nomeProcesso(c.nome))}</option>`).join('');
     document.querySelectorAll('[data-opt]').forEach(sel => {
       const list = o[sel.dataset.opt] || [];
       const cur = state.f[sel.dataset.f] || '';
@@ -199,7 +200,7 @@
     const c = d.comparacao;
     if (!c) { $('comparacao').innerHTML = ''; return; }
     const a = d.kpis, b = c.kpis;
-    const lado = `${esc(c.ciclo_nome)}${c.insc_de || c.insc_ate ? ` · inscrição ${fmtD(c.insc_de)} a ${fmtD(c.insc_ate)}` : ''}`;
+    const lado = `${esc(nomeProcesso(c.ciclo_nome))}${c.insc_de || c.insc_ate ? ` · inscrição ${fmtD(c.insc_de)} a ${fmtD(c.insc_ate)}` : ''}`;
     const linha = (rot, x, y, pct) => { const dif = x != null && y != null ? x - y : null; return `<tr><td>${rot}</td><td class="n">${pct ? fmtP(x) : fmtN(x)}</td><td class="n">${pct ? fmtP(y) : fmtN(y)}</td><td class="n ${dif > 0 ? 'up' : dif < 0 ? 'down' : ''}">${dif == null ? '—' : (dif > 0 ? '+' : '') + (pct ? fmtN(Math.round(dif * 10) / 10) + ' p.p.' : fmtN(dif))}</td></tr>`; };
     const statusKeys = [...new Set([...d.por_status.map(s => s.key), ...c.por_status.map(s => s.key)])];
     const lab = key => d.por_status.find(s => s.key === key)?.label || c.por_status.find(s => s.key === key)?.label || key;
