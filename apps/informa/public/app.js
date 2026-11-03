@@ -163,6 +163,7 @@
     $('productTabs').innerHTML = S.data.produtos.map(p => `<button type="button" role="tab" data-prod="${p.id}" aria-selected="${p.id === S.product}" class="${p.id === S.product ? 'active' : ''}">${esc(p.nome)}</button>`).join('');
     $('productTabs').querySelectorAll('[data-prod]').forEach(b => b.addEventListener('click', () => { S.product = b.dataset.prod; renderControls(); renderMatrix(); }));
     $('yearSel').innerHTML = S.data.anos.map(a => `<option ${a === S.year ? 'selected' : ''}>${esc(a)}</option>`).join('');
+    $('calendarCardTitle').textContent = `Calendário acadêmico ${S.year}`;
   }
   function renderSuggestions() {
     const sug = ['O que acontece esta semana?', 'Atividades de estudo', 'Datas de provas', 'Geração de RA do próximo módulo', 'Publicação de notas', 'Como funciona o MAPA?'];
@@ -255,7 +256,7 @@
     renderPortfolio();
   }
   function setArea(area, scroll = false) {
-    document.querySelectorAll('.area-tab').forEach(b => { const on = b.dataset.area === area; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+    document.querySelectorAll('.area-tab').forEach(b => { const on = b.dataset.area === area; b.classList.toggle('active', on); b.setAttribute('aria-pressed', String(on)); });
     $('area-calendario').classList.toggle('hidden', area !== 'calendario');
     $('area-marco').classList.toggle('hidden', area !== 'marco');
     if (area === 'marco' && location.hash !== '#marco') history.replaceState(null, '', location.pathname + location.search + '#marco');
@@ -291,7 +292,7 @@
     if (location.hash === '#busca') $('q').focus();
   }
   $('askForm').addEventListener('submit', ev => { ev.preventDefault(); ask($('q').value.trim()); });
-  $('yearSel').addEventListener('change', () => { S.year = $('yearSel').value; renderMatrix(); });
+  $('yearSel').addEventListener('change', () => { S.year = $('yearSel').value; $('calendarCardTitle').textContent = `Calendário acadêmico ${S.year}`; renderMatrix(); });
   document.addEventListener('click', ev => { const b = ev.target.closest('[data-ask]'); if (b) ask(b.dataset.ask); });
   load().catch(e => { $('erro').textContent = e.message; $('erro').classList.remove('hidden'); });
 })();
