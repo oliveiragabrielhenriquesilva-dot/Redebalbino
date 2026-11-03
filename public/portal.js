@@ -1,6 +1,21 @@
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const THEME_KEY = 'balbino-portal-theme-v1';
+  function setTheme(theme, persist = false) {
+    const isDark = theme !== 'light';
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    const button = $('themeToggle');
+    if (button) {
+      button.innerHTML = isDark ? '☾ <span>Escuro</span>' : '☀ <span>Claro</span>';
+      button.setAttribute('aria-pressed', String(isDark));
+      button.setAttribute('aria-label', `Tema ${isDark ? 'escuro' : 'claro'} ativo. Alternar para tema ${isDark ? 'claro' : 'escuro'}`);
+      button.title = `Tema ${isDark ? 'escuro' : 'claro'} ativo · clique para alternar`;
+    }
+    if (persist) try { localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light'); } catch (_) { /* preferência indisponível */ }
+  }
+  try { setTheme(localStorage.getItem(THEME_KEY) || 'dark'); } catch (_) { setTheme('dark'); }
+  $('themeToggle').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
   const apps = {
     matriculas: { title: 'Acompanhamento de Matrículas', desc: 'Acompanhe matrículas, metas, polos, tutores e relatórios.', href: '/matriculas/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5.5 7.5h8a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4h-8v-14Z"/><path d="M26.5 7.5h-8a4 4 0 0 0-1 0v18a4 4 0 0 1 4-4h5v-14Z"/><path d="m10 13 2.2 2.2L15 12"/></svg>', color: 'blue' },
     oportunidades: { title: 'Balbino Oportunidades', desc: 'Leads de inscrição, atendimentos, retornos e conversão por RA.', href: '/oportunidades/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="13" cy="11" r="5"/><path d="M4 27v-2a8 8 0 0 1 8-8h2M21 8v8M17 12h8M20 25h8M24 21v8"/></svg>', color: 'violet' },
