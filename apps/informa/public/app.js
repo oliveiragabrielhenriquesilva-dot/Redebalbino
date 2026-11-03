@@ -408,6 +408,34 @@
     ranges.push(start === end ? `Semana ${start}` : `Semanas ${start}–${end}`);
     return ranges.join(', ');
   }
+  function presenceLocation(group, course) {
+    if (group?.nome === 'Engenharias e Agronomia') return 'No Polo de Apoio, em sala de aula e/ou laboratório específico; atividade teórica e prática.';
+    if (group?.nome === 'Educação Física') return 'Presencial, em sala de aula; algumas disciplinas podem usar espaço conveniado com quadra.';
+    if (group?.nome === 'Licenciaturas' || /acompanhamento do transtorno do espectro autista/i.test(course.name)) return 'No Mova Play, em ambiente virtual; o vídeo não indica ida ao Polo físico.';
+    if (/automação industrial|manutenção industrial/i.test(course.name)) return 'No Polo de Apoio, em sala de aula e/ou laboratório específico do curso.';
+    return 'No Polo de Apoio; o curso define sala, laboratório ou outro espaço conforme o Studeo.';
+  }
+  function weeklyLegendHtml(course, group) {
+    const presence = presenceLocation(group, course);
+    const isVirtual = /mova play/i.test(presence);
+    const placeClass = isVirtual ? 'place-mova' : 'place-polo';
+    const presencePrefix = isVirtual ? 'Presencialidade teórica · Mova Play' : 'Presencialidade · Polo de Apoio';
+    return `<div class="weekly-legend"><span class="place-tag place-online">ASM e aula ao vivo · online</span><span class="place-tag ${placeClass}">${esc(presencePrefix)}</span><span class="place-tag place-prova">Prova presencial · confira local no Studeo</span></div>`;
+  }
+  function yearActivitySummary(group, year, course) {
+    const index = Number(year) - 1;
+    const applicable = M.data.matriz_cursos.linhas.filter(line => Boolean(group.grade?.[line.id]?.[index]));
+    const location = line => {
+      if (line.id === 'aulas') return 'Online, via Teams; pode acompanhar de casa (1h30 por encontro).';
+      if (line.id === 'asm') return 'Online e em tempo real; pode acompanhar de casa, sem deslocamento ao Polo (3h por encontro).';
+      if (line.id === 'provas') return 'Presencial nas semanas 9 e 10; confira no Studeo a data e o local da prova.';
+      if (line.id === 'extensao') return 'O vídeo indica que se aplica neste ano, mas não especifica semana ou local.';
+      if (line.id === 'presencialidade') return presenceLocation(group, course);
+      return 'Consulte as orientações da disciplina no Studeo.';
+    };
+    if (!applicable.length) return '';
+    return `<aside class="year-summary"><b>O que o vídeo confirma para o ${esc(year)}º ano</b><ul>${applicable.map(line => `<li><strong>${esc(line.rotulo)}:</strong> ${esc(location(line))}</li>`).join('')}</ul></aside>`;
+  }
   function weeklyPlanHtml(course, group, isEad) {
     const isException = M.data.jornada_ead?.excecoes?.some(name => norm(name) === norm(course.name));
     const planGroups = isEad ? (isException ? [] : [{ anos: [1], atividades: M.data.jornada_ead?.atividades || [], nota: M.data.jornada_ead?.nota || '' }]) : (group?.jornadas_semanais || []);
@@ -427,8 +455,9 @@
     const hasWeeklyDetail = Boolean(active?.atividades?.length);
     const detailedYears = [...new Set(planGroups.flatMap(plan => plan.anos))].sort((a, b) => a - b);
     const detailedYearsLabel = detailedYears.length ? detailedYears.map(year => `${year}º`).join(', ').replace(/, ([^,]+)$/, ' e $1') : '';
-    const missingYearNote = !hasWeeklyDetail ? `<p class="weekly-notice">O vídeo não apresenta uma grade semanal para o ${M.courseYear}º ano de ${esc(course.name)}. Ele detalha semanas para ${detailedYearsLabel} anos; para este ano, mostra apenas quais atividades se aplicam na matriz abaixo. As datas exatas devem ser confirmadas no Studeo.</p>` : '';
-    return `<section class="weekly-plan" aria-labelledby="weeklyPlanTitle"><header><div><p class="eyebrow">ROTINA DO CURSO</p><h4 id="weeklyPlanTitle">O que acontece em cada semana</h4><p>Organização apresentada para ${esc(course.name)}. Escolha seu ano:</p></div>${courseYears > 1 ? `<label class="field year-field"><span>Ano do curso</span><select id="courseYear">${yearOptions}</select></label>` : ''}</header><div class="weekly-legend"><span class="place-tag place-online">Online · Teams/ASM</span><span class="place-tag place-polo">Polo físico</span><span class="place-tag place-mova">Mova Play · ambiente virtual</span><span class="place-tag place-prova">Prova presencial · local a confirmar</span></div>${hasWeeklyDetail ? `<div class="table-wrap weekly-table-wrap"><table class="weekly-table"><thead><tr><th>Quando</th><th>Atividade</th><th>Disciplina</th><th>Onde acontece</th></tr></thead><tbody>${rows}</tbody></table></div>` : missingYearNote}${active?.nota ? `<p class="weekly-notice">${esc(active.nota)}</p>` : ''}${group ? `<details class="annual-overview" ${!hasWeeklyDetail ? 'open' : ''}><summary>O que o vídeo informa por ano</summary>${gradeHtml(group)}</details>` : ''}</section>`;
+    const missingYearNote = !hasWeeklyDetail ? `${yearActivitySummary(group, M.courseYear, course)}<p class="weekly-notice">O vídeo não detalha as semanas para o ${M.courseYear}º ano de ${esc(course.name)}. Ele confirma as atividades aplicáveis acima, mas não informa em quais semanas elas acontecem neste ano. Confira as datas e os agendamentos no Studeo.</p>` : '';
+    return `<section class="weekly-plan" aria-labelledby="weeklyPlanTitle"><header><div><p class="eyebrow">ROTINA DO CURSO</p><h4 id="weeklyPlanTitle">O que acontece em cada semana</h4><p>Organização apresentada para ${esc(course.name)}. Escolha seu ano:</p></div>${courseYears > 1 ? `<label class="field year-field"><span>Ano do curso</span><select id="courseYear">${yearOptions}</select></label>` : ''}</header>${weeklyLegendHtml(course, group)}${hasWeeklyDetail ? `<div class="table-wrap weekly-table-wrap"><table class="weekly-table"><thead><tr><th>Quando</th><th>Atividade</th><th>Disciplina</th><th>Onde acontece</th></tr></thead><tbody>${rows}</tbody></table></div>` : missingYearNote}${active?.nota ? `<p class="weekly-notice">${esc(active.nota)}</p>` : ''}${group ? `<details class="annual-overview" ${!hasWeeklyDetail ? 'open' : ''}><summary>Ver a matriz de atividades por ano</summary>${gradeHtml(group)}</details>` : ''}</section>`;
+
   }
   function renderCourseCard() {
     const host = $('courseCard'), course = marcoCourseCatalog().find(c => c.key === M.course);
