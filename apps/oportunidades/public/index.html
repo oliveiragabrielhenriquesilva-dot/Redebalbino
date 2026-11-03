@@ -42,34 +42,37 @@
     <section class="filters-panel" id="filters" aria-label="Filtros">
       <div class="filters-head">
         <strong>Filtros</strong><span id="filter-summary" class="muted">Todos os registros do processo</span>
-        <button type="button" class="mini" id="toggle-filters" aria-expanded="true">Ocultar</button>
+        <button type="button" class="mini" id="toggle-filters" aria-expanded="false">Mais filtros (11)</button>
+        <button type="button" class="mini" id="toggle-compare" aria-expanded="false">Comparar</button>
         <button type="button" class="mini" id="clear-filters">Limpar</button>
       </div>
       <div class="filter-grid" id="filter-grid">
+        <label class="field"><span>Polo</span><select data-f="polo" data-opt="polos"></select></label>
+        <label class="field"><span>Status</span><select data-f="status" data-opt="status"></select></label>
+        <label class="field"><span>Situação do RA</span><select data-f="ra" data-opt="ra"></select></label>
+        <label class="field wide"><span>Buscar</span><input type="search" data-f="q" placeholder="Nome, identificador, curso, tutor, RA, telefone"></label>
+      </div>
+      <div class="filter-grid hidden" id="filter-advanced">
         <label class="field"><span>Inscrição de</span><input type="date" data-f="insc_de"></label>
         <label class="field"><span>Inscrição até</span><input type="date" data-f="insc_ate"></label>
         <label class="field"><span>Atendimento de</span><input type="date" data-f="atend_de"></label>
         <label class="field"><span>Atendimento até</span><input type="date" data-f="atend_ate"></label>
-        <label class="field"><span>Polo</span><select data-f="polo" data-opt="polos"></select></label>
         <label class="field"><span>Tutor do relatório</span><select data-f="tutor" data-opt="tutores_relatorio"></select></label>
         <label class="field"><span>Responsável atual</span><select data-f="resp" data-opt="responsaveis_filtro"></select></label>
         <label class="field"><span>Curso</span><select data-f="curso" data-opt="cursos"></select></label>
         <label class="field"><span>Produto</span><select data-f="produto" data-opt="produtos"></select></label>
-        <label class="field"><span>Status (origem)</span><select data-f="status" data-opt="status"></select></label>
         <label class="field"><span>Etapa interna</span><select data-f="etapa" data-opt="etapas"></select></label>
-        <label class="field"><span>Situação do RA</span><select data-f="ra" data-opt="ra"></select></label>
         <label class="field"><span>Retorno</span><select data-f="retorno" data-opt="retornos"></select></label>
         <label class="field"><span>Contato</span><select data-f="contato"><option value="">Todos</option><option value="sem">Sem contato registrado</option><option value="com">Com contato registrado</option></select></label>
-        <label class="field wide"><span>Buscar</span><input type="search" data-f="q" placeholder="Nome, identificador, curso, tutor, RA, telefone"></label>
       </div>
-      <div class="compare-row" id="compare-row">
+      <div class="compare-row hidden" id="compare-row">
         <strong>Comparar com</strong>
         <label class="field"><span>Outro processo</span><select id="cmp-ciclo"><option value="">Não comparar</option></select></label>
         <label class="field"><span>ou inscrição de</span><input type="date" id="cmp-de"></label>
         <label class="field"><span>até</span><input type="date" id="cmp-ate"></label>
         <span class="muted small">Os demais filtros valem para os dois lados.</span>
       </div>
-    </section>
+    </section>>
 
     <div id="error" class="error hidden" role="alert"></div>
     <div id="notice" class="notice hidden" role="status"></div>
