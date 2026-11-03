@@ -14,7 +14,22 @@
   const MONTH_LABELS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
   const CATEGORY_LABELS = ['Lançamento de notas', 'Rematrícula automática', 'Aproveitamento de estudos', 'Divisão de turmas', 'Fechamento de período e rematrícula', 'Serviços da secretaria', 'Políticas preditivas e de retenção', 'Outras rotinas'];
   const STORAGE_KEY = 'balbino-informa-produto-v1';
+  const THEME_STORAGE_KEY = 'balbino-informa-tema-v1';
   const S = { data: null, today: isoOf(new Date()), product: 'graduacao', year: '', currentOnly: false, matrixSearch: '', category: '', marco: null, course: '' };
+  function setTheme(theme, persist = false) {
+    const isDark = theme !== 'light';
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    const button = $('themeToggle');
+    if (button) {
+      button.innerHTML = isDark ? '☾ <span>Claro</span>' : '☀ <span>Escuro</span>';
+      button.setAttribute('aria-pressed', String(isDark));
+      button.setAttribute('aria-label', `Alternar para tema ${isDark ? 'claro' : 'escuro'}`);
+      button.title = `Alternar para tema ${isDark ? 'claro' : 'escuro'}`;
+    }
+    if (persist) try { localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light'); } catch (_) { /* preferência indisponível */ }
+  }
+  try { setTheme(localStorage.getItem(THEME_STORAGE_KEY) || 'dark'); } catch (_) { setTheme('dark'); }
+  $('themeToggle').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
   const prodName = id => S.data?.produtos.find(p => p.id === id)?.nome || id;
   const modLabel = (pid, module) => /S$/i.test(String(module)) ? `${String(module)[0]}º semestre` : `Módulo ${module}`;
   const status = o => S.today < o.inicio ? 'proximo' : S.today > o.fim ? 'encerrado' : 'ativo';
