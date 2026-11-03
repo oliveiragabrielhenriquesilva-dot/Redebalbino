@@ -370,6 +370,11 @@
   function marcoCourseCatalog() {
     return M.data.portfolio.modalidades.flatMap((modality, mi) => modality.areas.flatMap((area, ai) => area.cursos.map(([name, type], ci) => ({ key: `${mi}-${ai}-${ci}`, name, type, typeName: M.data.portfolio.tipos[type] || 'Curso', modality: modality.nome, area: area.area }))));
   }
+  function activityGuideHtml() {
+    const section = M.data.secoes.find(s => s.id === 'atividades');
+    if (!section?.cartoes?.length) return '';
+    return `<section class="activity-guide" aria-labelledby="activityGuideTitle"><header><h4 id="activityGuideTitle">Onde acontece cada atividade?</h4><p>O curso e o calendário da disciplina indicam quais atividades se aplicam.</p></header><div class="activity-guide-grid">${section.cartoes.map(card => `<article class="activity-guide-card"><div class="activity-guide-title"><h5>${esc(card.titulo)}</h5><span class="chip">${esc(card.selo)}</span></div><p><b>Onde:</b> ${esc(card.onde || 'Consulte as orientações da disciplina no Studeo.')}</p><ul>${(card.pontos || []).map(point => `<li>${esc(point)}</li>`).join('')}</ul><p><b>Frequência:</b> ${esc(card.frequencia)}</p><p><b>Agendamento:</b> ${esc(card.agendamento)}</p></article>`).join('')}</div></section>`;
+  }
   function renderCourseCard() {
     const host = $('courseCard'), course = marcoCourseCatalog().find(c => c.key === M.course);
     if (!course) { host.innerHTML = '<div class="course-empty"><b>Selecione um curso</b><p>Escolha um curso para consultar somente as informações aplicáveis.</p></div>'; return; }
@@ -379,7 +384,7 @@
       host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)}</p><h3>${esc(course.name)}</h3><p>${esc(ead?.subtitulo || '')}</p></header><div class="course-facts">${(ead?.itens || []).map(item => `<article><span>${esc(item.titulo)}</span><strong>${esc(item.texto)}</strong></article>`).join('')}</div>${ead?.tabela ? `<div class="m-tabela course-table"><h4>${esc(ead.tabela.titulo)}</h4><div class="table-wrap"><table><thead><tr>${ead.tabela.colunas.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${ead.tabela.linhas.map((row, i, all) => `<tr class="${i === all.length - 1 ? 'total' : ''}">${row.map((cell, j) => `<td class="${j ? 'n' : ''}">${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="sub">${esc(ead.tabela.nota || '')}</p></div>` : ''}${matrix ? gradeHtml(matrix) : `<p class="course-source-note">${esc(ead?.nota || 'A apresentação não trouxe uma grade de atividades específica para este curso.')}</p>`}</article>`;
       return;
     }
-    host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)} · ${esc(course.typeName)}</p><h3>${esc(course.name)}</h3></header>${matrix ? gradeHtml(matrix) : `<p class="course-source-note">A apresentação não trouxe uma grade de atividades específica para este curso.</p>`}</article>`;
+    host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)} · ${esc(course.typeName)}</p><h3>${esc(course.name)}</h3></header>${/semipresencial/i.test(course.modality) ? activityGuideHtml() : ''}${matrix ? gradeHtml(matrix) : `<p class="course-source-note">A apresentação não trouxe uma grade de atividades específica para este curso.</p>`}</article>`;
   }
   function renderCourseOptions(search = '') {
     const catalog = marcoCourseCatalog(), q = norm(search), options = catalog.filter(c => !q || norm(`${c.name} ${c.area} ${c.modality} ${c.typeName}`).includes(q));
@@ -394,10 +399,6 @@
     const questions = M.data.perguntas || [], sections = M.data.secoes || [];
     const skip = new Set(['qual a media minima para aprovacao', 'quantas semanas tem cada disciplina', 'como e a avaliacao presencial', 'como e composta a nota da disciplina']);
     const sectionsByQuestion = {
-      'o que e asm': ['atividades'],
-      'o que e a presencialidade': ['atividades'],
-      'aula ao vivo conta frequencia': ['atividades'],
-      'como o aluno agenda asm e presencialidade': ['agendamento'],
       'quais as regras de aproveitamento de estudos': ['aproveitamento'],
       'o que e o espaco calouro': ['calouro']
     };
