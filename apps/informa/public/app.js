@@ -436,13 +436,13 @@
     $('area-calendario').classList.toggle('hidden', area !== 'calendario');
     $('area-marco').classList.toggle('hidden', area !== 'marco');
     $('myProduct').closest('.product-select').classList.toggle('hidden', area !== 'calendario');
-    if (area === 'marco' && location.hash !== '#marco') history.replaceState(null, '', location.pathname + location.search + '#marco');
-    if (area !== 'marco' && location.hash === '#marco') history.replaceState(null, '', location.pathname + location.search);
+    const targetHash = area === 'marco' ? '#marco' : area === 'calendario' ? '#calendario' : '';
+    if (location.hash !== targetHash) history.replaceState(null, '', location.pathname + location.search + targetHash);
     if (scroll) $('area-' + area).scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   document.querySelectorAll('.main-nav [data-area]').forEach(b => b.addEventListener('click', () => setArea(b.dataset.area, true)));
   document.addEventListener('click', e => { const b = e.target.closest('[data-area-go]'); if (b) setArea(b.dataset.area, true); const askButton = e.target.closest('[data-ask]'); if (askButton) ask(askButton.dataset.ask); });
-  window.addEventListener('hashchange', () => { if (location.hash === '#marco') setArea('marco'); });
+  window.addEventListener('hashchange', () => { if (location.hash === '#marco') setArea('marco', true); else if (location.hash === '#calendario') setArea('calendario', true); else setArea('inicio', true); });
   $('askForm').addEventListener('submit', e => { e.preventDefault(); ask($('q').value); });
   $('matrixSearch').addEventListener('input', e => { S.matrixSearch = e.target.value; renderCalendar(); });
   $('currentOnly').addEventListener('change', e => { S.currentOnly = e.target.checked; renderCalendar(); });
@@ -454,7 +454,7 @@
   }
   async function load() {
     await loadMarco();
-    if (location.hash === '#marco') setArea('marco');
+    if (location.hash === '#marco') setArea('marco'); else if (location.hash === '#calendario') setArea('calendario');
     const res = await fetch('/api/informa/calendario', { credentials: 'same-origin', cache: 'no-store' });
     if (res.status === 401) { location.assign('/?next=' + encodeURIComponent('/informa/')); return; }
     const data = await res.json().catch(() => ({}));
