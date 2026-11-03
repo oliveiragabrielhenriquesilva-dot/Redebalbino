@@ -165,7 +165,7 @@
     $('yearSel').innerHTML = S.data.anos.map(a => `<option ${a === S.year ? 'selected' : ''}>${esc(a)}</option>`).join('');
   }
   function renderSuggestions() {
-    const sug = ['O que acontece esta semana?', 'Qual módulo está em andamento?', 'Quando termina a captação?', 'Geração de RA do próximo módulo', 'Média mínima para aprovação em 2027', 'ASM e presencialidade de Farmácia', 'Regras de aproveitamento de estudos'];
+    const sug = ['O que acontece esta semana?', 'Atividades de estudo', 'Datas de provas', 'Geração de RA do próximo módulo', 'Publicação de notas', 'Como funciona o MAPA?'];
     const grad = S.data.ocorrencias.filter(o => o.produto === 'graduacao' && /geracao de ra/.test(norm(o.evento)) && status(o) !== 'encerrado').sort((a, b) => a.inicio.localeCompare(b.inicio))[0];
     if (grad) sug[3] = `Geração de RA do módulo ${grad.modulo}`;
     $('suggestions').innerHTML = sug.map(s => `<button type="button" data-ask="${esc(s)}">${esc(s)}</button>`).join('');
