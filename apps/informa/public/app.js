@@ -357,7 +357,7 @@
   document.addEventListener('click', e => { const b = e.target.closest('[data-open-event]'); if (b) openEvent(b.dataset.openEvent); });
 
   // Processo 51/2027: conteúdo vem integralmente de marco-regulatorio-51-2027.json.
-  const M = { data: null, course: '', portfolioQuery: '', portfolioModality: 0 };
+  const M = { data: null, course: '', courseYear: '1', portfolioQuery: '', portfolioModality: 0 };
   const yesNo = value => value ? '<span class="yes" aria-label="Sim">✓</span>' : '<span class="no" aria-label="Não">✕</span>';
   function gradeHtml(group) {
     const mz = M.data.matriz_cursos, max = Math.max(...Object.values(group.grade).map(a => a.length));
@@ -373,7 +373,39 @@
   function activityGuideHtml() {
     const section = M.data.secoes.find(s => s.id === 'atividades');
     if (!section?.cartoes?.length) return '';
-    return `<section class="activity-guide" aria-labelledby="activityGuideTitle"><header><h4 id="activityGuideTitle">Onde acontece cada atividade?</h4><p>O curso e o calendário da disciplina indicam quais atividades se aplicam.</p></header><div class="activity-guide-grid">${section.cartoes.map(card => `<article class="activity-guide-card"><div class="activity-guide-title"><h5>${esc(card.titulo)}</h5><span class="chip">${esc(card.selo)}</span></div><p><b>Onde:</b> ${esc(card.onde || 'Consulte as orientações da disciplina no Studeo.')}</p><ul>${(card.pontos || []).map(point => `<li>${esc(point)}</li>`).join('')}</ul><p><b>Frequência:</b> ${esc(card.frequencia)}</p><p><b>Agendamento:</b> ${esc(card.agendamento)}</p></article>`).join('')}</div></section>`;
+    return `<details class="activity-guide"><summary><span><b>O que significam ASM, presencialidade e aula ao vivo?</b><small>Onde acontece, frequência e agendamento</small></span><i aria-hidden="true"></i></summary><div class="activity-guide-body"><div class="activity-guide-grid">${section.cartoes.map(card => `<article class="activity-guide-card"><div class="activity-guide-title"><h5>${esc(card.titulo)}</h5><span class="chip">${esc(card.selo)}</span></div><p><b>Onde:</b> ${esc(card.onde || 'Consulte as orientações da disciplina no Studeo.')}</p><ul>${(card.pontos || []).map(point => `<li>${esc(point)}</li>`).join('')}</ul><p><b>Frequência:</b> ${esc(card.frequencia)}</p><p><b>Agendamento:</b> ${esc(card.agendamento)}</p></article>`).join('')}</div></div></details>`;
+  }
+  function weekRange(weeks = []) {
+    if (!weeks.length) return '—';
+    const sorted = [...weeks].sort((a, b) => a - b), ranges = [];
+    let start = sorted[0], end = start;
+    for (const week of sorted.slice(1)) {
+      if (week === end + 1) { end = week; continue; }
+      ranges.push(start === end ? `Semana ${start}` : `Semanas ${start}–${end}`);
+      start = end = week;
+    }
+    ranges.push(start === end ? `Semana ${start}` : `Semanas ${start}–${end}`);
+    return ranges.join(', ');
+  }
+  function weeklyPlanHtml(course, group, isEad) {
+    const isException = M.data.jornada_ead?.excecoes?.some(name => norm(name) === norm(course.name));
+    const planGroups = isEad ? (isException ? [] : [{ anos: [1], atividades: M.data.jornada_ead?.atividades || [], nota: M.data.jornada_ead?.nota || '' }]) : (group?.jornadas_semanais || []);
+    if (!planGroups.length && (isEad || !group)) {
+      const message = isException
+        ? 'O vídeo informa que este curso não tem aulas ao vivo. Ele não detalha uma grade semanal específica; consulte as atividades da disciplina no Studeo.'
+        : `O vídeo mostra quais atividades se aplicam por ano, mas não informa as semanas para ${esc(course.name)}. Consulte o calendário da disciplina no Studeo para confirmar a agenda.`;
+      return `<section class="weekly-plan"><header><div><p class="eyebrow">ROTINA DO CURSO</p><h4>Semana a semana</h4></div></header><p class="weekly-notice">${message}</p>${group ? `<details class="annual-overview"><summary>Resumo por ano (atividades aplicáveis)</summary>${gradeHtml(group)}</details>` : ''}</section>`;
+    }
+    const courseYears = !isEad && group ? Number(group.anos) : 1;
+    const availableYears = Array.from({ length: courseYears }, (_, index) => index + 1);
+    if (!availableYears.includes(Number(M.courseYear))) M.courseYear = String(availableYears[0]);
+    const active = planGroups.find(item => item.anos.includes(Number(M.courseYear)));
+    const activities = active?.atividades || [];
+    const rows = activities.map(item => `<tr><td><b>${esc(weekRange(item.semanas))}</b></td><td><strong>${esc(item.atividade)}</strong>${item.detalhe ? `<span class="weekly-detail">${esc(item.detalhe)}</span>` : ''}</td><td>${esc(item.disciplina)}</td><td><span class="place-tag place-${esc(item.tipo)}">${esc(item.onde)}</span></td></tr>`).join('');
+    const yearOptions = availableYears.map(year => `<option value="${year}" ${year === Number(M.courseYear) ? 'selected' : ''}>${year}º ano</option>`).join('');
+    const hasWeeklyDetail = Boolean(active?.atividades?.length);
+    const missingYearNote = !hasWeeklyDetail ? `<p class="weekly-notice">O vídeo não apresenta uma grade semanal para o ${M.courseYear}º ano deste curso. A tabela abaixo mostra somente em quais anos cada atividade se aplica; confira as datas e os encontros no calendário da disciplina no Studeo.</p>` : '';
+    return `<section class="weekly-plan" aria-labelledby="weeklyPlanTitle"><header><div><p class="eyebrow">ROTINA DO CURSO</p><h4 id="weeklyPlanTitle">O que acontece em cada semana</h4><p>Organização apresentada para ${esc(course.name)}. Escolha seu ano:</p></div>${courseYears > 1 ? `<label class="field year-field"><span>Ano do curso</span><select id="courseYear">${yearOptions}</select></label>` : ''}</header><div class="weekly-legend"><span class="place-tag place-online">Online · Teams/ASM</span><span class="place-tag place-polo">Polo físico</span><span class="place-tag place-mova">Mova Play · ambiente virtual</span><span class="place-tag place-prova">Prova presencial · local a confirmar</span></div>${hasWeeklyDetail ? `<div class="table-wrap weekly-table-wrap"><table class="weekly-table"><thead><tr><th>Quando</th><th>Atividade</th><th>Disciplina</th><th>Onde acontece</th></tr></thead><tbody>${rows}</tbody></table></div>` : missingYearNote}${active?.nota ? `<p class="weekly-notice">${esc(active.nota)}</p>` : ''}${group ? `<details class="annual-overview"><summary>Resumo por ano (atividades aplicáveis)</summary>${gradeHtml(group)}</details>` : ''}</section>`;
   }
   function renderCourseCard() {
     const host = $('courseCard'), course = marcoCourseCatalog().find(c => c.key === M.course);
@@ -381,10 +413,11 @@
     const isEad = /ead/i.test(course.modality), matrix = !isEad && M.data.matriz_cursos.grupos.find(g => g.cursos.includes(course.name));
     if (isEad) {
       const ead = M.data.secoes.find(s => s.id === 'mudancas-ead');
-      host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)}</p><h3>${esc(course.name)}</h3><p>${esc(ead?.subtitulo || '')}</p></header><div class="course-facts">${(ead?.itens || []).map(item => `<article><span>${esc(item.titulo)}</span><strong>${esc(item.texto)}</strong></article>`).join('')}</div>${ead?.tabela ? `<div class="m-tabela course-table"><h4>${esc(ead.tabela.titulo)}</h4><div class="table-wrap"><table><thead><tr>${ead.tabela.colunas.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${ead.tabela.linhas.map((row, i, all) => `<tr class="${i === all.length - 1 ? 'total' : ''}">${row.map((cell, j) => `<td class="${j ? 'n' : ''}">${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="sub">${esc(ead.tabela.nota || '')}</p></div>` : ''}${matrix ? gradeHtml(matrix) : `<p class="course-source-note">${esc(ead?.nota || 'A apresentação não trouxe uma grade de atividades específica para este curso.')}</p>`}</article>`;
+      host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)}</p><h3>${esc(course.name)}</h3><p>${esc(ead?.subtitulo || '')}</p></header><div class="course-facts">${(ead?.itens || []).map(item => `<article><span>${esc(item.titulo)}</span><strong>${esc(item.texto)}</strong></article>`).join('')}</div>${weeklyPlanHtml(course, null, true)}${ead?.tabela ? `<div class="m-tabela course-table"><h4>${esc(ead.tabela.titulo)}</h4><div class="table-wrap"><table><thead><tr>${ead.tabela.colunas.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${ead.tabela.linhas.map((row, i, all) => `<tr class="${i === all.length - 1 ? 'total' : ''}">${row.map((cell, j) => `<td class="${j ? 'n' : ''}">${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="sub">${esc(ead.tabela.nota || '')}</p></div>` : ''}</article>`;
       return;
     }
-    host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)} · ${esc(course.typeName)}</p><h3>${esc(course.name)}</h3></header>${/semipresencial/i.test(course.modality) ? activityGuideHtml() : ''}${matrix ? gradeHtml(matrix) : `<p class="course-source-note">A apresentação não trouxe uma grade de atividades específica para este curso.</p>`}</article>`;
+    host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)} · ${esc(course.typeName)}</p><h3>${esc(course.name)}</h3></header>${/semipresencial/i.test(course.modality) ? activityGuideHtml() : ''}${weeklyPlanHtml(course, matrix, false)}</article>`;
+    $('courseYear')?.addEventListener('change', e => { M.courseYear = e.target.value; renderCourseCard(); });
   }
   function renderCourseOptions(search = '') {
     const catalog = marcoCourseCatalog(), q = norm(search), options = catalog.filter(c => !q || norm(`${c.name} ${c.area} ${c.modality} ${c.typeName}`).includes(q));
@@ -425,7 +458,7 @@
       <details class="card portfolio-card"><summary><span><b>Portfólio completo de cursos</b><small>${esc(d.portfolio.nota)}</small></span><i aria-hidden="true"></i></summary><div class="portfolio-body"><div class="portfolio-controls"><div class="segmented" id="portfolioModalities">${d.portfolio.modalidades.map((m, i) => `<button type="button" data-portfolio-modality="${i}" aria-pressed="${i === M.portfolioModality}" class="${i === M.portfolioModality ? 'active' : ''}">${esc(m.nome)}</button>`).join('')}</div><label class="field"><span>Buscar no portfólio</span><input id="portfolioSearch" type="search" placeholder="Digite o nome do curso"></label><span id="portfolioCount" class="sub"></span></div><div id="portfolioList" class="portfolio-list"></div></div></details>`;
     renderCourseOptions(); renderFaq(); renderPortfolio();
     $('courseSearch').addEventListener('input', e => renderCourseOptions(e.target.value));
-    $('courseSelect').addEventListener('change', e => { M.course = e.target.value; renderCourseCard(); });
+    $('courseSelect').addEventListener('change', e => { M.course = e.target.value; M.courseYear = '1'; renderCourseCard(); });
     $('portfolioSearch').addEventListener('input', e => { M.portfolioQuery = e.target.value; renderPortfolio(); });
     $('portfolioModalities').querySelectorAll('[data-portfolio-modality]').forEach(b => b.addEventListener('click', () => { M.portfolioModality = Number(b.dataset.portfolioModality); $('portfolioModalities').querySelectorAll('[data-portfolio-modality]').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); }); renderPortfolio(); }));
   }
@@ -470,3 +503,4 @@
   }
   load().catch(e => { $('erro').textContent = e.message; $('erro').classList.remove('hidden'); });
 })();
+
