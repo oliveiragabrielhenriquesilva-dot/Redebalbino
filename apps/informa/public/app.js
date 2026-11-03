@@ -240,7 +240,7 @@
   }
   function renderNow() {
     $('nowGrid').innerHTML = S.data.produtos.map(currentModuleCard).join('');
-    $('nowGrid').querySelectorAll('[data-w]').forEach(el => { el.querySelector('i').style.width = `${el.dataset.w}%`; });
+    $('nowGrid').querySelectorAll('.progress > i[data-w]').forEach(el => { el.style.width = `${el.dataset.w}%`; });
     renderHeroContext();
   }
   function renderHeroContext() {
