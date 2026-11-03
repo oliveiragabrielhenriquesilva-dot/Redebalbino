@@ -7,9 +7,9 @@
   <meta name="description" content="Consulte o Calendário Acadêmico Unicesumar e as orientações do Processo 51/2027.">
   <title>Balbino Informa</title>
   <link rel="icon" href="/brand/monograma-rede-balbino.webp" type="image/webp">
-  <link rel="stylesheet" href="/informa/style.css?v=20261103q">
+  <link rel="stylesheet" href="/informa/style.css?v=20261103r">
   <link rel="stylesheet" href="/brand/balbino.css">
-  <script src="/informa/app.js?v=20261103q" defer></script>
+  <script src="/informa/app.js?v=20261103r" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -31,6 +31,13 @@
 
   <main>
     <div id="area-inicio" class="area">
+    <section class="home-choices" aria-labelledby="chooseAreaTitle">
+      <div class="home-choices-heading"><p class="eyebrow">ESCOLHA UMA ÁREA</p><h2 id="chooseAreaTitle">O que você quer consultar?</h2><p>O calendário de 2026 e as mudanças para 2027 ficam separados.</p></div>
+      <div class="home-choice-grid">
+        <a class="home-area-card home-area-link" href="#calendario" data-area-link="calendario"><span class="home-number">01</span><span class="home-card-kicker">PRAZOS E MÓDULOS</span><h3>Calendário Acadêmico 2026</h3><p>Atividades, avaliações e datas organizadas por produto e módulo.</p><span class="home-card-action">Abrir calendário <span aria-hidden="true">→</span></span></a>
+        <a class="home-area-card home-process home-area-link" href="#marco" data-area-link="marco"><span class="home-number">02</span><span class="home-card-kicker">MUDANÇAS E ROTINA POR CURSO</span><h3>Processo 51/2027</h3><p>Novas regras, composição da nota e atividades do seu curso.</p><span class="home-card-action">Consultar Processo 51/2027 <span aria-hidden="true">→</span></span></a>
+      </div>
+    </section>
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
         <p class="eyebrow"><span id="today">Consulta acadêmica</span></p>
@@ -50,9 +57,7 @@
       </div>
     </section>
 
-    <div class="erro hidden" id="erro" role="alert"></div>
     <section id="answer" class="answer hidden" aria-live="polite"></section>
-    <section class="home-choices" aria-labelledby="chooseAreaTitle"><div><p class="eyebrow">ESCOLHA UMA ÁREA</p><h2 id="chooseAreaTitle">O que você quer consultar?</h2></div><div class="home-choice-grid"><a class="home-area-card home-area-link" href="#calendario"><span class="home-number">01</span><h3>Calendário Acadêmico 2026</h3><p>Datas de atividades, avaliações e prazos por produto e módulo.</p><span class="home-card-action">Abrir calendário <span aria-hidden="true">→</span></span></a><a class="home-area-card home-process home-area-link" href="#marco"><span class="home-number">02</span><h3>Processo 51/2027</h3><p>Escolha o curso para ver regras, avaliação e atividades aplicáveis.</p><span class="home-card-action">Consultar o Processo <span aria-hidden="true">→</span></span></a></div></section>
     </div>
 
     <div id="area-calendario" class="area hidden" aria-labelledby="calendarTitle">
@@ -95,7 +100,8 @@
       <p class="fonte" id="fonte"></p>
     </div>
 
-    <div id="area-marco" class="area hidden" aria-labelledby="marcoTitle"></div>
+    <div class="erro hidden" id="erro" role="alert"></div>
+    <div id="area-marco" class="area hidden" aria-labelledby="marcoTitle"><section class="card area-loading" role="status"><span class="loading-mark" aria-hidden="true"></span><p>Carregando as informações do Processo 51/2027…</p></section></div>
   </main>
 
   <dialog id="eventDialog" class="event-dialog" aria-labelledby="eventTitle">
