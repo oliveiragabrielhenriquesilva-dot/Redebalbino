@@ -244,7 +244,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
         status_origem: o.status_origem || '', status_key: norm(o.status_origem) || 'sem',
         etapa: ETAPA_LABEL[o.etapa] ? o.etapa : 'novo',
         data_registro: o.data_registro || null, ultimo_atendimento: o.ultimo_atendimento || null,
-        ultimo_contato_sistema: ultimoSistema, atendimentos: at.length, datas_atendimento: at.map(a => a.data), autores: at.map(a => a.autor_nome || a.autor_login || ''),
+        ultimo_contato_sistema: ultimoSistema, atendimentos: at.length, datas_atendimento: at.map(a => a.data), autores: at.map(a => a.autor_nome || a.autor_login || ''), autores_keys: at.map(a => norm(a.autor_nome || a.autor_login || '') || 'sem'),
         proximo_contato: proximo, proximo_manual: o.proximo_contato || null, retorno, aberta,
         sem_contato: !at.length && !o.ultimo_atendimento,
         ra_situacao: ra.situacao, ra: ra.ra, ra_fonte: ra.fonte, ra_motivo: ra.motivo, ra_candidatos: ra.candidatos || [],
@@ -262,20 +262,25 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     for (const k of ['insc_de', 'insc_ate', 'atend_de', 'atend_ate']) { const v = String(q[k] || ''); if (v) { if (!isoValido(v)) falha(400, 'Data inválida no filtro.'); f[k] = v; } }
     if (f.insc_de && f.insc_ate && f.insc_de > f.insc_ate) falha(400, 'O período de inscrição está invertido.');
     if (f.atend_de && f.atend_ate && f.atend_de > f.atend_ate) falha(400, 'O período de atendimento está invertido.');
-    for (const k of ['polo', 'tutor', 'resp', 'curso', 'produto', 'status', 'etapa', 'ra', 'retorno', 'contato', 'mes']) { const v = String(q[k] || '').trim(); if (v) f[k] = v.slice(0, 200); }
+    for (const k of ['polo', 'tutor', 'resp', 'curso', 'produto', 'status', 'etapa', 'ra', 'retorno', 'contato', 'mes', 'autor']) { const v = String(q[k] || '').trim(); if (v) f[k] = v.slice(0, 200); }
     const busca = String(q.q || '').trim(); if (busca) f.q = busca.slice(0, 100);
     return f;
   }
   function noPeriodo(d, de, ate) { return !!d && (!de || d >= de) && (!ate || d <= ate); }
-  function atendidoNoPeriodo(r, de, ate) {
-    if (!de && !ate) return true;
-    return r.datas_atendimento.some(d => noPeriodo(d, de, ate)) || noPeriodo(r.ultimo_atendimento, de, ate);
+  function atendimentoNoFiltro(r, f) {
+    if (f.autor) return r.datas_atendimento.some((d, i) => r.autores_keys[i] === f.autor && noPeriodo(d, f.atend_de, f.atend_ate));
+    if (!f.atend_de && !f.atend_ate) return true;
+    return r.datas_atendimento.some(d => noPeriodo(d, f.atend_de, f.atend_ate)) || noPeriodo(r.ultimo_atendimento, f.atend_de, f.atend_ate);
+  }
+  function contarAtendimentosFiltrados(r, f) {
+    if (!f.autor && !f.atend_de && !f.atend_ate) return r.atendimentos;
+    return r.datas_atendimento.filter((d, i) => (!f.autor || r.autores_keys[i] === f.autor) && noPeriodo(d, f.atend_de, f.atend_ate)).length;
   }
   function filtrar(base, f) {
     const termo = f.q ? norm(f.q) : '', termoDig = f.q ? soDig(f.q) : '';
     return base.filter(r => {
       if ((f.insc_de || f.insc_ate) && !noPeriodo(r.data_registro, f.insc_de, f.insc_ate)) return false;
-      if (!atendidoNoPeriodo(r, f.atend_de, f.atend_ate)) return false;
+      if (!atendimentoNoFiltro(r, f)) return false;
       if (f.polo && r.polo_key !== f.polo) return false;
       if (f.tutor && r.tutor_key !== f.tutor) return false;
       if (f.resp && r.responsavel_key !== f.resp) return false;
@@ -310,7 +315,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     let atendimentos = 0, atendidos = 0;
     for (const r of rows) {
       retornos[r.retorno]++;
-      const n = (f.atend_de || f.atend_ate) ? r.datas_atendimento.filter(d => noPeriodo(d, f.atend_de, f.atend_ate)).length : r.atendimentos;
+      const n = contarAtendimentosFiltrados(r, f);
       atendimentos += n; if (n) atendidos++;
     }
     return {
@@ -332,7 +337,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       if (r.aberta) g.abertas++;
       if (r.sem_contato) g.sem_contato++;
       if (r.retorno === 'vencido') g.vencidos++;
-      g.atendimentos += (f.atend_de || f.atend_ate) ? r.datas_atendimento.filter(d => noPeriodo(d, f.atend_de, f.atend_ate)).length : r.atendimentos;
+      g.atendimentos += contarAtendimentosFiltrados(r, f);
       g.status[r.status_key] = (g.status[r.status_key] || 0) + 1;
     }
     return [...m.values()].map(g => ({ ...g, taxa: taxa(g.confirmado, g.total) })).sort((a, b) => b.total - a.total || String(a.label).localeCompare(String(b.label), 'pt-BR'));
@@ -374,7 +379,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     // volume atendido por semana (atendimentos registrados no sistema) e por autor
     const semanas = new Map(), autores = new Map();
     for (const r of rows) r.datas_atendimento.forEach((d, i) => {
-      if ((f.atend_de || f.atend_ate) && !noPeriodo(d, f.atend_de, f.atend_ate)) return;
+      if (!noPeriodo(d, f.atend_de, f.atend_ate) || (f.autor && r.autores_keys[i] !== f.autor)) return;
       const dt = new Date(d + 'T12:00:00Z'); dt.setUTCDate(dt.getUTCDate() - ((dt.getUTCDay() + 6) % 7));
       const wk = dt.toISOString().slice(0, 10);
       const s = semanas.get(wk) || { key: wk, label: 'Semana de ' + wk.split('-').reverse().join('/'), atendimentos: 0, leads: new Set() };
@@ -442,6 +447,11 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       polos: uniq('polo_key', r => r.polo), polos_cadastro: all('SELECT id, nome FROM polos WHERE ativo=1 ORDER BY ordem, nome').filter(p => !restrito || p.id === restrito),
       tutores_relatorio: uniq('tutor_key', r => r.tutor_origem || 'Sem tutor no relatório'),
       responsaveis_filtro: uniq('responsavel_key', r => r.responsavel || 'Sem responsável'),
+      autores_atendimento: (() => {
+        const m = new Map();
+        for (const r of base) r.autores.forEach((nome, i) => { const value = r.autores_keys[i] || 'sem'; if (!m.has(value)) m.set(value, nome || 'Sem autor'); });
+        return [...m].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
+      })(),
       cursos: uniq('curso_key', r => r.curso || 'Curso não informado'), produtos: uniq('produto_key', r => r.produto || 'Produto não identificado'),
       status: uniq('status_key', r => r.status_origem || 'Sem status na origem'),
       etapas: ETAPAS.map(([value, label]) => ({ value, label })), canais: Object.entries(CANAIS).map(([value, label]) => ({ value, label })),
