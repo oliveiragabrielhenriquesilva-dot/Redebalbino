@@ -8,7 +8,7 @@
   const fmtD = v => { if (!v) return '—'; const [y, m, d] = String(v).slice(0, 10).split('-'); return y && m && d ? `${d}/${m}/${y}` : '—'; };
   const digits = v => String(v || '').replace(/\D/g, '');
 
-  const state = { opts: null, ciclo: '', f: {}, tab: 'painel', painel: null, list: { page: 1, order: 'retorno' }, drill: { extra: {}, page: 1, title: '' }, detail: null, filtersOpen: true };
+  const state = { opts: null, ciclo: '', f: {}, tab: 'painel', painel: null, list: { page: 1, order: 'retorno' }, drill: { extra: {}, page: 1, title: '' }, detail: null, filtersOpen: false, compareOpen: false };
   const drillRegistry = [];
 
   // ------------------------------------------------------------ requisições
@@ -115,10 +115,10 @@
     if (search) container.querySelector('.table-search').addEventListener('input', e => { st.q = e.target.value.trim(); render(); });
     render();
   }
-  function groupCols(dimLabel, dimKey) {
+  function groupCols(dimLabel, dimKey, rows = []) {
     const ex = r => ({ [dimKey]: r.key });
     const t = (r, s) => `${dimLabel}: ${r.label}${s ? ' · ' + s : ''}`;
-    return [
+    const columns = [
       { key: 'label', label: dimLabel },
       { key: 'total', label: 'Oportunidades', num: true, html: r => num(r.total, t(r), ex(r)) },
       { key: 'confirmado', label: 'RA confirmado', num: true, html: r => num(r.confirmado, t(r, 'RA confirmado'), { ...ex(r), ra: 'confirmado' }, 'ok') },
@@ -130,6 +130,8 @@
       { key: 'vencidos', label: 'Retorno vencido', num: true, html: r => num(r.vencidos, t(r, 'retorno vencido'), { ...ex(r), retorno: 'vencido' }, r.vencidos ? 'warn' : '') },
       { key: 'atendimentos', label: 'Atendimentos', num: true, html: r => fmtN(r.atendimentos) }
     ];
+    const optional = new Set(['aguardando', 'sem_contato', 'atendimentos']);
+    return columns.filter(col => !optional.has(col.key) || rows.some(row => Number(row[col.key]) > 0));
   }
   function totalOf(rows) {
     const t = { label: 'Total' };
@@ -146,6 +148,9 @@
     $('avisos').innerHTML = d.avisos.map(a => `<div class="aviso">${esc(a)}</div>`).join('');
     const tile = (label, value, drill, opts = {}) => `<article class="kpi ${opts.cls || ''}"><span>${esc(label)}</span><strong>${drill ? num(value, drill.title, drill.extra) : esc(value)}</strong>${opts.sub ? `<small>${opts.sub}</small>` : ''}</article>`;
     $('kpis').innerHTML = [
+      tile('Retornos vencidos', k.retornos.vencido, { title: 'Abrir candidatos com retorno vencido', extra: { retorno: 'vencido' } }, { cls: 'alert', sub: 'Prioridade de contato hoje' }),
+      tile('Retornos para hoje', k.retornos.hoje, { title: 'Retornos previstos para hoje', extra: { retorno: 'hoje' } }),
+      tile('Próximos 7 dias', k.retornos.proximos7, { title: 'Retornos nos próximos 7 dias', extra: { retorno: 'proximos7' } }, { sub: `${fmtN(k.retornos.sem)} sem data de retorno` }),
       tile('Oportunidades', k.total, { title: 'Todas as oportunidades do filtro', extra: {} }, { sub: `${fmtN(d.total_base)} no processo${d.permissoes.polo_restrito ? ' (seu polo)' : ''}` }),
       tile('RA confirmado', k.ra.confirmado, { title: 'RA confirmado', extra: { ra: 'confirmado' } }, { cls: 'good' }),
       tile('Taxa de conversão', fmtP(k.taxa_conversao), null, { cls: 'hero', sub: esc(k.formula) }),
@@ -153,21 +158,23 @@
       tile('Sem RA', k.ra.sem_ra, { title: 'Sem RA', extra: { ra: 'sem_ra' } }),
       tile('Em aberto', k.abertas, null, { sub: 'sem RA e etapa não encerrada' }),
       tile('Sem contato registrado', k.sem_contato, { title: 'Sem contato registrado', extra: { contato: 'sem' } }),
-      tile('Retornos vencidos', k.retornos.vencido, { title: 'Retornos vencidos', extra: { retorno: 'vencido' } }, { cls: k.retornos.vencido ? 'alert' : '' }),
-      tile('Retorno hoje / 7 dias', `${fmtN(k.retornos.hoje)} / ${fmtN(k.retornos.proximos7)}`, null, { sub: `${fmtN(k.retornos.sem)} em aberto sem data de retorno` }),
       tile('Atendimentos registrados', k.atendimentos_registrados, null, { sub: `${fmtN(k.oportunidades_atendidas)} oportunidade(s) atendida(s)${state.f.atend_de || state.f.atend_ate ? ' no período' : ''}` })
     ].join('');
     renderComparacao(d);
     bars($('chart-status'), d.por_status.map(s => ({ label: s.label, value: s.total, sub: s.confirmado, note: ` · ${fmtP(s.percentual)} · RA ${fmtN(s.confirmado)}`, tip: `${s.label}: ${s.total} oportunidades, ${s.confirmado} com RA confirmado (${fmtP(s.taxa)})`, drill: { title: `Status: ${s.label}`, extra: { status: s.key } } })),
       { legend: '<span class="sw"></span>Oportunidades <span class="sw sub"></span>com RA confirmado' });
     const funil = Object.fromEntries(d.funil.map(x => [x.key, x]));
-    bars($('chart-etapa'), d.por_etapa.map(e => ({ label: e.label, value: e.total, sub: e.confirmado, note: ` · ${fmtP(e.percentual)}${funil[e.key] ? ` · na etapa ou adiante ${fmtN(funil[e.key].na_etapa_ou_adiante)}${funil[e.key].taxa_da_anterior != null ? ' (' + fmtP(funil[e.key].taxa_da_anterior) + ' da anterior)' : ''}` : ''}`, tip: `${e.label}: ${e.total}; RA confirmado ${e.confirmado}`, drill: { title: `Etapa: ${e.label}`, extra: { etapa: e.key } } })),
-      { legend: '<span class="sw"></span>Na etapa <span class="sw sub"></span>com RA confirmado' });
-    table($('table-polo'), groupCols('Polo', 'polo'), d.por_polo, { search: true, initialSort: 'total', total: totalOf(d.por_polo) });
-    table($('table-tutor'), groupCols('Tutor do relatório', 'tutor'), d.por_tutor, { search: true, initialSort: 'total', total: totalOf(d.por_tutor) });
-    table($('table-resp'), groupCols('Responsável atual', 'resp'), d.por_responsavel, { search: true, initialSort: 'total', total: totalOf(d.por_responsavel) });
-    table($('table-curso'), groupCols('Curso', 'curso').slice(0, 6), d.por_curso, { search: true, initialSort: 'total' });
-    table($('table-produto'), groupCols('Produto', 'produto').slice(0, 6), d.por_produto, { initialSort: 'total' });
+    if (k.atendimentos_registrados === 0) {
+      $('chart-etapa').innerHTML = `<p class="empty">Ainda não há atendimentos registrados. Comece pelos ${fmtN(k.retornos.vencido)} retornos vencidos.</p>`;
+    } else {
+      bars($('chart-etapa'), d.por_etapa.map(e => ({ label: e.label, value: e.total, sub: e.confirmado, note: ` · ${fmtP(e.percentual)}${funil[e.key] ? ` · na etapa ou adiante ${fmtN(funil[e.key].na_etapa_ou_adiante)}${funil[e.key].taxa_da_anterior != null ? ' (' + fmtP(funil[e.key].taxa_da_anterior) + ' da anterior)' : ''}` : ''}`, tip: `${e.label}: ${e.total}; RA confirmado ${e.confirmado}`, drill: { title: `Etapa: ${e.label}`, extra: { etapa: e.key } } })),
+        { legend: '<span class="sw"></span>Na etapa <span class="sw sub"></span>com RA confirmado' });
+    }
+    table($('table-polo'), groupCols('Polo', 'polo', d.por_polo), d.por_polo, { search: true, initialSort: 'total', total: totalOf(d.por_polo) });
+    table($('table-tutor'), groupCols('Tutor do relatório', 'tutor', d.por_tutor), d.por_tutor, { search: true, initialSort: 'total', total: totalOf(d.por_tutor) });
+    table($('table-resp'), groupCols('Responsável atual', 'resp', d.por_responsavel), d.por_responsavel, { search: true, initialSort: 'total', total: totalOf(d.por_responsavel) });
+    table($('table-curso'), groupCols('Curso', 'curso', d.por_curso).slice(0, 6), d.por_curso, { search: true, initialSort: 'total' });
+    table($('table-produto'), groupCols('Produto', 'produto', d.por_produto).slice(0, 6), d.por_produto, { initialSort: 'total' });
     const stCols = d.status_colunas;
     table($('table-cruz'), [
       { key: 'polo', label: 'Polo' }, { key: 'tutor', label: 'Tutor do relatório' },
@@ -483,7 +490,7 @@
     document.querySelectorAll('.tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('hidden', v.id !== 'view-' + tab));
     $('filters').classList.toggle('hidden', tab === 'importacoes' || tab === 'definicoes');
-    $('compare-row').classList.toggle('hidden', tab !== 'painel');
+    $('compare-row').classList.toggle('hidden', tab !== 'painel' || !state.compareOpen);
     refresh();
   }
   let timer;
@@ -491,7 +498,8 @@
   document.querySelectorAll('[data-f]').forEach(el => el.addEventListener(el.tagName === 'INPUT' && el.type === 'search' ? 'input' : 'change', onFilter));
   ['cmp-ciclo', 'cmp-de', 'cmp-ate'].forEach(id => $(id).addEventListener('change', onFilter));
   $('clear-filters').addEventListener('click', () => { state.f = {}; writeFilters(); state.list.page = 1; refresh(); });
-  $('toggle-filters').addEventListener('click', () => { state.filtersOpen = !state.filtersOpen; $('filter-grid').classList.toggle('hidden', !state.filtersOpen); $('toggle-filters').textContent = state.filtersOpen ? 'Ocultar' : 'Mostrar'; $('toggle-filters').setAttribute('aria-expanded', state.filtersOpen); });
+  $('toggle-filters').addEventListener('click', () => { state.filtersOpen = !state.filtersOpen; $('filter-advanced').classList.toggle('hidden', !state.filtersOpen); $('toggle-filters').textContent = state.filtersOpen ? 'Menos filtros (11)' : 'Mais filtros (11)'; $('toggle-filters').setAttribute('aria-expanded', state.filtersOpen); });
+  $('toggle-compare').addEventListener('click', () => { state.compareOpen = !state.compareOpen; $('compare-row').classList.toggle('hidden', !state.compareOpen); $('toggle-compare').setAttribute('aria-expanded', state.compareOpen); });
   $('cycle').addEventListener('change', async () => { state.ciclo = $('cycle').value; try { await loadOpcoes(); } catch (e) { showError(e.message); } refresh(); });
   document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
   $('list-order').addEventListener('change', () => { state.list.order = $('list-order').value; state.list.page = 1; refresh(); });
