@@ -101,9 +101,10 @@
     const words = text.split(/\s+/).filter(Boolean);
     const productWords = new Set(['pos', 'graduacao', 'grad', 'ead', 'faculdade', 'tecnico', 'tecnicos', 'tec', 'profissionalizante', 'profissionalizantes', 'profis', 'presencial', 'presenciais', 'hibrida', 'mba', 'especializacao']);
     for (const word of words) {
-      if (ignored.has(word) || productWords.has(word) || /^\d/.test(word) || /^\d{4}$/.test(word) || ['a', 'o'].includes(word)) continue;
       const synonym = { ra: ['ra'], rematricula: ['rematricula'], renovacao: ['rematricula'], nota: ['nota'], notas: ['nota'], captacao: ['captacao'], inscricao: ['captacao'], inscricoes: ['captacao'], vestibular: ['captacao'], venda: ['captacao'], vendas: ['captacao'], aula: ['letivo'], aulas: ['letivo'], letivo: ['letivo'], aproveitamento: ['aproveitamento'], turma: ['turma'], turmas: ['turma'], fechamento: ['fechamento'], secretaria: ['secretaria'], financeiro: ['financeiro'], asm: ['asm'] }[word];
-      q.terms.push(synonym || [word.length > 4 ? word.replace(/s$/, '') : word]);
+      if (synonym) { q.terms.push(synonym); continue; }
+      if (ignored.has(word) || productWords.has(word) || /^\d/.test(word) || /^\d{4}$/.test(word) || ['a', 'o'].includes(word)) continue;
+      q.terms.push([word.length > 4 ? word.replace(/s$/, '') : word]);
     }
     const addChip = (label, token) => q.chips.push({ label, token });
     if (S.product !== 'todos') addChip(prodName(S.product), '__selected_product__');
@@ -194,10 +195,31 @@
     const course = catalog.filter(c => n.includes(norm(c.name)) || (norm(c.name).length > 6 && n.includes(norm(c.name).replace(/^engenharia (de )?/, ''))));
     for (const c of course.slice(0, 2)) {
       const group = S.marco.matriz_cursos.grupos.find(g => g.cursos.includes(c.name));
-      found.push({ score: 2, title: c.name, text: group ? `${c.modality} · ${group.nome}. ${group.nota || 'A matriz está disponível no Processo 51/2027.'}` : `${c.modality} · ${c.area}. A apresentação não traz uma grade de atividades específica para este curso.`, tag: 'Curso' });
+      const scheduleText = group && courseScheduleSummary(group, n);
+      found.push({ score: scheduleText ? 10 : 2, title: c.name, text: group ? `${c.modality} · ${group.nome}. ${scheduleText || group.nota || 'A matriz está disponível no Processo 51/2027.'}` : `${c.modality} · ${c.area}. A apresentação não traz uma grade de atividades específica para este curso.`, tag: scheduleText ? 'Rotina do curso' : 'Curso' });
     }
     if (!found.length && /\b(processo 51|51\/2027|marco regulatorio|2027)\b/.test(n)) for (const d of S.marco.destaques.slice(0, 3)) found.push({ score: 1, title: `${d.rotulo}: ${d.valor}`, text: d.detalhe, tag: 'Processo 51/2027' });
     return found.sort((a, b) => b.score - a.score).slice(0, 5);
+  }
+  function courseScheduleSummary(group, query) {
+    const plans = group.jornadas_semanais || [];
+    if (!plans.length) return '';
+    const activityFilter = /\basm\b/.test(query) ? 'asm' : /\b(presencialidade|polo)\b/.test(query) ? 'presencialidade' : /\b(aula ao vivo|aulas ao vivo|teams)\b/.test(query) ? 'aulas ao vivo' : '';
+    const relevant = plans.flatMap(plan => {
+      const activities = (plan.atividades || []).filter(item => !activityFilter || norm(item.atividade) === norm(activityFilter));
+      if (!activities.length) return [];
+      const years = plan.anos.map(year => `${year}º ano`).join(', ');
+      return activities.map(item => `${years}: ${item.atividade} · ${item.disciplina} · ${weekRange(item.semanas)} · ${item.onde}`);
+    });
+    const covered = new Set(plans.flatMap(plan => plan.anos));
+    const annualKeys = activityFilter === 'asm' ? ['asm'] : activityFilter === 'presencialidade' ? ['presencialidade'] : activityFilter === 'aulas ao vivo' ? ['aulas'] : ['aulas', 'asm', 'presencialidade'];
+    const applicable = Array.from({ length: Number(group.anos) || 0 }, (_, index) => index + 1).filter(year => annualKeys.some(key => group.grade?.[key]?.[year - 1]));
+    const missing = applicable.filter(year => !covered.has(year));
+    if (missing.length) {
+      const labels = missing.map(year => `${year}º ano`).join(', ');
+      relevant.push(`Para ${labels}, o vídeo não detalha as semanas; consulte a agenda da disciplina no Studeo.`);
+    }
+    return relevant.join(' ');
   }
   function ask(raw, push = true) {
     const text = String(raw || '').trim(); $('q').value = text;
