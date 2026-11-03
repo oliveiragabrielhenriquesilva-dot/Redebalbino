@@ -216,3 +216,28 @@ td{border-color:#e7edf4;color:#304967}
 .m-portfolio-collapse{padding:0;overflow:hidden}
 .m-portfolio-body{padding:14px 16px 18px;border-top:1px solid #e6edf5}
 @media(max-width:620px){.m-course-filter{grid-template-columns:1fr}.m-course-hint{grid-column:auto}.m-indice{position:static;flex-wrap:wrap}.m-accordion>summary,.m-portfolio-collapse>summary{padding:12px}.m-accordion-body,.m-portfolio-body{padding:12px}}
+
+
+/* Início do Informa: duas áreas distintas, com destaque para o Processo 51/2027. */
+.area-picker{margin:2px 0 28px}
+.area-picker-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:0 0 12px}
+.area-picker-head .eyebrow{margin:0 0 5px}
+.area-picker-head h2{margin:0;color:#132b4b;font-size:20px;letter-spacing:-.35px}
+.area-picker-head>p{max-width:430px;margin:0;color:#63758e;font-size:12px;line-height:1.5;text-align:right}
+.areas{display:grid;grid-template-columns:1.12fr 1fr;gap:12px;margin:0;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+.area-tab{position:relative;min-width:0;min-height:162px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:18px 20px;border:1px solid #d7e2f0;border-radius:16px;background:#fff;color:#132b4b;text-align:left;white-space:normal;box-shadow:0 7px 20px rgba(20,43,75,.045);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+.area-tab:hover,.area-tab:focus-visible{transform:translateY(-2px);border-color:#8fb6f1;box-shadow:0 12px 28px rgba(25,70,130,.1);outline:none}
+.area-tab.active:not(.area-featured){border-color:#6d9ff0;box-shadow:0 0 0 2px rgba(47,107,215,.08)}
+.area-tab.area-featured{border-color:#244f96;background:linear-gradient(120deg,#122b52,#1a3e70);color:#fff;box-shadow:0 10px 28px rgba(18,43,82,.18)}
+.area-tab.area-featured:before{position:absolute;inset:0 auto 0 0;width:4px;border-radius:16px 0 0 16px;background:linear-gradient(#35c7b2,#64a6ff);content:""}
+.area-card-badge{color:#647b9a;font-size:9px;font-weight:850;letter-spacing:1.1px}
+.area-featured .area-card-badge{color:#8ce6d9}
+.area-tab>strong{font-size:19px;letter-spacing:-.35px}
+.area-card-desc{max-width:620px;color:#60748e;font-size:12px;line-height:1.5}
+.area-featured .area-card-desc{color:#d0def1}
+.area-card-action{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-top:auto;padding-top:4px;color:#245fbe;font-size:12px;font-weight:750}
+.area-featured .area-card-action{color:#fff}
+.area-card-action b{font-size:18px;color:#3e82eb}
+.area-featured .area-card-action b{color:#7fc1ff}
+@media(max-width:700px){.areas{grid-template-columns:1fr}.area-tab{min-height:145px}.area-picker-head{align-items:flex-start;flex-direction:column;gap:5px}.area-picker-head>p{text-align:left}}
+@media(max-width:560px){.area-picker{margin-bottom:22px}.area-picker-head h2{font-size:18px}.area-tab{padding:16px}.area-tab>strong{font-size:17px}}

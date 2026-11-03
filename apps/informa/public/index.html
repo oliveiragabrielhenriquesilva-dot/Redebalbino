@@ -7,8 +7,8 @@
   <meta name="description" content="Consulta do Calendário Administrativo Unicesumar para a equipe da Rede Balbino.">
   <title>Balbino Informa</title>
   <link rel="icon" href="/brand/monograma-rede-balbino.webp" type="image/webp">
-  <link rel="stylesheet" href="/informa/style.css?v=20261103c">
-  <script src="/informa/app.js?v=20261103c" defer></script>
+  <link rel="stylesheet" href="/informa/style.css?v=20261103d">
+  <script src="/informa/app.js?v=20261103d" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -20,28 +20,45 @@
   </header>
 
   <main>
-    <nav class="areas" role="tablist" aria-label="Áreas do Balbino Informa">
-      <button type="button" role="tab" class="area-tab active" data-area="calendario" aria-selected="true">Calendário acadêmico</button>
-      <button type="button" role="tab" class="area-tab" data-area="marco" aria-selected="false">Conexão Pedagógica · 51/2027</button>
-    </nav>
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
         <p class="eyebrow"><span id="today">Consulta acadêmica</span></p>
-        <h1 id="heroTitle">Calendário acadêmico <span>e orientações</span></h1>
-        <p class="hero-description">Consulte atividades, avaliações e prazos por curso. As orientações do Processo 51/2027 ficam em uma área própria.</p>
+        <h1 id="heroTitle">Informações acadêmicas <span>mais organizadas</span></h1>
+        <p class="hero-description">Consulte o Calendário Acadêmico 2026 ou acesse em destaque as mudanças do Processo 51/2027.</p>
       </div>
       <div class="hero-consult">
         <p class="consult-title">O que você precisa consultar?</p>
         <form class="ask" id="askForm" role="search">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
-          <label class="visually-hidden" for="q">Pergunte ou busque no calendário</label>
-          <input id="q" type="search" autocomplete="off" placeholder="Ex.: prova presencial, atividade de estudo, módulo 54">
+          <label class="visually-hidden" for="q">Busque no Calendário Acadêmico ou no Processo 51/2027</label>
+          <input id="q" type="search" autocomplete="off" placeholder="Ex.: prova presencial, atividade de estudo, média mínima">
           <button type="submit">Buscar</button>
         </form>
         <div class="understood hidden" id="understood" aria-live="polite"></div>
         <div class="suggestions-head"><strong>Atalhos de consulta</strong><span>Escolha um assunto</span></div>
         <div class="suggestions" id="suggestions" aria-label="Atalhos de consulta"></div>
       </div>
+    </section>
+
+    <section class="area-picker" aria-labelledby="areasTitle">
+      <div class="area-picker-head">
+        <div><p class="eyebrow">ÁREAS DE CONSULTA</p><h2 id="areasTitle">Escolha o que você precisa</h2></div>
+        <p>O calendário de 2026 e as mudanças para 2027 ficam em áreas separadas.</p>
+      </div>
+      <nav class="areas" aria-label="Áreas do Balbino Informa">
+        <button type="button" class="area-tab area-featured" data-area="marco" aria-pressed="false" aria-controls="area-marco">
+          <span class="area-card-badge">MUDANÇAS PARA O PROCESSO 51/2027</span>
+          <strong>Conexão Pedagógica</strong>
+          <span class="area-card-desc">Mudanças acadêmicas, critérios de avaliação e orientações para o próximo processo.</span>
+          <span class="area-card-action">Consultar mudanças <b aria-hidden="true">→</b></span>
+        </button>
+        <button type="button" class="area-tab active" data-area="calendario" aria-pressed="true" aria-controls="area-calendario">
+          <span class="area-card-badge">CONSULTA DE PRAZOS</span>
+          <strong id="calendarCardTitle">Calendário acadêmico 2026</strong>
+          <span class="area-card-desc">Atividades, avaliações e datas organizadas por produto e módulo.</span>
+          <span class="area-card-action">Abrir calendário <b aria-hidden="true">→</b></span>
+        </button>
+      </nav>
     </section>
 
     <div class="erro hidden" id="erro" role="alert"></div>
