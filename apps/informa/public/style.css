@@ -87,9 +87,16 @@ main{padding:36px 0 60px}.eyebrow{display:flex;align-items:center;gap:10px;margi
 :root[data-theme="light"] .home-card-action{background:#f8fafd;color:#294666;border-color:#d6e1ef}
 
 .activity-guide{margin:12px 0 16px;padding:15px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.025)}
-.activity-guide>header{margin-bottom:10px}
-.activity-guide h4{margin:0 0 3px;font-size:15px}
-.activity-guide>header p{margin:0;color:var(--muted2);font-size:11px}
+.activity-guide>summary{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer;list-style:none}
+.activity-guide>summary::-webkit-details-marker{display:none}
+.activity-guide>summary span{display:grid;gap:3px}
+.activity-guide>summary b{font-size:13px}
+.activity-guide>summary small{color:var(--muted2);font-size:11px}
+.activity-guide>summary i{position:relative;width:22px;height:22px;flex:none;border:1px solid var(--line2);border-radius:50%}
+.activity-guide>summary i:before,.activity-guide>summary i:after{position:absolute;top:10px;left:6px;right:6px;height:1px;background:var(--ink2);content:""}
+.activity-guide>summary i:after{transform:rotate(90deg)}
+.activity-guide[open]>summary{margin-bottom:12px}
+.activity-guide-body{padding-top:2px}
 .activity-guide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 .activity-guide-card{min-width:0;padding:12px;border:1px solid var(--line);border-radius:11px;background:rgba(5,14,30,.24)}
 .activity-guide-title{display:grid;gap:6px}
@@ -104,3 +111,40 @@ main{padding:36px 0 60px}.eyebrow{display:flex;align-items:center;gap:10px;margi
 :root[data-theme="light"] .activity-guide-title h5,:root[data-theme="light"] .activity-guide-card>p b{color:#183554}
 :root[data-theme="light"] .activity-guide-card>p,:root[data-theme="light"] .activity-guide-card ul{color:#64758d}
 @media(max-width:800px){.activity-guide-grid{grid-template-columns:1fr}}
+
+.weekly-plan{margin:16px 0;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025)}
+.weekly-plan>header{display:flex;justify-content:space-between;align-items:end;gap:14px;margin-bottom:12px}
+.weekly-plan>header h4{margin:3px 0;font-size:18px}
+.weekly-plan>header p:not(.eyebrow){margin:3px 0 0;color:var(--muted2);font-size:12px}
+.year-field{width:min(190px,100%);margin:0}
+.weekly-legend{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 12px}
+.place-tag{display:inline-flex;align-items:center;max-width:100%;padding:5px 9px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--ink2);font-size:11px;line-height:1.4}
+.place-online{background:rgba(66,215,181,.12);color:#9cebd8}
+.place-polo{background:rgba(75,140,255,.16);color:#c2d9ff}
+.place-mova{background:rgba(165,119,255,.16);color:#ddcaff}
+.place-prova{background:rgba(243,201,105,.12);color:#f6dc9a}
+.weekly-table-wrap{width:100%;}
+.weekly-table{min-width:720px}
+.weekly-table th{white-space:nowrap}
+.weekly-table td{vertical-align:middle}
+.weekly-table td:first-child{width:130px;color:var(--ink)}
+.weekly-table td:nth-child(2){min-width:145px}
+.weekly-table td:nth-child(3){min-width:125px;color:var(--muted)}
+.weekly-table td:last-child{min-width:270px}
+.weekly-table td strong{display:block;color:var(--ink)}
+.weekly-detail{display:block;margin-top:3px;color:var(--muted2);font-size:11px}
+.weekly-notice{margin:12px 0 0;padding:10px 12px;border-left:3px solid var(--accent);border-radius:0 9px 9px 0;background:rgba(75,140,255,.08);color:var(--muted);font-size:12px;line-height:1.5}
+.annual-overview{margin-top:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.annual-overview>summary{padding:11px 13px;background:rgba(255,255,255,.035);color:var(--ink2);cursor:pointer;font-size:12px;font-weight:700}
+.annual-overview>.table-wrap,.annual-overview>.sub{margin:10px}
+.annual-overview>.sub{margin-bottom:12px}
+:root[data-theme="light"] .weekly-plan{background:#f8fafd;border-color:#d6e1ef}
+:root[data-theme="light"] .place-tag{background:#eef3f9;color:#36506d}
+:root[data-theme="light"] .place-online{background:#e3f7f2;color:#137a68}
+:root[data-theme="light"] .place-polo{background:#e8f0ff;color:#2254a1}
+:root[data-theme="light"] .place-mova{background:#f1eaff;color:#6842a2}
+:root[data-theme="light"] .place-prova{background:#fff5dd;color:#845d0e}
+:root[data-theme="light"] .weekly-notice{background:#edf4ff;color:#415a78}
+:root[data-theme="light"] .annual-overview>summary{background:#f3f7fc;color:#294666}
+@media(max-width:650px){.weekly-plan{padding:12px}.weekly-plan>header{align-items:stretch;flex-direction:column}.year-field{width:100%}.weekly-table{min-width:680px}}
+
