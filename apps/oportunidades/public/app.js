@@ -2,6 +2,15 @@
   'use strict';
   const API = '/oportunidades/api/ma/oportunidades';
   const $ = id => document.getElementById(id);
+  const THEME_KEY = 'balbino-theme';
+  function carregarTema() { try { const t = localStorage.getItem(THEME_KEY) || localStorage.getItem('balbino:tema'); if (t === 'claro' || t === 'light') return 'claro'; if (t === 'escuro' || t === 'dark') return 'escuro'; } catch {} return 'escuro'; }
+  function aplicarTema(tema, salvar = false) {
+    const claro = tema === 'claro'; document.documentElement.dataset.tema = claro ? 'claro' : 'escuro';
+    const botao = $('theme-toggle');
+    if (botao) { botao.textContent = claro ? '🌙 Tema escuro' : '☀️ Tema claro'; botao.setAttribute('aria-label', claro ? 'Mudar para tema escuro' : 'Mudar para tema claro'); botao.setAttribute('aria-pressed', String(claro)); }
+    if (salvar) { try { localStorage.setItem(THEME_KEY, claro ? 'light' : 'dark'); } catch {} }
+  }
+  document.documentElement.dataset.tema = carregarTema();
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmtN = n => n == null ? '—' : Number(n).toLocaleString('pt-BR');
   const fmtP = n => n == null ? '—' : Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
@@ -515,6 +524,8 @@
     const o = ev.target.closest('[data-open]'); if (o) { openDetail(Number(o.dataset.open)); return; }
     const c = ev.target.closest('[data-close]'); if (c) c.closest('dialog')?.close();
   });
+  $('theme-toggle').addEventListener('click', () => aplicarTema(document.documentElement.dataset.tema === 'claro' ? 'escuro' : 'claro', true));
+  aplicarTema(document.documentElement.dataset.tema);
   $('logout').addEventListener('click', async () => { try { await api('/api/portal/logout', { method: 'POST', body: '{}' }); } catch {} location.assign('/'); });
 
   (async () => {
