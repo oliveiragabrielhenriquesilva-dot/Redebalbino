@@ -27,9 +27,10 @@ O Gerador de Artes precisa de Chromium no ambiente Linux. Configure `CHROME_PATH
 - `/chat/` — Balbino Chat
 - `/matriculas/` — Acompanhamento de Matrículas
 - `/artes/` — Gerador de Artes
-- `/informa/` — Balbino Informa, área de consulta disponível para todas as contas ativas do portal
+- `/oportunidades/` — Balbino Oportunidades (banco e acessos do Matrículas; ver `DOCUMENTACAO/BALBINO_OPORTUNIDADES.md`)
+- `/informa/` — Balbino Informa, consulta do Calendário Administrativo Unicesumar para todas as contas ativas do portal
 - `/healthz` — saúde do roteador
 
 Cada banco fica em seu diretório próprio sob `runtime/`.
 
-O Balbino Informa usa a sessão central do portal e não exige login ou permissão de sistema separados. A aplicação publica somente as páginas de consulta e os resumos textuais; os documentos internos originais não ficam no repositório.
+O Balbino Informa usa a sessão central do portal e não exige login separado. Os dados vêm somente do Calendário Administrativo Unicesumar (https://secretaria-unicesumar.github.io/calendariounicesumar/): o servidor lê a planilha Google publicada por aquele site no máximo a cada 30 minutos e guarda uma cópia em `informa/calendario-unicesumar-cache.json`. Se a planilha não responder, usa a última cópia; sem cópia, mostra os dados base do código do site, com aviso na tela. O servidor precisa de acesso de saída a `docs.google.com`.

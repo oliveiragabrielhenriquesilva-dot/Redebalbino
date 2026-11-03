@@ -44,9 +44,14 @@
 
       <section class="dashboard hidden" id="dashboardView" aria-labelledby="dashboardTitle">
         <div class="dashboard-heading">
-          <div><div class="eyebrow">Sistemas da equipe</div><h1 id="dashboardTitle">Olá, <span id="userName"></span></h1><p>Escolha um sistema para continuar.</p></div>
+          <div><div class="eyebrow" id="todayLabel">Sistemas da equipe</div><h1 id="dashboardTitle"><span class="greet" id="greeting">Olá</span>, <span id="userName"></span></h1><p id="dashboardLead">Escolha um sistema ou comece pelo que precisa de atenção hoje.</p></div>
           <button class="secondary-btn hidden" id="manageUsersBtn" type="button"><span aria-hidden="true">♙</span> Usuários e acessos</button>
         </div>
+        <section class="today hidden" id="todayPanel" aria-labelledby="todayTitle">
+          <div class="today-head"><h2 id="todayTitle">Captação</h2><span id="todayMeta"></span></div>
+          <div class="today-grid" id="todayGrid"></div>
+        </section>
+        <div class="section-label">Seus sistemas</div>
         <div class="app-grid" id="appGrid"></div>
         <div class="empty-state hidden" id="emptyState">Sua conta ainda não tem acesso a nenhum sistema. Peça ao administrador para liberar o acesso.</div>
       </section>

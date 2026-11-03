@@ -16,7 +16,7 @@ const { db, DB_FILE, DATA_DIR } = require('./db');
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const SESSAO_DIAS = 30;
-const VERSAO_APP = '30.3.6';
+const VERSAO_APP = '30.4.0';
 
 // ---------------------------------------------------------------- utilidades
 const tx = (fn) => { db.exec('BEGIN'); try { const r = fn(); db.exec('COMMIT'); return r; } catch (e) { db.exec('ROLLBACK'); throw e; } };
@@ -1453,6 +1453,7 @@ function conferenciaMundoAzul(q, usuario) {
 
 // ---------------------------------------------------------------- conciliação com o Mundo Azul (posições oficiais)
 const conciliacaoMA = require('./conciliacao')({ db, DATA_DIR, all, get, run, tx, falha, registrar, lerCorpo, enviarJson, ehAdmin, podeLancar, hojeISO, cfg });
+const oportunidades = require('./oportunidades')({ db, DATA_DIR, all, get, run, tx, falha, registrar, lerCorpo, enviarJson, ehAdmin, podeLancar, hojeISO, norm: conciliacaoMA.norm, poloDaFonte: conciliacaoMA.poloDaFonte, produtoDoCurso: conciliacaoMA.produtoDoCurso });
 
 const gestao = require('./gestao')({db,all,get,run,falha,enviarJson,lerCorpo,ehAdmin,poloRestrito,dataRef,addDias,inicioSemana,painel,paginaTutor,bootstrap,registrar,tx,validarPeriodo,hojeISO,mascaraCpf});
 
@@ -1685,6 +1686,7 @@ async function rotear(req, res) {
     }
   }
   if (p === '/api/conferencia' && m === 'GET') return enviarJson(res, 200, conferenciaMundoAzul(q, usuario));
+  if (p.startsWith('/api/ma/oportunidades') && await oportunidades.rotas(req, res, p, m, q, usuario)) return;
   if (p.startsWith('/api/ma/') && await conciliacaoMA.rotas(req, res, p, m, q, usuario)) return;
 
   // Matrículas
@@ -1787,6 +1789,22 @@ async function rotear(req, res) {
     });
     registrar(usuario, 'salvou metas diárias de ritmo', `ciclo ${ciclo}, polo ${polo}, tutor ${tutor}, semana ${sem.inicio}`);
     return enviarJson(res, 200, { ok: true });
+  }
+  // Resumo do processo atual para a página inicial do Portal: mesmos números do painel (mesmo cálculo e permissões).
+  if (p === '/api/resumo-portal' && m === 'GET') {
+    const ciclo = get('SELECT id, nome FROM ciclos WHERE padrao = 1 ORDER BY id DESC LIMIT 1') || get('SELECT id, nome FROM ciclos ORDER BY id DESC LIMIT 1');
+    if (!ciclo) return enviarJson(res, 200, { ciclo: null });
+    const d = painel({ ciclo: String(ciclo.id) }, usuario);
+    const r = d.ritmo || {}, hT = r.hoje_situacao?.total || {}, prox = (r.spaces || []).find(x => x.proximo) || null;
+    const alvo = prox || r.final || null;
+    return enviarJson(res, 200, {
+      ciclo: { id: ciclo.id, nome: ciclo.nome }, ref: r.hoje || hojeISO(),
+      matriculas: d.totais.qtd, meta: d.totais.meta, percentual_meta: d.totais.meta ? d.totais.qtd / d.totais.meta * 100 : null, pendentes_ra: d.pendentes_ra,
+      hoje: { esperado: hT.esperado ?? null, realizado: hT.realizado ?? null, saldo: hT.saldo ?? null, status: hT.status || null },
+      vendas_dia: (d.porPolo || []).reduce((a, x) => a + (x.vendas_dia || 0), 0), vendas_semana: (d.porPolo || []).reduce((a, x) => a + (x.vendas_semana || 0), 0),
+      proximo_space: alvo ? { nome: alvo.nome, data: alvo.data, final: !prox, esperado: alvo.total?.esperado ?? null, realizado: alvo.total?.realizado ?? null, falta: alvo.total?.falta ?? null, por_dia: alvo.total?.por_dia ?? null, dias: alvo.dias ?? null } : null,
+      aguardando_spaces: !!r.aguardando_spaces, polo_restrito: usuario.papel === 'visualizador' && usuario.polo_id ? (get('SELECT nome FROM polos WHERE id = ?', usuario.polo_id)?.nome || null) : null
+    });
   }
   if (p === '/api/painel' && m === 'GET') return enviarJson(res, 200, painel(q, usuario));
   if (p === '/api/ritmo' && m === 'GET') return enviarJson(res, 200, ritmo(q, usuario));
@@ -1909,4 +1927,4 @@ function iniciarRotinasHospedadas() {
 }
 if (require.main === module) servidor.listen(PORT, process.env.HOST || '0.0.0.0', iniciarRotinasHospedadas);
 
-module.exports = { servidor, db, conciliacaoMA, painel, ritmo, previsaoSemana, diario, origensPolo, ritmoSemanal, paginaTutor, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, percentualCalendario, gestao, iniciarRotinasHospedadas };
+module.exports = { servidor, db, conciliacaoMA, oportunidades, painel, ritmo, previsaoSemana, diario, origensPolo, ritmoSemanal, paginaTutor, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, percentualCalendario, gestao, iniciarRotinasHospedadas };

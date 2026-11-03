@@ -221,51 +221,15 @@ function jsonReply(res, status, data, headers = {}) {
   res.end(JSON.stringify(data));
 }
 
-function informaCalendarFile() { return path.join(RUNTIME, 'informa', 'calendar.json'); }
-function readInformaCalendar() {
-  const file = informaCalendarFile();
-  const source = fs.existsSync(file) ? file : path.join(ROOT, 'apps', 'informa', 'calendar-2026.json');
-  return JSON.parse(fs.readFileSync(source, 'utf8'));
-}
-function validateInformaCalendar(input) {
-  const original = JSON.parse(fs.readFileSync(path.join(ROOT, 'apps', 'informa', 'calendar-2026.json'), 'utf8'));
-  if (!input || input.year !== original.year || !Array.isArray(input.courses) || input.courses.length !== original.courses.length) throw new Error('Estrutura do calendário inválida.');
-  const output = structuredClone(original);
-  for (let ci = 0; ci < original.courses.length; ci++) {
-    const baseCourse = original.courses[ci], editedCourse = input.courses[ci];
-    if (!editedCourse || editedCourse.id !== baseCourse.id || !Array.isArray(editedCourse.modules) || editedCourse.modules.length !== baseCourse.modules.length) throw new Error('A lista de cursos não corresponde ao calendário publicado.');
-    for (let mi = 0; mi < baseCourse.modules.length; mi++) {
-      const baseModule = baseCourse.modules[mi], editedModule = editedCourse.modules[mi];
-      if (!editedModule || editedModule.label !== baseModule.label || !Array.isArray(editedModule.events) || editedModule.events.length !== baseModule.events.length) throw new Error('A lista de módulos não corresponde ao calendário publicado.');
-      for (let ei = 0; ei < baseModule.events.length; ei++) {
-        const baseEvent = baseModule.events[ei], editedEvent = editedModule.events[ei];
-        if (!editedEvent || editedEvent.name !== baseEvent.name) throw new Error('As atividades do calendário não podem ser alteradas por esta tela.');
-        for (const key of ['first', 'second', 'common']) {
-          const value = editedEvent[key] == null ? '' : String(editedEvent[key]).trim();
-          if (value.length > 120 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) throw new Error('Uma das datas excede o limite permitido.');
-          output.courses[ci].modules[mi].events[ei][key] = value;
-        }
-      }
-    }
-  }
-  return output;
-}
+const informaFonte = require('./apps/informa/fonte').criarFonte(RUNTIME);
+// Balbino Informa: somente leitura, dados do Calendário Administrativo Unicesumar (ver apps/informa/fonte.js).
 async function informaApi(req, res, url) {
-  if (url.pathname !== '/api/informa/calendar') return jsonReply(res, 404, { error: 'Endpoint não encontrado.' });
+  if (url.pathname !== '/api/informa/calendario') return jsonReply(res, 404, { error: 'Endpoint não encontrado.' });
   const user = portal.current(req);
   if (!user) return jsonReply(res, 401, { error: 'Entre no portal para consultar o calendário.' });
-  if (req.method === 'GET') return jsonReply(res, 200, readInformaCalendar());
-  if (req.method !== 'PUT') return jsonReply(res, 405, { error: 'Método não permitido.' }, { Allow: 'GET, PUT' });
-  if (!sameOrigin(req)) return jsonReply(res, 403, { error: 'Origem da solicitação inválida.' });
-  if (!user.is_admin) return jsonReply(res, 403, { error: 'Somente o administrador pode alterar as datas.' });
-  try {
-    const calendar = validateInformaCalendar(await readJson(req, 2 * 1024 * 1024));
-    const file = informaCalendarFile(), dir = path.dirname(file), temp = `${file}.${process.pid}.tmp`;
-    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-    fs.writeFileSync(temp, JSON.stringify(calendar, null, 2) + '\n', { mode: 0o600 });
-    fs.renameSync(temp, file);
-    return jsonReply(res, 200, { calendar, saved: true });
-  } catch (error) { return jsonReply(res, error.status || 400, { error: error.message || 'Não foi possível salvar o calendário.' }); }
+  if (req.method !== 'GET') return jsonReply(res, 405, { error: 'Método não permitido.' }, { Allow: 'GET' });
+  try { return jsonReply(res, 200, await informaFonte.calendario({ forcar: url.searchParams.get('atualizar') === '1' && Boolean(user.is_admin) })); }
+  catch (error) { return jsonReply(res, 500, { error: 'Não foi possível montar o calendário: ' + error.message }); }
 }
 
 function tutorUsername(name, polo) {
@@ -377,8 +341,7 @@ const INFORMA_FILES = new Map([
   ['/', 'index.html'],
   ['/index.html', 'index.html'],
   ['/app.js', 'app.js'],
-  ['/style.css', 'style.css'],
-  ['/details.css', 'details.css']
+  ['/style.css', 'style.css']
 ]);
 function serveInforma(req, res, url) {
   if (!portal.current(req)) {
@@ -400,7 +363,7 @@ function serveInforma(req, res, url) {
     return res.end('Arquivo não encontrado.');
   }
   const content = fs.readFileSync(path.join(ROOT, 'apps', 'informa', 'public', fileName));
-  const types = { 'index.html': 'text/html; charset=utf-8', 'app.js': 'text/javascript; charset=utf-8', 'style.css': 'text/css; charset=utf-8', 'details.css': 'text/css; charset=utf-8' };
+  const types = { 'index.html': 'text/html; charset=utf-8', 'app.js': 'text/javascript; charset=utf-8', 'style.css': 'text/css; charset=utf-8' };
   res.writeHead(200, {
     'Content-Type': types[fileName],
     'Cache-Control': 'no-store',
@@ -412,7 +375,10 @@ function serveInforma(req, res, url) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
-  if (url.pathname.startsWith('/api/informa/')) return jsonReply(res, 410, { error: 'Balbino Informa está temporariamente desativado.' });
+  if (url.pathname.startsWith('/api/informa/')) {
+    informaApi(req, res, url).catch(error => jsonReply(res, 500, { error: error.message || 'Falha ao consultar o calendário.' }));
+    return;
+  }
   if (url.pathname.startsWith('/api/portal/')) {
     portalApi(req, res, url).catch(error => jsonReply(res, error.status || 400, { error: error.message || 'Falha ao processar a solicitação.' }));
     return;
@@ -432,7 +398,7 @@ const server = http.createServer((req, res) => {
     });
     return res.end(JSON.stringify({ ok: appHealth.every(app => app.status === 'ready' && app.loaded), apps: appHealth }));
   }
-  if (url.pathname === '/informa' || url.pathname.startsWith('/informa/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Balbino Informa está temporariamente desativado.');
+  if (url.pathname === '/informa' || url.pathname.startsWith('/informa/')) return serveInforma(req, res, url);
   if (url.pathname === '/artes' || url.pathname.startsWith('/artes/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Gerador de Artes está temporariamente desativado.');
   if (url.pathname === '/chat' || url.pathname.startsWith('/chat/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Balbino Chat está temporariamente desativado.');
   if (url.pathname === '/oportunidades' || url.pathname.startsWith('/oportunidades/')) {
@@ -500,7 +466,7 @@ server.on('upgrade', (req, socket, head) => {
   app.server.emit('upgrade', req, socket, head);
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /matriculas, /oportunidades`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /matriculas, /oportunidades, /informa`));
 startApps().catch(error => {
   console.error('Não foi possível preparar os sistemas:', error);
 });

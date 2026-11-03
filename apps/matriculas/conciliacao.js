@@ -446,89 +446,13 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
   }
 
 
-  const etapasOportunidade=new Set(['novo','contato','negociacao','pendencia','perdido']);
-  const cpfChave=v=>{const d=String(v||'').replace(/\D/g,'');return d.length>=10&&d.length<=11?d.padStart(11,'0'):''};
-  const dataOportunidade=v=>{const d=String(v||'').trim();return /^\d{4}-\d{2}-\d{2}$/.test(d)?d:null};
-  function listaOportunidades(q,usuario){
-    const cicloId=Number(q.ciclo)||Number(get('SELECT id FROM ciclos WHERE padrao=1 ORDER BY id DESC LIMIT 1')?.id)||0;
-    if(!cicloId)falha(400,'Não há processo ativo para consultar.');
-    const situacao=['abertas','perdidas','matriculadas','todas'].includes(String(q.situacao||''))?String(q.situacao):'abertas';
-    const leads=all(`SELECT o.*,u.nome responsavel FROM ma_oportunidades o
-      LEFT JOIN usuarios u ON u.id=o.responsavel_id
-      WHERE o.ciclo_id=? ORDER BY COALESCE(o.proximo_contato,o.data_retorno_origem,'9999-12-31'),o.nome,o.id LIMIT 10000`,cicloId);
-    const matriculas=all('SELECT cpf,ra FROM ma_lista_alunos WHERE ciclo_id=? AND ativo=1 AND ra<>\'\'',cicloId);
-    const porCpf=new Map();
-    for(const m of matriculas){const key=cpfChave(m.cpf);if(!key)continue;const atual=porCpf.get(key)||new Set();atual.add(String(m.ra||'').trim());porCpf.set(key,atual);}
-    const restrito=filtroUsuario(usuario),termo=String(q.q||'').trim().toLocaleLowerCase('pt-BR');
-    const rows=leads.map(r=>{
-      const ras=porCpf.get(cpfChave(r.cpf));const ra=ras&&ras.size===1?[...ras][0]:'';
-      return {...r,candidato_id:r.id,ra,telefone:r.telefone||'',situacao:ra?'matriculado':r.etapa==='perdido'?'perdida':'oportunidade',proximo_contato:r.proximo_contato||r.data_retorno_origem||''};
-    }).filter(r=>{
-      if(restrito&&poloDaFonte(r.polo_fonte)!==restrito)return false;
-      if(situacao==='abertas'&&(r.ra||r.etapa==='perdido'))return false;
-      if(situacao==='perdidas'&&(r.ra||r.etapa!=='perdido'))return false;
-      if(situacao==='matriculadas'&&!r.ra)return false;
-      if(termo&&!['nome','identificador','cpf','curso_nome','polo_fonte','telefone','status_origem'].some(k=>String(r[k]||'').toLocaleLowerCase('pt-BR').includes(termo)))return false;
-      return true;
-    });
-    const visiveis=leads.filter(r=>!restrito||poloDaFonte(r.polo_fonte)===restrito);
-    const abertas=visiveis.filter(r=>r.etapa!=='perdido'&&porCpf.get(cpfChave(r.cpf))?.size!==1);
-    const hoje=hojeISO();
-    const resumo={abertas:abertas.length,novas:abertas.filter(r=>r.etapa==='novo').length,em_contato:abertas.filter(r=>['contato','negociacao','pendencia'].includes(r.etapa)).length,matriculadas:visiveis.filter(r=>porCpf.get(cpfChave(r.cpf))?.size===1).length,perdidas:visiveis.filter(r=>r.etapa==='perdido'&&porCpf.get(cpfChave(r.cpf))?.size!==1).length,retornos_atrasados:abertas.filter(r=>(r.proximo_contato||r.data_retorno_origem)&&String(r.proximo_contato||r.data_retorno_origem)<hoje).length};
-    return{ciclo:cicloId,ciclos:all('SELECT id,nome,padrao FROM ciclos ORDER BY id DESC'),etapas:[...etapasOportunidade],pode_editar:!!podeLancar(usuario),responsaveis:podeLancar(usuario)?all("SELECT id,nome FROM usuarios WHERE ativo=1 ORDER BY nome"):[],resumo,lista:rows.slice(0,1000)};
-  }
-  function importarOportunidades(c,usuario){
-    const cicloId=Number(c.ciclo);
-    if(!cicloId||!get('SELECT id FROM ciclos WHERE id=?',cicloId))falha(400,'Selecione um processo válido.');
-    if(!Array.isArray(c.linhas)||!c.linhas.length)falha(400,'A planilha não contém linhas para importar.');
-    if(c.linhas.length>3000)falha(413,'A planilha excede o limite de 3.000 registros por importação.');
-    const seen=new Set();let novos=0,atualizados=0,ignorados=0;
-    for(const r of c.linhas){
-      const identificador=String(r.identificador||'').trim().slice(0,80);
-      const cpf=cpfChave(r.cpf);
-      const chave=identificador||cpf;
-      if(!chave){ignorados++;continue}
-      const id=identificador||('CPF:'+cpf);
-      if(seen.has(id)){ignorados++;continue}seen.add(id);
-      const old=get('SELECT id FROM ma_oportunidades WHERE ciclo_id=? AND identificador=?',cicloId,id);
-      const vals=[cicloId,id,cpf||null,String(r.nome||'').trim().slice(0,180)||null,String(r.telefone||'').replace(/\D/g,'').slice(0,15)||null,String(r.curso_cod||'').trim().slice(0,80)||null,String(r.curso_nome||'').trim().slice(0,180)||null,String(r.polo_fonte||'').trim().slice(0,120)||null,String(r.prioridade||'').trim().slice(0,120)||null,dataOportunidade(r.ultimo_atendimento),dataOportunidade(r.data_retorno),dataOportunidade(r.data_registro),Math.max(0,Number(r.interacoes)||0),String(r.status_origem||'').trim().slice(0,100)||null,String(r.origem||'').trim().slice(0,120)||null,String(r.localizacao||'').trim().slice(0,120)||null,String(r.contato||'').trim().slice(0,120)||null,String(r.responsavel_origem||'').trim().slice(0,180)||null];
-      run(`INSERT INTO ma_oportunidades(ciclo_id,identificador,cpf,nome,telefone,curso_cod,curso_nome,polo_fonte,prioridade,ultimo_atendimento,data_retorno_origem,data_registro,interacoes,status_origem,origem,localizacao,contato,responsavel_origem)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        ON CONFLICT(ciclo_id,identificador) DO UPDATE SET cpf=excluded.cpf,nome=excluded.nome,telefone=excluded.telefone,curso_cod=excluded.curso_cod,curso_nome=excluded.curso_nome,polo_fonte=excluded.polo_fonte,prioridade=excluded.prioridade,ultimo_atendimento=excluded.ultimo_atendimento,data_retorno_origem=excluded.data_retorno_origem,data_registro=excluded.data_registro,interacoes=excluded.interacoes,status_origem=excluded.status_origem,origem=excluded.origem,localizacao=excluded.localizacao,contato=excluded.contato,responsavel_origem=excluded.responsavel_origem,atualizado_em=datetime('now','localtime')`,...vals);
-      if(old)atualizados++;else novos++;
-    }
-    registrar(usuario,'importou oportunidades',`Processo ${cicloId}: ${novos} novos, ${atualizados} atualizados`);
-    return{ok:true,novos,atualizados,ignorados};
-  }
-  function salvarOportunidade(id,c,usuario){
-    const row=get('SELECT id,ciclo_id,identificador,polo_fonte FROM ma_oportunidades WHERE id=?',id);
-    if(!row)falha(404,'Lead não encontrado.');
-    const restrito=filtroUsuario(usuario);if(restrito&&poloDaFonte(row.polo_fonte)!==restrito)falha(404,'Lead não encontrado.');
-    const etapa=String(c.etapa||'novo');if(!etapasOportunidade.has(etapa))falha(400,'Etapa inválida.');
-    const responsavel=c.responsavel_id===''||c.responsavel_id==null?null:Number(c.responsavel_id);
-    if(responsavel!==null&&(!Number.isInteger(responsavel)||!get('SELECT id FROM usuarios WHERE id=? AND ativo=1',responsavel)))falha(400,'Responsável inválido.');
-    const proximo=String(c.proximo_contato||'').trim();if(proximo&&!dataOportunidade(proximo))falha(400,'Data de retorno inválida.');
-    const observacao=String(c.observacao||'').trim().slice(0,2000);
-    run(`UPDATE ma_oportunidades SET etapa=?,responsavel_id=?,proximo_contato=?,observacao=?,atualizado_por=?,atualizado_em=datetime('now','localtime') WHERE id=?`,etapa,responsavel,proximo||null,observacao||null,usuario.login,id);
-    registrar(usuario,'atualizou oportunidade',`Lead ${row.identificador} — ${etapa}`);
-    return{ok:true};
-  }
+  // Balbino Oportunidades: rotas e regras ficam em ./oportunidades.js (registradas antes destas no server.js).
 
   // ------------------------------------------------------------------ rotas /api/ma/*
   async function rotas(req, res, p, m, q, usuario) {
     if (!p.startsWith('/api/ma/')) return false;
     const exigeLancar = () => { if (!podeLancar(usuario)) falha(403, 'Seu usuário não pode registrar posições oficiais'); };
     const exigeAdmin = () => { if (!ehAdmin(usuario)) falha(403, 'Apenas administradores'); };
-    if(p==='/api/ma/oportunidades'&&m==='GET'){
-      enviarJson(res,200,listaOportunidades(q,usuario));return true;
-    }
-    if(p==='/api/ma/oportunidades/importar'&&m==='POST'){
-      exigeLancar();enviarJson(res,200,importarOportunidades(await lerCorpo(req),usuario));return true;
-    }
-    const oportunidade=p.match(/^\/api\/ma\/oportunidades\/(\d+)$/);
-    if(oportunidade&&m==='PUT'){
-      exigeLancar();enviarJson(res,200,salvarOportunidade(Number(oportunidade[1]),await lerCorpo(req),usuario));return true;
-    }
     if (p === '/api/ma/conciliacao' && m === 'GET') { enviarJson(res, 200, conciliacao(q, usuario)); return true; }
     if (p === '/api/ma/sede' && m === 'GET') { enviarJson(res, 200, quadroSede(q, usuario)); return true; }
     if (p === '/api/ma/resetar' && m === 'GET') { exigeAdmin(); const k = contarReset(q); delete k.pos; enviarJson(res, 200, k); return true; }
@@ -1073,5 +997,5 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     }
     return{ok:true};
   }
-return { rotas, conciliacao, calcular, lerPosicao, norm, extrasSede, sedeLigada, quadroSede, classificarLista, listaResumo, previaLista, gravarLista, resetar, contarReset, raPorMatricula, workerBoasVindasPendentes, workerBoasVindasResultado };
+return { rotas, poloDaFonte, produtoDoCurso, conciliacao, calcular, lerPosicao, norm, extrasSede, sedeLigada, quadroSede, classificarLista, listaResumo, previaLista, gravarLista, resetar, contarReset, raPorMatricula, workerBoasVindasPendentes, workerBoasVindasResultado };
 };

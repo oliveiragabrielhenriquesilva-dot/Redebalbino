@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b1d39">
-  <meta name="description" content="Consulte atividades, MAPA, provas e publicação de notas da Rede Balbino.">
+  <meta name="theme-color" content="#0b1730">
+  <meta name="description" content="Consulta do Calendário Administrativo Unicesumar para a equipe da Rede Balbino.">
   <title>Balbino Informa</title>
   <link rel="icon" href="/brand/monograma-rede-balbino.webp" type="image/webp">
   <link rel="stylesheet" href="/informa/style.css">
@@ -12,50 +12,51 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="/" aria-label="Voltar ao portal da Rede Balbino"><img src="/brand/rede-balbino-branco.webp" alt="Rede Balbino"></a>
-    <div class="top-actions"><span class="secure"><i></i> Área da equipe</span><a class="portal-link" href="/">Meus sistemas <span aria-hidden="true">↗</span></a></div>
+    <a class="brand" href="/" aria-label="Rede Balbino — portal">
+      <span class="brand-mark" aria-hidden="true"><img src="/brand/monograma-rede-balbino-branco.webp" alt=""></span>
+      <span><small>REDE BALBINO</small><strong>Informa</strong></span>
+    </a>
+    <nav><a href="/">Portal</a><a href="#calendario">Calendário completo</a></nav>
   </header>
 
-  <main class="shell">
-    <section class="hero">
-      <div class="hero-copy">
-        <span class="eyebrow">CONSULTA ACADÊMICA</span>
-        <h1>Balbino <span>Informa</span></h1>
-        <p>Encontre prazos de atividades, orientações sobre o MAPA, datas de provas e publicação de notas.</p>
-      </div>
-      <form class="search" id="searchForm" role="search">
+  <main>
+    <section class="hero" aria-labelledby="heroTitle">
+      <p class="eyebrow" id="today">Calendário Unicesumar</p>
+      <h1 id="heroTitle">O que você precisa <span>saber do calendário?</span></h1>
+      <form class="ask" id="askForm" role="search">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
-        <label class="visually-hidden" for="query">Buscar informações</label>
-        <input id="query" type="search" placeholder="Ex.: prova online, MAPA, módulo 52, 14/08" autocomplete="off">
-        <button type="submit">Buscar <span aria-hidden="true">→</span></button>
+        <label class="visually-hidden" for="q">Pergunte ou busque</label>
+        <input id="q" type="search" autocomplete="off" placeholder="Ex.: quando é a geração de RA do módulo 54?">
+        <button type="submit">Consultar</button>
       </form>
-      <div class="hero-foot"><span>Calendários e orientações da equipe</span><span class="hero-dot"></span><span>Calendários acadêmicos de 2026</span></div>
+      <div class="understood hidden" id="understood" aria-live="polite"></div>
+      <div class="suggestions" id="suggestions" aria-label="Perguntas frequentes"></div>
     </section>
 
-    <section class="topics" aria-labelledby="topicsTitle">
-      <div class="section-heading"><div><span class="eyebrow light-eyebrow">ATALHOS</span><h2 id="topicsTitle">O que você quer consultar?</h2></div></div>
-      <div class="topic-grid" role="group" aria-label="Filtrar por assunto">
-        <button class="topic-card topic-activities" type="button" data-category="atividades" aria-pressed="false"><span class="topic-icon">A</span><span class="topic-copy"><strong>Atividades</strong><small>Prazos separados por módulo e atividade</small></span><span class="topic-arrow" aria-hidden="true">↗</span></button>
-        <button class="topic-card topic-mapa" type="button" data-category="mapa" aria-pressed="false"><span class="topic-icon">M</span><span class="topic-copy"><strong>MAPA</strong><small>Composição da nota e onde conferir o prazo</small></span><span class="topic-arrow" aria-hidden="true">↗</span></button>
-        <button class="topic-card topic-exams" type="button" data-category="provas" aria-pressed="false"><span class="topic-icon">P</span><span class="topic-copy"><strong>Datas de provas</strong><small>Agendamento, realização e provas online</small></span><span class="topic-arrow" aria-hidden="true">↗</span></button>
-        <button class="topic-card topic-publications" type="button" data-category="publicacoes" aria-pressed="false"><span class="topic-icon">N</span><span class="topic-copy"><strong>Publicação de notas</strong><small>Datas de fechamento por módulo</small></span><span class="topic-arrow" aria-hidden="true">↗</span></button>
+    <div class="fonte-aviso hidden" id="fonteAviso" role="status"></div>
+    <div class="erro hidden" id="erro" role="alert"></div>
+
+    <section id="answer" class="answer hidden" aria-live="polite"></section>
+
+    <section id="agora" aria-labelledby="agoraTitle">
+      <div class="section-head"><div><p class="eyebrow">Agora</p><h2 id="agoraTitle">Em que módulo estamos</h2></div></div>
+      <div class="now-grid" id="nowGrid"></div>
+      <div class="grid-2">
+        <article class="card"><header><h3>Acontecendo hoje</h3><p>Prazos e rotinas em andamento.</p></header><ul class="events" id="activeList"></ul></article>
+        <article class="card"><header><h3>Próximos 30 dias</h3><p>O que começa ou termina em breve.</p></header><ol class="agenda" id="upcomingList"></ol></article>
       </div>
     </section>
 
-    <section class="results-section" aria-labelledby="resultsHeading">
-      <div class="results-toolbar">
-        <div><span class="eyebrow light-eyebrow">CONSULTA RÁPIDA</span><h2 id="resultsHeading">Todas as informações</h2><p id="resultCount" class="result-count" aria-live="polite"></p></div>
-        <label class="course-filter">Curso ou calendário
-          <select id="courseFilter"><option value="todos">Todos os cursos</option></select>
-        </label>
+    <section id="calendario" aria-labelledby="calTitle">
+      <div class="section-head"><div><p class="eyebrow">Calendário completo</p><h2 id="calTitle">Todos os eventos por módulo</h2></div>
+        <div class="cal-controls"><div class="segmented" id="productTabs" role="tablist" aria-label="Produto"></div><label class="field"><span>Ano</span><select id="yearSel"></select></label></div>
       </div>
-      <div class="result-grid" id="results"></div>
-      <div class="empty hidden" id="empty">Não encontrei esse assunto. Tente buscar por módulo, curso, atividade ou data.</div>
+      <div class="legend"><span class="st st-ativo">Em andamento</span><span class="st st-proximo">Próximo</span><span class="st st-encerrado">Encerrado</span></div>
+      <div class="matrix-wrap" id="matrix"></div>
     </section>
 
-    <aside class="notice"><span class="notice-mark" aria-hidden="true">i</span><p><strong>Confira também o Studeo.</strong> Alguns prazos e orientações variam por curso e disciplina. Quando não houver uma data geral, consulte o cronograma dentro da sala da disciplina.</p></aside>
+    <p class="fonte" id="fonte"></p>
   </main>
-
-  <footer><span>Rede Balbino <i>·</i> Balbino Informa</span><a href="/">Voltar ao portal</a></footer>
+  <footer class="site-foot"><span><strong>Rede Balbino</strong> · Balbino Informa</span><span>Confira também o Studeo: prazos de disciplina podem variar por curso.</span></footer>
 </body>
 </html>

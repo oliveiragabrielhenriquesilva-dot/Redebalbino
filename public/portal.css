@@ -21,3 +21,21 @@ footer{display:flex;justify-content:space-between;gap:16px;padding:21px 0 27px;b
 @media(max-width:600px){.tutor-provision{margin:0 17px 17px;padding:14px}.tutor-preview{grid-template-columns:1fr}.admin-actions{align-items:stretch;flex-direction:column}.admin-actions button{width:100%}}
 
 .app-informa{--glow:#25c5df;--icon-bg:rgba(37,197,223,.14);--icon-color:#8be5f2}
+
+/* Painel inicial: resumo do dia, atalhos e grade que se ajusta à quantidade de sistemas */
+main:has(.dashboard:not(.hidden)){justify-content:flex-start}
+.dashboard{padding:44px 0 60px}.dashboard-heading{margin-bottom:26px}.dashboard-heading h1{margin:12px 0 8px}
+.today{margin-bottom:30px;padding:20px 22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(150deg,rgba(24,42,73,.75),rgba(15,29,53,.8))}
+.today-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}.today-head h2{margin:0;font-size:16px;letter-spacing:-.2px}.today-head span{color:#8498b8;font-size:12px}
+.today-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.today-tile{display:block;padding:14px 16px;border:1px solid rgba(156,181,222,.2);border-radius:14px;background:rgba(5,14,30,.28);text-decoration:none;transition:border-color .18s ease,background .18s ease,transform .18s ease}
+.today-tile:hover,.today-tile:focus-visible{border-color:rgba(116,169,255,.6);background:rgba(74,137,255,.1);transform:translateY(-2px);outline:none}
+.today-tile span{display:block;color:#a6b6d0;font-size:12px;font-weight:650}.today-tile strong{display:block;margin:6px 0 2px;font-size:30px;font-weight:760;letter-spacing:-1px;font-variant-numeric:tabular-nums}.today-tile small{color:#8498b8;font-size:11px}
+.today-tile.alert strong{color:#ff9aa0}.today-tile.good strong{color:#72d8b7}
+.section-label{margin:0 0 12px;color:#9badc9;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+.app-grid{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.app-card{min-height:0}.app-card p{min-height:0}
+.app-shortcuts{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 18px}.app-shortcuts a{padding:5px 10px;border:1px solid rgba(156,181,222,.2);border-radius:999px;color:#c6d4e9;font-size:11.5px;text-decoration:none}.app-shortcuts a:hover{border-color:rgba(116,169,255,.6);color:#fff;background:rgba(74,137,255,.12)}
+.app-oportunidades{--glow:#22c9ae;--icon-bg:rgba(34,201,174,.14);--icon-color:#67e2cb}
+@media(max-width:900px){.today-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.dashboard{padding:28px 0 40px}.dashboard-heading{flex-direction:column;align-items:flex-start}.today{padding:16px}.today-tile strong{font-size:24px}}

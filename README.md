@@ -5,6 +5,8 @@ Uma aplicação Node.js única encaminha os três sistemas, mantendo cada códig
 - `https://redebalbino.com.br/chat/`
 - `https://redebalbino.com.br/matriculas/`
 - `https://redebalbino.com.br/artes/`
+- `https://redebalbino.com.br/informa/` — Balbino Informa (Calendário Administrativo Unicesumar)
+- `https://redebalbino.com.br/oportunidades/` — Balbino Oportunidades (usa o banco e os acessos do Matrículas; ver `DOCUMENTACAO/BALBINO_OPORTUNIDADES.md`)
 
 ## Implantação
 

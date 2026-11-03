@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10294f">
+  <meta name="theme-color" content="#0b1730">
   <title>Balbino Oportunidades</title>
   <link rel="stylesheet" href="/oportunidades/style.css">
   <script defer src="/oportunidades/app.js"></script>
@@ -11,70 +11,147 @@
 <body>
   <header class="topbar">
     <a class="brand" href="/oportunidades/" aria-label="Balbino Oportunidades">
-      <span class="brand-mark">B</span>
-      <span><small>REDE</small><strong>Balbino Oportunidades</strong></span>
+      <span class="brand-mark" aria-hidden="true"><img src="/brand/monograma-rede-balbino-branco.webp" alt=""></span>
+      <span><small>REDE BALBINO</small><strong>Oportunidades</strong></span>
     </a>
-    <nav><a href="/matriculas/">Matrículas</a><button id="logout" class="button ghost">Sair</button></nav>
+    <nav><span id="who" class="who"></span><a href="/">Portal</a><a href="/matriculas/">Matrículas</a><button id="logout" class="button ghost" type="button">Sair</button></nav>
   </header>
   <main>
     <section class="intro">
       <div>
-        <p class="eyebrow">INSCRIÇÕES EM ANDAMENTO</p>
-        <h1>Balbino Oportunidades</h1>
-        <p class="lead">Acompanhe quem começou a inscrição e ainda não recebeu RA.</p>
+        <p class="eyebrow">Leads de inscrição · conversão por RA</p>
+        <h1>Balbino <span>Oportunidades</span></h1>
+        <p class="lead">Quem iniciou a inscrição, como está o atendimento e quantos já têm RA confirmado.</p>
       </div>
-      <label class="field cycle-field"><span>Processo</span><select id="cycle"></select></label>
-    </section>
-    <section class="metrics" aria-label="Resumo de oportunidades">
-      <article><span>Em aberto</span><strong id="metric-open">—</strong></article>
-      <article><span>Novas</span><strong id="metric-new">—</strong></article>
-      <article><span>Em acompanhamento</span><strong id="metric-contact">—</strong></article>
-      <article><span>Com RA</span><strong id="metric-enrolled">—</strong></article>
-      <article class="alert"><span>Retorno atrasado</span><strong id="metric-overdue">—</strong></article>
-    </section>
-    <section class="panel">
-      <div class="panel-heading">
-        <div><h2>Candidatos</h2><p id="result-count">Carregando…</p></div>
-        <div class="filters">
-          <label class="upload button primary"><input id="upload" type="file" accept=".xlsx,.csv">Importar acompanhamento</label>
-          <label class="field search"><span>Buscar</span><input id="search" type="search" placeholder="Nome, curso, polo ou telefone"></label>
-          <label class="field"><span>Mostrar</span><select id="view">
-            <option value="abertas">Em aberto</option>
-            <option value="perdidas">Perdidas</option>
-            <option value="matriculadas">Com RA</option>
-            <option value="todas">Todas na lista</option>
-          </select></label>
-        </div>
-      </div>
-      <div id="error" class="error hidden" role="alert"></div>
-      <div id="notice" class="notice hidden" role="status"></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Candidato</th><th>Curso</th><th>Polo</th><th>Prioridade</th><th>Último atendimento</th><th>Etapa / situação</th><th>Responsável</th><th>Próximo contato</th><th></th></tr></thead>
-          <tbody id="rows"><tr><td colspan="9" class="empty">Carregando oportunidades…</td></tr></tbody>
-        </table>
+      <div class="intro-actions">
+        <label class="field cycle-field"><span>Processo</span><select id="cycle"></select></label>
+        <label class="upload button primary hidden" id="upload-label"><input id="upload" type="file" accept=".xlsx,.csv">Importar acompanhamento</label>
+        <button class="button" id="export-csv" type="button">Exportar CSV</button>
+        <button class="button" id="export-xlsx" type="button">Exportar XLSX</button>
       </div>
     </section>
-    <p class="note">Importe o Excel de acompanhamento para atualizar os leads. O Mundo Azul confirma o RA e a matrícula, conciliados pelo CPF. O arquivo é lido no navegador; o sistema guarda telefone, mas não e-mail.</p>
+
+    <nav class="tabs" role="tablist" aria-label="Seções">
+      <button role="tab" class="tab active" data-tab="painel" aria-selected="true">Painel gerencial</button>
+      <button role="tab" class="tab" data-tab="candidatos" aria-selected="false">Candidatos</button>
+      <button role="tab" class="tab hidden" data-tab="importacoes" aria-selected="false" id="tab-importacoes">Importações</button>
+      <button role="tab" class="tab" data-tab="definicoes" aria-selected="false">Definições</button>
+    </nav>
+
+    <section class="filters-panel" id="filters" aria-label="Filtros">
+      <div class="filters-head">
+        <strong>Filtros</strong><span id="filter-summary" class="muted">Todos os registros do processo</span>
+        <button type="button" class="mini" id="toggle-filters" aria-expanded="true">Ocultar</button>
+        <button type="button" class="mini" id="clear-filters">Limpar</button>
+      </div>
+      <div class="filter-grid" id="filter-grid">
+        <label class="field"><span>Inscrição de</span><input type="date" data-f="insc_de"></label>
+        <label class="field"><span>Inscrição até</span><input type="date" data-f="insc_ate"></label>
+        <label class="field"><span>Atendimento de</span><input type="date" data-f="atend_de"></label>
+        <label class="field"><span>Atendimento até</span><input type="date" data-f="atend_ate"></label>
+        <label class="field"><span>Polo</span><select data-f="polo" data-opt="polos"></select></label>
+        <label class="field"><span>Tutor do relatório</span><select data-f="tutor" data-opt="tutores_relatorio"></select></label>
+        <label class="field"><span>Responsável atual</span><select data-f="resp" data-opt="responsaveis_filtro"></select></label>
+        <label class="field"><span>Curso</span><select data-f="curso" data-opt="cursos"></select></label>
+        <label class="field"><span>Produto</span><select data-f="produto" data-opt="produtos"></select></label>
+        <label class="field"><span>Status (origem)</span><select data-f="status" data-opt="status"></select></label>
+        <label class="field"><span>Etapa interna</span><select data-f="etapa" data-opt="etapas"></select></label>
+        <label class="field"><span>Situação do RA</span><select data-f="ra" data-opt="ra"></select></label>
+        <label class="field"><span>Retorno</span><select data-f="retorno" data-opt="retornos"></select></label>
+        <label class="field"><span>Contato</span><select data-f="contato"><option value="">Todos</option><option value="sem">Sem contato registrado</option><option value="com">Com contato registrado</option></select></label>
+        <label class="field wide"><span>Buscar</span><input type="search" data-f="q" placeholder="Nome, identificador, curso, tutor, RA, telefone"></label>
+      </div>
+      <div class="compare-row" id="compare-row">
+        <strong>Comparar com</strong>
+        <label class="field"><span>Outro processo</span><select id="cmp-ciclo"><option value="">Não comparar</option></select></label>
+        <label class="field"><span>ou inscrição de</span><input type="date" id="cmp-de"></label>
+        <label class="field"><span>até</span><input type="date" id="cmp-ate"></label>
+        <span class="muted small">Os demais filtros valem para os dois lados.</span>
+      </div>
+    </section>
+
+    <div id="error" class="error hidden" role="alert"></div>
+    <div id="notice" class="notice hidden" role="status"></div>
+
+    <section id="view-painel" class="view">
+      <div id="avisos"></div>
+      <div class="kpis" id="kpis"></div>
+      <div id="comparacao"></div>
+      <div class="grid-2">
+        <article class="card"><header><h2>Status da inscrição (origem)</h2><p>Como a inscrição está no relatório. Não é etapa de atendimento.</p></header><div id="chart-status"></div></article>
+        <article class="card"><header><h2>Funil por etapa interna</h2><p>Etapa atual de cada oportunidade no acompanhamento.</p></header><div id="chart-etapa"></div></article>
+      </div>
+      <article class="card"><header><h2>Por polo</h2><p>Clique em um número para ver os candidatos.</p></header><div id="table-polo"></div></article>
+      <article class="card"><header><h2>Por tutor do relatório</h2><p>Responsável indicado na planilha de acompanhamento (origem).</p></header><div id="table-tutor"></div></article>
+      <article class="card"><header><h2>Por responsável atual</h2><p>Quem foi definido no sistema para cuidar da oportunidade.</p></header><div id="table-resp"></div></article>
+      <article class="card"><header><h2>Polo × tutor × status</h2><p>Quantidade de oportunidades por status de origem em cada combinação.</p></header><div id="table-cruz"></div></article>
+      <div class="grid-2">
+        <article class="card"><header><h2>Conversão por mês de inscrição</h2><p>RA confirmado ÷ oportunidades inscritas no mês.</p></header><div id="chart-conv"></div></article>
+        <article class="card"><header><h2>Volume atendido por semana</h2><p>Atendimentos registrados no sistema (não inclui o histórico da planilha).</p></header><div id="chart-vol"></div><div id="table-autor"></div></article>
+      </div>
+      <div class="grid-2">
+        <article class="card"><header><h2>Por curso</h2></header><div id="table-curso"></div></article>
+        <article class="card"><header><h2>Por produto</h2></header><div id="table-produto"></div></article>
+      </div>
+      <p class="note" id="painel-meta"></p>
+    </section>
+
+    <section id="view-candidatos" class="view hidden">
+      <article class="card">
+        <header class="row-head"><div><h2>Candidatos</h2><p id="list-count">—</p></div>
+          <label class="field"><span>Ordenar por</span><select id="list-order"><option value="retorno">Próximo retorno</option><option value="nome">Nome</option><option value="inscricao">Inscrição mais recente</option><option value="contato">Último contato</option><option value="polo">Polo</option></select></label>
+        </header>
+        <div id="list-table"></div>
+        <div class="pager" id="list-pager"></div>
+      </article>
+    </section>
+
+    <section id="view-importacoes" class="view hidden">
+      <article class="card"><header><h2>Importações deste processo</h2><p>Cada importação registra quem enviou, quando e o que aconteceu com cada linha problemática.</p></header><div id="imports"></div></article>
+    </section>
+
+    <section id="view-definicoes" class="view hidden">
+      <article class="card prose">
+        <header><h2>Definições dos indicadores</h2><p>Use estas definições ao comparar números com outras bases.</p></header>
+        <dl>
+          <dt>Oportunidade</dt><dd>Uma linha da planilha de acompanhamento, identificada pela coluna <b>Identificador</b> dentro do processo selecionado. Linhas sem Identificador são reconhecidas pelo CPF. Uma oportunidade nunca é apagada por não vir numa importação posterior.</dd>
+          <dt>Status (origem)</dt><dd>Texto da coluna Status da planilha (ex.: Boleto vencido, Boleto não gerado, Inscrito, Qualificado). É atualizado a cada importação e não muda a etapa interna.</dd>
+          <dt>Etapa interna</dt><dd>Andamento do atendimento no sistema: Novo, Em contato, Aguardando retorno, Em negociação, Inscrição pendente, Concluído, Sem interesse. Só muda por ação da equipe; a importação não altera.</dd>
+          <dt>RA confirmado</dt><dd>Existe aluno com RA na lista do Mundo Azul <b>do mesmo processo</b> (Matrículas › Conciliação Mundo Azul) e: o CPF da oportunidade corresponde a exatamente um RA, ou alguém que lança confirmou o vínculo manualmente. Estar “Inscrito” ou ter boleto não conta.</dd>
+          <dt>Aguardando conciliação</dt><dd>Há aluno com RA possivelmente correspondente, mas sem confirmação confiável: o CPF tem mais de um RA, ou só o nome completo coincide. Não entra na conversão até alguém confirmar ou descartar.</dd>
+          <dt>Sem RA</dt><dd>Nenhuma correspondência na lista do Mundo Azul do processo.</dd>
+          <dt>Taxa de conversão</dt><dd>RA confirmado ÷ total de oportunidades no filtro. O denominador inclui todas as oportunidades filtradas (abertas, sem interesse e aguardando conciliação).</dd>
+          <dt>Em aberto</dt><dd>Sem RA confirmado e com etapa diferente de Concluído e Sem interesse.</dd>
+          <dt>Sem contato registrado</dt><dd>Nenhum atendimento registrado no sistema e sem data de último atendimento na planilha.</dd>
+          <dt>Retorno</dt><dd>Usa o próximo contato definido no sistema; se não houver, a data de retorno da planilha. Vencido = antes de hoje. Só vale para oportunidades em aberto.</dd>
+          <dt>Período de inscrição</dt><dd>Filtra pela data de registro da planilha. Oportunidades sem essa data ficam fora quando o período é informado.</dd>
+          <dt>Período de atendimento</dt><dd>Inclui oportunidades com atendimento registrado no sistema no período ou com último atendimento da planilha no período. O volume atendido conta apenas os registros do sistema.</dd>
+          <dt>Tutor do relatório × responsável atual × autor</dt><dd>Tutor do relatório vem da planilha. Responsável atual é definido no sistema e cada troca fica no histórico. Autor é quem registrou cada atendimento.</dd>
+          <dt>Funil por etapa</dt><dd>“Na etapa ou adiante” usa a etapa atual de cada oportunidade na ordem Novo → Concluído (Sem interesse fica fora). Não reconstrói etapas passadas.</dd>
+          <dt>Polo não identificado</dt><dd>Nome de polo da planilha sem vínculo com o cadastro. Aparece só para a administração; tutores veem apenas as oportunidades do próprio polo.</dd>
+        </dl>
+      </article>
+    </section>
+
+    <p class="note">Telefone é guardado para contato; e-mail não. CPF aparece mascarado. A conversão depende da lista do Mundo Azul importada em Matrículas. O WhatsApp abre o aplicativo do próprio usuário — não há envio automático.</p>
   </main>
-  <dialog id="edit-dialog">
-    <form id="edit-form" method="dialog">
-      <div class="dialog-head"><div><p class="eyebrow">ACOMPANHAMENTO</p><h2 id="edit-title">Candidato</h2></div><button type="button" id="close-dialog" class="icon-button" aria-label="Fechar">×</button></div>
-      <input id="candidate-id" type="hidden">
-      <div class="form-grid">
-        <label class="field"><span>Etapa</span><select id="stage">
-          <option value="novo">Novo</option>
-          <option value="contato">Contato iniciado</option>
-          <option value="negociacao">Em negociação</option>
-          <option value="pendencia">Inscrição pendente</option>
-          <option value="perdido">Perdida</option>
-        </select></label>
-        <label class="field"><span>Responsável</span><select id="owner"><option value="">Sem responsável</option></select></label>
-        <label class="field"><span>Próximo contato</span><input id="follow-up" type="date"></label>
-        <label class="field full"><span>Anotações</span><textarea id="notes" rows="5" maxlength="2000" placeholder="Registre o que foi combinado e o próximo passo."></textarea></label>
-      </div>
-      <div class="dialog-actions"><span id="save-error" class="save-error"></span><button type="button" class="button" id="cancel-edit">Cancelar</button><button class="button primary" id="save" type="submit">Salvar</button></div>
-    </form>
+  <footer class="site-foot"><span><strong>Rede Balbino</strong> · Oportunidades</span><span>Dados da planilha de acompanhamento e da lista do Mundo Azul.</span></footer>
+
+  <dialog id="drill-dialog" class="wide-dialog">
+    <div class="dialog-body">
+      <div class="dialog-head"><div><p class="eyebrow">Detalhamento</p><h2 id="drill-title">Candidatos</h2><p class="muted" id="drill-sub"></p></div><button type="button" class="icon-button" data-close aria-label="Fechar">×</button></div>
+      <div class="drill-actions"><button class="mini" id="drill-csv" type="button">Exportar esta lista (CSV)</button><button class="mini" id="drill-xlsx" type="button">XLSX</button><button class="mini" id="drill-apply" type="button">Aplicar como filtro</button></div>
+      <div id="drill-table"></div>
+      <div class="pager" id="drill-pager"></div>
+    </div>
+  </dialog>
+
+  <dialog id="detail-dialog" class="wide-dialog">
+    <div class="dialog-body" id="detail-body"></div>
+  </dialog>
+
+  <dialog id="import-dialog" class="wide-dialog">
+    <div class="dialog-body" id="import-body"></div>
   </dialog>
 </body>
 </html>
