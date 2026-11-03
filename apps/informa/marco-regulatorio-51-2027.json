@@ -81,8 +81,8 @@
       "subtitulo": "O que é cada encontro, onde acontece e se conta frequência",
       "cartoes": [
         {
-          "titulo": "Presencialidade no Polo de Apoio",
-          "selo": "3 horas por encontro · NO POLO",
+          "titulo": "Presencialidade",
+          "selo": "3 horas por encontro · local conforme o curso",
           "pontos": [
             "Pode ter natureza teórica ou prática",
             "Avaliações e simulados",
@@ -92,7 +92,7 @@
           ],
           "frequencia": "Requer presença com registro de frequência para aprovação.",
           "agendamento": "Requer agendamento via Studeo, conforme orientações nos ambientes das disciplinas do curso.",
-          "onde": "Polo de Apoio — atividades teóricas ou práticas, incluindo laboratórios e salas de aula."
+          "onde": "O local depende do modelo acadêmico do curso: Polo de Apoio (sala ou laboratório) quando indicado; para Licenciaturas e o curso de Acompanhamento do Transtorno do Espectro Autista, o slide informa atividade teórica em Mova Play."
         },
         {
           "titulo": "Atividade Síncrona Mediada (ASM)",
@@ -105,7 +105,7 @@
           ],
           "frequencia": "Requer participação com registro de frequência para aprovação.",
           "agendamento": "Requer agendamento via Studeo, conforme orientações nos ambientes das disciplinas do curso.",
-          "onde": "Online, em tempo real; o material não especifica um local físico obrigatório para o aluno."
+          "onde": "Online e em tempo real. O vídeo não determina um local físico obrigatório; pode ser acompanhada de casa com conexão, salvo orientação específica no Studeo."
         },
         {
           "titulo": "Aulas ao vivo",
@@ -282,14 +282,119 @@
             1
           ]
         },
-        "anos_exibidos": 5
+        "anos_exibidos": 5,
+        "jornadas_semanais": [
+          {
+            "anos": [
+              1
+            ],
+            "atividades": [
+              {
+                "atividade": "Aulas ao vivo",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · Teams. Pode acompanhar de casa com conexão; o vídeo não exige presença no Polo.",
+                "tipo": "online",
+                "detalhe": "Aulas via Teams, 1h30 por disciplina."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": ""
+          },
+          {
+            "anos": [
+              2,
+              3
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplina 1",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplina 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Mova Play · atividade teórica. O slide não indica ida ao Polo físico.",
+                "tipo": "mova"
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "A apresentação seleciona estes anos. A presencialidade teórica ocorre no Mova Play; o quadro não indica ida ao Polo físico. A distribuição pode variar conforme o curso e a matriz curricular."
+          }
+        ]
       },
       {
         "nome": "Licenciaturas",
         "cursos": [
           "Letras Português – Inglês"
         ],
-        "anos": 4,
+        "anos": 5,
         "nota": "Letras Português – Inglês é o único curso deste grupo com 5 anos; a coluna do 5º ano aparece somente aqui.",
         "grade": {
           "aulas": [
@@ -328,7 +433,113 @@
             1
           ]
         },
-        "anos_exibidos": 5
+        "anos_exibidos": 5,
+        "jornadas_semanais": [
+          {
+            "anos": [
+              1
+            ],
+            "atividades": [
+              {
+                "atividade": "Aulas ao vivo",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · Teams. Pode acompanhar de casa com conexão; o vídeo não exige presença no Polo.",
+                "tipo": "online",
+                "detalhe": "Aulas via Teams, 1h30 por disciplina."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": ""
+          },
+          {
+            "anos": [
+              2,
+              3,
+              5
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplina 1",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplina 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Mova Play · atividade teórica. O slide não indica ida ao Polo físico.",
+                "tipo": "mova"
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "A apresentação seleciona estes anos. A presencialidade teórica ocorre no Mova Play; o quadro não indica ida ao Polo físico. A distribuição pode variar conforme o curso e a matriz curricular."
+          }
+        ]
       },
       {
         "nome": "Acompanhamento do Transtorno do Espectro Autista",
@@ -363,7 +574,96 @@
             1,
             1
           ]
-        }
+        },
+        "jornadas_semanais": [
+          {
+            "anos": [
+              1
+            ],
+            "atividades": [
+              {
+                "atividade": "Aulas ao vivo",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · Teams. Pode acompanhar de casa com conexão; o vídeo não exige presença no Polo.",
+                "tipo": "online",
+                "detalhe": "Aulas via Teams, 1h30 por disciplina."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": ""
+          },
+          {
+            "anos": [
+              2,
+              3
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Mova Play · atividade teórica. O slide não indica ida ao Polo físico.",
+                "tipo": "mova"
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "A presencialidade teórica deste quadro ocorre no Mova Play; o vídeo não indica ida ao Polo físico. A distribuição pode variar conforme a matriz curricular."
+          }
+        ]
       },
       {
         "nome": "Psicopedagogia",
@@ -452,7 +752,105 @@
             1,
             1
           ]
-        }
+        },
+        "jornadas_semanais": [
+          {
+            "anos": [
+              1
+            ],
+            "atividades": [
+              {
+                "atividade": "Aulas ao vivo",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · Teams. Pode acompanhar de casa com conexão; o vídeo não exige presença no Polo.",
+                "tipo": "online",
+                "detalhe": "Aulas via Teams, 1h30 por disciplina."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ]
+          },
+          {
+            "anos": [
+              3,
+              4,
+              5
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplina 1",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "onde": "Polo de Apoio · sala de aula e/ou laboratório do curso.",
+                "tipo": "polo",
+                "detalhe": "Atividade teórica e prática; pode ocorrer em sala ou laboratório específico do curso."
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplina 2",
+                "semanas": [
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Polo de Apoio · sala de aula e/ou laboratório do curso.",
+                "tipo": "polo",
+                "detalhe": "Atividade teórica e prática; pode ocorrer em sala ou laboratório específico do curso."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "O quadro semanal do vídeo seleciona os anos 3, 4 e 5. A apresentação ressalta que a distribuição pode variar conforme curso e matriz curricular."
+          }
+        ]
       },
       {
         "nome": "Automação Industrial",
@@ -487,7 +885,61 @@
             1,
             1
           ]
-        }
+        },
+        "jornadas_semanais": [
+          {
+            "anos": [
+              2,
+              3
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Polo de Apoio · sala de aula e/ou laboratório do curso.",
+                "tipo": "polo",
+                "detalhe": "Atividade teórica e prática, em sala e no laboratório específico do curso."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "Sem aulas ao vivo neste curso. A apresentação alerta que a distribuição pode variar conforme a matriz curricular."
+          }
+        ]
       },
       {
         "nome": "Manutenção Industrial",
@@ -522,7 +974,129 @@
             1,
             1
           ]
-        }
+        },
+        "jornadas_semanais": [
+          {
+            "anos": [
+              1
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplina 1",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplina 1",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "onde": "Polo de Apoio · sala de aula e/ou laboratório do curso.",
+                "tipo": "polo",
+                "detalhe": "Teórica e prática, em sala e no laboratório específico."
+              },
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplina 2",
+                "semanas": [
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplina 2",
+                "semanas": [
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Polo de Apoio · sala de aula e/ou laboratório do curso.",
+                "tipo": "polo",
+                "detalhe": "Teórica e prática, em sala e no laboratório específico."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "No módulo 51, uma das disciplinas tem 24 horas de ASM."
+          },
+          {
+            "anos": [
+              2,
+              3
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Polo de Apoio · sala de aula e/ou laboratório do curso.",
+                "tipo": "polo",
+                "detalhe": "Teórica e prática, em sala e no laboratório específico do curso."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "A apresentação alerta que a distribuição pode variar conforme a matriz curricular."
+          }
+        ]
       },
       {
         "nome": "Educação Física",
@@ -561,7 +1135,99 @@
             1,
             1
           ]
-        }
+        },
+        "jornadas_semanais": [
+          {
+            "anos": [
+              3
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplina 1",
+                "semanas": [
+                  1,
+                  2,
+                  3
+                ],
+                "onde": "Presencialidade teórico-prática em sala de aula; pode haver atividade em espaço conveniado com quadra poliesportiva.",
+                "tipo": "polo"
+              },
+              {
+                "atividade": "Presencialidade",
+                "disciplina": "Disciplina 2",
+                "semanas": [
+                  4,
+                  5,
+                  6
+                ],
+                "onde": "Presencialidade teórico-prática em sala de aula; pode haver atividade em espaço conveniado com quadra poliesportiva.",
+                "tipo": "polo"
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "A apresentação alerta que a distribuição pode variar conforme a matriz curricular."
+          },
+          {
+            "anos": [
+              4
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "A grade do 4º ano não mostra presencialidade. A apresentação alerta que podem existir atividades em espaço conveniado com quadra poliesportiva."
+          }
+        ]
       },
       {
         "nome": "Biomedicina",
@@ -646,10 +1312,115 @@
             1,
             1
           ]
-        }
+        },
+        "jornadas_semanais": [
+          {
+            "anos": [
+              1
+            ],
+            "atividades": [
+              {
+                "atividade": "Aulas ao vivo",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · Teams. Pode acompanhar de casa com conexão; o vídeo não exige presença no Polo.",
+                "tipo": "online",
+                "detalhe": "Aulas via Teams, 1h30 por disciplina."
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ]
+          },
+          {
+            "anos": [
+              2
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Disciplinas 1 e 2",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online"
+              },
+              {
+                "atividade": "Provas presenciais",
+                "disciplina": "Disciplinas do módulo",
+                "semanas": [
+                  9,
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "O quadro semanal exibido é do 2º ano. A matriz anual indica ASM também nos anos 3 e 4 e presencialidade nesses anos, mas o vídeo não detalha as semanas dessas atividades."
+          },
+          {
+            "anos": [
+              5
+            ],
+            "atividades": [
+              {
+                "atividade": "ASM",
+                "disciplina": "Uma disciplina do módulo",
+                "semanas": [
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "onde": "Online · atividade síncrona mediada. O vídeo não determina um local físico obrigatório para o aluno.",
+                "tipo": "online",
+                "detalhe": "A grade do 5º ano mostra ASM para uma das disciplinas."
+              },
+              {
+                "atividade": "Prova presencial",
+                "disciplina": "Conforme a disciplina",
+                "semanas": [
+                  10
+                ],
+                "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+                "tipo": "prova"
+              }
+            ],
+            "nota": "No 5º ano, cada módulo tem uma disciplina de estágio curricular supervisionado e outra disciplina comum. O slide semanal mostra a avaliação na semana 10."
+          }
+        ]
       }
     ],
-    "nota": "Mostramos só os cursos cujo quadro apareceu na apresentação. Para os demais, consulte a matriz do curso."
+    "nota": "Mostramos só os cursos cujo quadro apareceu na apresentação. Para os demais, consulte a matriz do curso.",
+    "nota_jornada": "O vídeo apresenta distribuição semanal para alguns cursos e anos. Quando a semana não estiver listada, a apresentação mostra apenas a aplicabilidade por ano; consulte o calendário da disciplina no Studeo para confirmar."
   },
   "portfolio": {
     "nota": "Portfólio sujeito a alteração.",
@@ -1249,5 +2020,52 @@
       "pergunta": "O que é o Espaço Calouro?",
       "resposta": "A página “Boas-vindas da UniCesumar”, no site e no app, com ambientação, detalhes do curso e diferenciais da instituição."
     }
-  ]
+  ],
+  "jornada_ead": {
+    "titulo": "Organização semanal dos cursos EaD",
+    "aplica_a": "Graduação EaD",
+    "atividades": [
+      {
+        "atividade": "Aulas ao vivo",
+        "disciplina": "Disciplina 1",
+        "semanas": [
+          1,
+          3,
+          5,
+          7
+        ],
+        "onde": "Online · Teams. Pode acompanhar de casa com conexão; o vídeo não exige presença no Polo.",
+        "tipo": "online",
+        "detalhe": "1h30 por disciplina."
+      },
+      {
+        "atividade": "Aulas ao vivo",
+        "disciplina": "Disciplina 2",
+        "semanas": [
+          2,
+          4,
+          6,
+          8
+        ],
+        "onde": "Online · Teams. Pode acompanhar de casa com conexão; o vídeo não exige presença no Polo.",
+        "tipo": "online",
+        "detalhe": "1h30 por disciplina."
+      },
+      {
+        "atividade": "Provas presenciais",
+        "disciplina": "Disciplinas do módulo",
+        "semanas": [
+          9,
+          10
+        ],
+        "onde": "Prova presencial · o vídeo não identifica o local; confira o calendário da disciplina no Studeo.",
+        "tipo": "prova"
+      }
+    ],
+    "excecoes": [
+      "Ciência da Criatividade",
+      "Gestão de Cooperativas"
+    ],
+    "nota": "A apresentação informa que Ciência da Criatividade e Gestão de Cooperativas não têm aulas ao vivo em seus modelos acadêmicos operacionais. A distribuição pode variar conforme o curso e a matriz curricular."
+  }
 }
