@@ -480,7 +480,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
   function lista(q, usuario) {
     const cicloId = cicloValido(q.ciclo);
     const f = lerFiltros(q);
-    const rows = filtrar(carregarBase(cicloId, usuario).base, f).sort(ORDENS[q.ordem] || ORDENS.retorno);
+    const rows = filtrar(carregarBase(cicloId, usuario).base, f).map(r => ({ ...r, atendimentos: contarAtendimentosFiltrados(r, f) })).sort(ORDENS[q.ordem] || ORDENS.retorno);
     const porPagina = Math.min(500, Math.max(10, Number(q.por_pagina) || 100));
     const pagina = Math.max(1, Number(q.pagina) || 1);
     const p = permissoes(usuario);
@@ -497,7 +497,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
   function exportar(q, usuario) {
     const cicloId = cicloValido(q.ciclo);
     const f = lerFiltros(q);
-    const rows = filtrar(carregarBase(cicloId, usuario).base, f).sort(ORDENS[q.ordem] || ORDENS.polo);
+    const rows = filtrar(carregarBase(cicloId, usuario).base, f).map(r => ({ ...r, atendimentos: contarAtendimentosFiltrados(r, f) })).sort(ORDENS[q.ordem] || ORDENS.polo);
     const k = kpis(rows, f);
     const ciclo = get('SELECT nome FROM ciclos WHERE id=?', cicloId)?.nome || String(cicloId);
     const filtrosTxt = Object.entries(f).map(([a, b]) => `${a}=${b}`).join('; ') || 'nenhum';
