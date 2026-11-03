@@ -55,3 +55,25 @@ main{padding:36px 0 60px}.eyebrow{display:flex;align-items:center;gap:10px;margi
 :root[data-theme="light"] .site-foot{border-color:#dce5f0;color:#71819a}
 :root[data-theme="light"] .site-foot strong{color:#344c6c}
 @media(max-width:650px){.top-actions{flex-wrap:wrap}.main-nav{flex-wrap:wrap}}
+
+/* Entrada simplificada: duas áreas principais e navegação curta. */
+.calendar-heading{margin:2px 0 25px}
+.calendar-heading h1{margin:4px 0;font-size:clamp(30px,4vw,42px);letter-spacing:-1.4px}
+.calendar-heading>p:last-child{margin:5px 0;color:var(--muted2);font-size:14px}
+.home-choices{margin:26px 0 0}
+.home-choices>div:first-child{margin-bottom:12px}
+.home-choices h2{margin:4px 0;font-size:22px;letter-spacing:-.5px}
+.home-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.home-area-card{display:flex;min-width:0;flex-direction:column;align-items:flex-start;padding:22px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(150deg,rgba(24,42,73,.82),rgba(15,29,53,.94));box-shadow:0 16px 42px rgba(0,0,0,.12)}
+.home-area-card.home-process{background:linear-gradient(145deg,rgba(23,62,104,.72),rgba(15,29,53,.94))}
+.home-number{display:grid;width:30px;height:30px;place-items:center;border-radius:10px;background:rgba(75,140,255,.18);color:#afd0ff;font-size:12px;font-weight:800}
+.home-area-card h3{margin:14px 0 5px;font-size:20px}
+.home-area-card p{margin:0 0 18px;color:var(--muted2);font-size:13px}
+.home-area-card button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;margin-top:auto;padding:11px 13px;border:1px solid var(--line2);border-radius:11px;background:rgba(255,255,255,.04);color:var(--ink);font-size:13px;font-weight:750;text-align:left}
+.home-area-card button:hover{border-color:#4b8cff;background:rgba(75,140,255,.14)}
+.home-area-card button span{color:var(--accent);font-size:18px}
+:root[data-theme="light"] .home-area-card{border-color:#d6e1ef;background:#fff;box-shadow:0 8px 24px rgba(20,43,75,.055)}
+:root[data-theme="light"] .home-area-card h3{color:#183554}
+:root[data-theme="light"] .home-area-card p{color:#64758d}
+:root[data-theme="light"] .home-area-card button{background:#f8fafd;color:#294666;border-color:#d6e1ef}
+@media(max-width:650px){.home-choice-grid{grid-template-columns:1fr}.home-area-card{padding:18px}.calendar-heading{margin-bottom:18px}.calendar-heading h1{font-size:32px}}
