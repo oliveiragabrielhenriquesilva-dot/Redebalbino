@@ -1,4 +1,4 @@
-'use strict';
+'use strict'; process.env.TZ = 'America/Sao_Paulo';
 // Sistema de Acompanhamento de Matrículas — servidor local para acesso pela rede
 // Requisitos: Node.js 22.13+ (recomendado: Node 24 LTS). Sem dependências externas.
 
@@ -1936,4 +1936,4 @@ function iniciarRotinasHospedadas() {
 }
 if (require.main === module) servidor.listen(PORT, process.env.HOST || '0.0.0.0', iniciarRotinasHospedadas);
 
-module.exports = { servidor, db, conciliacaoMA, oportunidades, painel, ritmo, previsaoSemana, diario, origensPolo, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, percentualCalendario, gestao, iniciarRotinasHospedadas };
+module.exports = { servidor, db, conciliacaoMA, oportunidades, painel, ritmo, previsaoSemana, diario, origensPolo, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, hojeISO, percentualCalendario, gestao, iniciarRotinasHospedadas };

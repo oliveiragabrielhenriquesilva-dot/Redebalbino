@@ -1,4 +1,4 @@
-'use strict';
+'use strict'; process.env.TZ = 'America/Sao_Paulo';
 const http = require('node:http');
 const path = require('node:path');
 const fs = require('node:fs');
