@@ -174,7 +174,7 @@
 
   // ------------------------------------------------------------ carga
   // ------------------------------------------------------------ Marco Regulatório – 51/2027 (dados em apps/informa/marco-regulatorio-51-2027.json)
-  const M = { data: null, grupo: 0, portQ: '', mod: 0 };
+  const M = { data: null, grupo: 0, courseKey: '', portQ: '', mod: 0 };
   const ok = v => v ? '<span class="yes" aria-label="Sim">✓</span>' : '<span class="no" aria-label="Não">✕</span>';
   function gradeHtml(g) {
     const mz = M.data.matriz_cursos, n = Math.max(...Object.values(g.grade).map(a => a.length));
@@ -203,17 +203,46 @@
   }
   function renderMarco() {
     const d = M.data, el = $('area-marco'), mz = d.matriz_cursos;
-    const gruposMenu = [
-      { nome: 'Licenciaturas', grupos: ['Licenciaturas', 'Acompanhamento do Transtorno do Espectro Autista', 'Psicopedagogia'] },
-      { nome: 'Engenharias e áreas técnicas', grupos: ['Engenharias e Agronomia', 'Automação Industrial', 'Manutenção Industrial'] },
-      { nome: 'Saúde', grupos: ['Educação Física', 'Biomedicina', 'Farmácia'] }
-    ].map(c => ({ nome: c.nome, grupos: mz.grupos.map((g, i) => ({ ...g, indice: i })).filter(g => c.grupos.includes(g.nome)) }));
-    const opcoesCurso = termo => {
-      const q = norm(termo);
-      return gruposMenu.map(c => {
-        const opcoes = c.grupos.map(g => ({ ...g, cursos: g.cursos.filter(nome => !q || norm(nome).includes(q)) })).filter(g => g.cursos.length);
-        return opcoes.length ? `<optgroup label="${esc(c.nome)}">${opcoes.map(g => g.cursos.map(nome => `<option value="${g.indice}">${esc(nome)}</option>`).join('')).join('')}</optgroup>` : '';
-      }).join('');
+    const catalogo = d.portfolio.modalidades.flatMap((modalidade, mi) =>
+      modalidade.areas.flatMap((area, ai) =>
+        area.cursos.map(([nome, tipo], ci) => ({
+          chave: `${mi}-${ai}-${ci}`,
+          nome,
+          tipo,
+          tipoNome: d.portfolio.tipos[tipo] || 'Curso',
+          modalidade: modalidade.nome,
+          area: area.area,
+          grupo: `${/semipresencial/i.test(modalidade.nome) ? 'Semipresencial' : 'Graduação EaD'} · ${area.area}`
+        }))
+      )
+    );
+    const matrizDoCurso = curso => {
+      if (!curso || !/semipresencial/i.test(curso.modalidade)) return null;
+      return mz.grupos.find(g => g.cursos.includes(curso.nome) &&
+        (curso.tipo === 'L' ? norm(g.nome) === 'licenciaturas' : norm(g.nome) !== 'licenciaturas')) || null;
+    };
+    const opcoesCurso = cursos => {
+      const grupos = new Map();
+      for (const curso of cursos) {
+        if (!grupos.has(curso.grupo)) grupos.set(curso.grupo, []);
+        grupos.get(curso.grupo).push(curso);
+      }
+      return [...grupos.entries()].map(([nome, itens]) =>
+        `<optgroup label="${esc(nome)}">${itens.map(curso =>
+          `<option value="${esc(curso.chave)}">${esc(curso.nome)} · ${esc(curso.tipoNome)}</option>`
+        ).join('')}</optgroup>`
+      ).join('');
+    };
+    const renderCursoSelecionado = chave => {
+      const curso = catalogo.find(c => c.chave === chave);
+      const matriz = matrizDoCurso(curso);
+      if (matriz) {
+        $('gradeBox').innerHTML = gradeHtml(matriz);
+        return;
+      }
+      $('gradeBox').innerHTML = curso
+        ? `<div class="empty m-course-empty"><strong>${esc(curso.nome)} · ${esc(curso.modalidade)}</strong><p>O portfólio inclui este curso, mas o quadro de atividades específico não consta no material apresentado. Consulte a matriz oficial do curso.</p></div>`
+        : '';
     };
     const conteudoSecao = s => `
       ${s.itens ? `<div class="m-itens">${s.itens.map(i => `<div class="m-item"><b>${esc(i.titulo)}</b><p>${esc(i.texto)}</p></div>`).join('')}</div>` : ''}
@@ -221,17 +250,17 @@
       ${s.cartoes ? `<div class="m-cartoes">${s.cartoes.map(c => `<article class="m-cartao"><h4>${esc(c.titulo)}</h4><span class="chip">${esc(c.selo)}</span><ul>${c.pontos.map(p => `<li>${esc(p)}</li>`).join('')}</ul><p><b>Frequência:</b> ${esc(c.frequencia)}</p><p><b>Agendamento:</b> ${esc(c.agendamento)}</p></article>`).join('')}</div>` : ''}
       ${s.nota ? `<p class="sub m-section-note">${esc(s.nota)}</p>` : ''}`;
     el.innerHTML = `
-      <div class="section-head"><div><p class="eyebrow">Conexão Pedagógica · Processo 51/2027</p><h2 id="marcoTitle">${esc(d.titulo)}</h2><p class="sub">${esc(d.fonte)}</p></div></div>
+      <div class="section-head"><div><p class="eyebrow">PROCESSO 51/2027</p><h2 id="marcoTitle">Processo 51/2027</h2><p class="sub">Mudanças acadêmicas, critérios de avaliação e orientações deste processo.</p></div></div>
       <div class="fonte-aviso">${esc(d.aviso)}</div>
       <div class="m-destaques">${d.destaques.map(x => `<article class="now"><span class="now-prod">${esc(x.rotulo)}</span><strong>${esc(x.valor)}</strong><small>${esc(x.detalhe)}</small></article>`).join('')}</div>
       <nav class="m-indice" aria-label="Ir direto para"><a href="#m-cursos">Atividades por curso</a><a href="#m-orientacoes">Regras acadêmicas</a><a href="#m-portfolio">Cursos disponíveis</a></nav>
-      <section class="card marco-sec" id="m-cursos"><header><h3>${esc(mz.titulo)}</h3><p>Busque e selecione o curso para consultar a matriz correspondente.</p></header>
+      <section class="card marco-sec" id="m-cursos"><header><h3>Cursos e atividades por modalidade</h3><p>Escolha entre Graduação EaD e Semipresencial. Os cursos ficam agrupados por área.</p></header>
         <div class="m-course-filter">
           <label class="field m-course-search"><span>Buscar curso</span><input id="cursoBusca" type="search" autocomplete="off" placeholder="Digite o nome do curso"></label>
-          <label class="field m-curso"><span>Curso</span><select id="cursoSel">${opcoesCurso('')}</select></label>
-          <span class="sub m-course-hint">A matriz aparece abaixo após a seleção.</span>
+          <label class="field m-curso"><span>Modalidade, área e curso</span><select id="cursoSel"></select></label>
+          <span class="sub m-course-hint">A tabela aparece quando o material do Processo 51/2027 traz a matriz daquele curso.</span>
         </div>
-        <div id="gradeBox"></div><p class="sub">${esc(mz.nota)}</p></section>
+        <div id="gradeBox"></div><p class="sub">A lista reúne os cursos do portfólio, agrupados por modalidade e área. Quando a apresentação não trouxe a matriz de atividades, consulte a matriz oficial do curso.</p></section>
       <section class="card marco-sec" id="m-orientacoes"><header><h3>Regras e orientações do processo</h3><p>Abra somente o assunto que deseja consultar.</p></header>
         <div class="m-accordions">${d.secoes.map((s, i) => `<details class="m-accordion" id="m-${esc(s.id)}" ${i === 0 ? 'open' : ''}><summary><span><b>${esc(s.titulo)}</b>${s.subtitulo ? `<small>${esc(s.subtitulo)}</small>` : ''}</span><i aria-hidden="true"></i></summary><div class="m-accordion-body">${conteudoSecao(s)}</div></details>`).join('')}</div></section>
       <details class="card marco-sec m-portfolio-collapse" id="m-portfolio"><summary><span><b>Portfólio de cursos</b><small>${esc(d.portfolio.nota)}</small></span><i aria-hidden="true"></i></summary>
@@ -240,17 +269,25 @@
           <label class="field"><span>Buscar curso no portfólio</span><input id="portQ" type="search" placeholder="Ex.: Pedagogia, Gestão, Dados"></label><span class="sub" id="portCount"></span></div>
           <div class="port-grid" id="portList"></div></div></details>`;
     const preencherMatriz = termo => {
-      const sel = $('cursoSel'), previous = sel.value;
-      const html = opcoesCurso(termo);
+      const q = norm(termo);
+      const filtrados = catalogo.filter(c => !q || norm(`${c.nome} ${c.area} ${c.modalidade} ${c.tipoNome}`).includes(q));
+      const sel = $('cursoSel');
+      const html = opcoesCurso(filtrados);
       sel.innerHTML = html || '<option value="">Nenhum curso encontrado</option>';
-      if (!html) { $('gradeBox').innerHTML = '<p class="empty">Não encontrei um curso com esse nome.</p>'; return; }
-      const valores = [...sel.options].map(o => o.value);
-      sel.value = valores.includes(previous) ? previous : valores[0];
-      M.grupo = Number(sel.value);
-      $('gradeBox').innerHTML = gradeHtml(mz.grupos[M.grupo]);
+      if (!filtrados.length) {
+        M.courseKey = '';
+        $('gradeBox').innerHTML = '<p class="empty">Não encontrei curso com esse nome.</p>';
+        return;
+      }
+      const selecionado = filtrados.some(c => c.chave === M.courseKey)
+        ? M.courseKey
+        : (filtrados.find(c => matrizDoCurso(c)) || filtrados[0]).chave;
+      sel.value = M.courseKey = selecionado;
+      renderCursoSelecionado(selecionado);
     };
     $('cursoBusca').addEventListener('input', e => preencherMatriz(e.target.value));
-    $('cursoSel').addEventListener('change', () => { M.grupo = Number($('cursoSel').value); $('gradeBox').innerHTML = gradeHtml(mz.grupos[M.grupo]); });
+    $('cursoSel').addEventListener('change', () => { M.courseKey = $('cursoSel').value; renderCursoSelecionado(M.courseKey); });
+    preencherMatriz('');
     el.querySelectorAll('[data-mod]').forEach(b => b.addEventListener('click', () => { M.mod = Number(b.dataset.mod); el.querySelectorAll('[data-mod]').forEach(x => x.classList.toggle('active', x === b)); renderPortfolio(); }));
     $('portQ').addEventListener('input', e => { M.portQ = e.target.value; renderPortfolio(); });
     renderPortfolio();
