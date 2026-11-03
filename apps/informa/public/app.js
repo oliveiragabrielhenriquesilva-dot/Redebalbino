@@ -553,6 +553,10 @@
     if (scroll) $('area-' + area).scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   document.querySelectorAll('.main-nav [data-area]').forEach(b => b.addEventListener('click', () => setArea(b.dataset.area, true)));
+  document.querySelectorAll('[data-area-link]').forEach(link => link.addEventListener('click', e => {
+    e.preventDefault();
+    setArea(link.dataset.areaLink, true);
+  }));
   document.addEventListener('click', e => { const b = e.target.closest('[data-area-go]'); if (b) setArea(b.dataset.area, true); const askButton = e.target.closest('[data-ask]'); if (askButton) ask(askButton.dataset.ask); });
   window.addEventListener('hashchange', () => { if (location.hash === '#marco') setArea('marco', true); else if (location.hash === '#calendario') setArea('calendario', true); else setArea('inicio', true); });
   $('askForm').addEventListener('submit', e => { e.preventDefault(); ask($('q').value); });
