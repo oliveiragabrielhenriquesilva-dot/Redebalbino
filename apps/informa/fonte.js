@@ -63,13 +63,13 @@ function lerPlanilha(texto) {
   if (linhas.length < 2) throw new Error('A planilha publicada está vazia.');
   const cab = linhaCsv(linhas[0]).map(h => h.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase());
   const col = (...n) => cab.findIndex(h => n.includes(h));
-  const ix = { ano: col('ano'), produto: col('produto'), categoria: col('categoria'), evento: col('evento'), coluna: col('coluna'), inicio: col('inicio'), fim: col('fim', 'termino') };
+  const ix = { ano: col('ano'), produto: col('produto'), categoria: col('categoria'), evento: col('evento'), coluna: col('coluna'), inicio: col('inicio'), fim: col('fim', 'termino'), observacao: col('observacao', 'observacoes', 'observacao da planilha', 'obs', 'nota') };
   if ([ix.produto, ix.categoria, ix.evento, ix.coluna].some(i => i < 0)) throw new Error('A planilha publicada não tem as colunas esperadas (Produto, Categoria, Evento, Coluna).');
   const out = {};
   for (const l of linhas.slice(1)) {
     const c = linhaCsv(l), v = i => (i < 0 ? '' : String(c[i] ?? '').trim());
     const produto = produtoDe(v(ix.produto)), categoria = v(ix.categoria), evento = v(ix.evento), coluna = v(ix.coluna);
-    const inicio = v(ix.inicio) || '-', fim = v(ix.fim) || '-';
+    const inicio = v(ix.inicio) || '-', fim = v(ix.fim) || '-', observacao = v(ix.observacao);
     if (!produto || !categoria || !evento || !coluna) continue;
     let ano = v(ix.ano);
     if (!ano && inicio !== '-') { const p = inicio.split('/'); if (p.length === 3) { let y = parseInt(p[2], 10); if (y < 100) y += 2000; ano = String(y); } }
@@ -78,8 +78,9 @@ function lerPlanilha(texto) {
     let cat = out[ano][produto].find(x => x.categoria === categoria);
     if (!cat) { cat = { categoria, eventos: [] }; out[ano][produto].push(cat); }
     let ev = cat.eventos.find(x => x.nome === evento);
-    if (!ev) { ev = { nome: evento, datas: {} }; cat.eventos.push(ev); }
+    if (!ev) { ev = { nome: evento, datas: {}, observacoes: {} }; cat.eventos.push(ev); }
     ev.datas[coluna] = [inicio, fim];
+    if (observacao) ev.observacoes[coluna] = observacao;
   }
   if (!Object.keys(out).length) throw new Error('A planilha publicada não tem eventos válidos.');
   return out;
@@ -112,7 +113,8 @@ function normalizar(dados) {
       const [ini, fim] = Array.isArray(par) ? par : [par.inicio, par.fim];
       const inicio = isoDe(ini), termino = isoDe(fim) || inicio;
       if (!inicio && !termino) continue;
-      ocorrencias.push({ ano, produto: pid, modulo: String(mod), categoria: cat.categoria, ordem_categoria: ordemCat(cat.categoria), evento: ev.nome, inicio: inicio || termino, fim: termino && inicio && termino < inicio ? inicio : termino, inicio_texto: ini, fim_texto: fim });
+      const observacao = ev.observacoes?.[mod] || ev.observacao || '';
+      ocorrencias.push({ ano, produto: pid, modulo: String(mod), categoria: cat.categoria, ordem_categoria: ordemCat(cat.categoria), evento: ev.nome, inicio: inicio || termino, fim: termino && inicio && termino < inicio ? inicio : termino, inicio_texto: ini, fim_texto: fim, observacao });
     }
   }
   return { anos, produtos: Object.entries(PRODUTOS).map(([id, p]) => ({ id, ...p })), ocorrencias };
