@@ -116,3 +116,38 @@ details summary{cursor:pointer;color:var(--ink2)}
 .topbar nav a.portal-link{display:inline-flex;align-items:center;justify-content:center;background:#eaf2ff;border-color:#c5d8f4;color:#174ea6;font-weight:750}
 .topbar nav a.portal-link:hover{background:#dceaff;border-color:#9bbcf0;color:#123d87}
 @media(max-width:900px){.topbar nav a.portal-link{display:inline-flex}}
+
+/* Tema claro/escuro compartilhado entre os sistemas Balbino. */
+:root[data-tema="claro"]{color-scheme:light;--bg:#eef3fa;--ink:#10233f;--ink2:#334a68;--muted:#536985;--muted2:#647b98;--line:rgba(25,55,95,.14);--line2:rgba(25,55,95,.24);--card:linear-gradient(150deg,rgba(255,255,255,.98),rgba(246,249,255,.98));--card-flat:#fff;--field:#fff;--head:rgba(29,75,130,.06);--bar:rgba(37,99,235,.3);--bar-strong:#2563eb;--track:rgba(29,75,130,.1);--ok:#087e62;--ok-bg:rgba(16,160,120,.12);--warn:#b42332;--warn-bg:rgba(220,55,70,.1);--wait:#8a5a00;--wait-bg:rgba(244,180,0,.16)}
+:root[data-tema="claro"] html{background:var(--bg)}
+:root[data-tema="claro"] body{color:var(--ink);background:radial-gradient(ellipse at 10% 0%,rgba(37,99,235,.08),transparent 34%),radial-gradient(ellipse at 90% 100%,rgba(20,184,166,.07),transparent 32%),linear-gradient(145deg,#f7f9fd 0%,#edf3fb 54%,#f7f9fd 100%)}
+:root[data-tema="claro"] .brand-mark{background:#14233b;border-color:rgba(25,55,95,.18);box-shadow:0 8px 24px rgba(18,48,84,.12)}
+:root[data-tema="claro"] .brand small{color:#486587}
+:root[data-tema="claro"] .topbar nav a{color:#334a68;border-color:var(--line2)}
+:root[data-tema="claro"] .topbar nav a:hover{background:#eaf1fb}
+:root[data-tema="claro"] .topbar nav a.portal-link{background:#eaf2ff;border-color:#b9d0f1;color:#174ea6}
+:root[data-tema="claro"] .button{color:#183456;background:#fff;border-color:rgba(25,55,95,.22)}
+:root[data-tema="claro"] .button:hover{background:#f0f5fc}
+:root[data-tema="claro"] .button.primary{color:#fff;background:linear-gradient(120deg,#2876f3,#2f5fe5);border-color:#4b8cff}
+:root[data-tema="claro"] .lead{color:#435b79}
+:root[data-tema="claro"] .field{color:#334a68}
+:root[data-tema="claro"] .field input,:root[data-tema="claro"] .field select,:root[data-tema="claro"] .field textarea,:root[data-tema="claro"] .table-search{color:#10233f;background:#fff;border-color:rgba(25,55,95,.22)}
+:root[data-tema="claro"] .field select option{background:#fff;color:#10233f}
+:root[data-tema="claro"] .tab{color:#536985}
+:root[data-tema="claro"] .tab:hover,:root[data-tema="claro"] .tab.active{color:#174ea6}
+:root[data-tema="claro"] .filters-head strong,:root[data-tema="claro"] .compare-row strong,:root[data-tema="claro"] .kpi strong,:root[data-tema="claro"] .card h2,:root[data-tema="claro"] .bar-val,:root[data-tema="claro"] .prose dt,:root[data-tema="claro"] .prose b{color:#10233f}
+:root[data-tema="claro"] .kpi.hero span,:root[data-tema="claro"] .kpi.hero small,:root[data-tema="claro"] .kpi.hero strong{color:#fff}
+:root[data-tema="claro"] .aviso{color:#704b00}
+:root[data-tema="claro"] .error{color:#8b1d28}
+:root[data-tema="claro"] .notice{color:#075e49}
+:root[data-tema="claro"] td{color:#233c5c;border-top-color:rgba(25,55,95,.1)}
+:root[data-tema="claro"] tfoot td{color:#10233f;background:rgba(29,75,130,.05)}
+:root[data-tema="claro"] tbody tr:hover{background:rgba(29,75,130,.04)}
+:root[data-tema="claro"] .bar-val small,:root[data-tema="claro"] .sub{color:#647b98}
+:root[data-tema="claro"] .link{color:#174ea6}
+:root[data-tema="claro"] .mini{color:#334a68;background:#fff;border-color:rgba(25,55,95,.22)}
+:root[data-tema="claro"] .mini:hover{background:#edf4ff}
+:root[data-tema="claro"] .prose dd,:root[data-tema="claro"] .facts dd,:root[data-tema="claro"] .timeline li,:root[data-tema="claro"] .timeline p,:root[data-tema="claro"] .box h3,:root[data-tema="claro"] .dialog-head h2{color:#233c5c}
+:root[data-tema="claro"] dialog{background:#fff;color:#10233f;box-shadow:0 30px 100px rgba(18,48,84,.24)}
+:root[data-tema="claro"] .icon-button{color:#334a68;background:#f4f7fc}
+:root[data-tema="claro"] .site-foot strong{color:#334a68}
