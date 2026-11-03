@@ -75,7 +75,7 @@ const ICONES = {
 };
 const icone = (n) => `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${ICONES[n]}</svg>`;
 
-const VERSAO_TELA = '30.3.6';
+const VERSAO_TELA = '30.4.0';
 
 // ======================================================================= estado
 let B = null; // bootstrap (cadastros + usuário)
@@ -199,7 +199,7 @@ function montarShell() {
         ${podeLancar() ? '<button class="btn prim" id="b-nova">+ Nova matrícula</button>' : ''}
       </header>
       ${B.config.organizacao_produtos_2026_10_erro ? `<div class="faixa-versao">A organização dos produtos não foi aplicada: ${esc(B.config.organizacao_produtos_2026_10_erro)}. Os dados foram preservados; confira os cadastros antes de tentar novamente.</div>` : ''}
-      ${B.versao !== VERSAO_TELA ? '<div class="faixa-versao">O servidor está rodando outra versão do sistema. Feche a janela preta do servidor e abra o <b>iniciar.bat</b> de novo; depois aperte F5.</div>' : ''}
+      ${B.versao !== VERSAO_TELA ? `<div class="faixa-versao">${location.hostname.endsWith('redebalbino.com.br') ? 'A interface e o servidor estão em versões diferentes. Atualize a página com Ctrl+F5; se o aviso continuar, avise o administrador para verificar a implantação.' : 'O servidor está rodando outra versão do sistema. Feche a janela preta do servidor e abra o <b>iniciar.bat</b> de novo; depois aperte F5.'}</div>` : ''}
       <section class="conteudo" id="conteudo"></section>
     </div>
   </div>`;
