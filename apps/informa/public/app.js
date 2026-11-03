@@ -432,9 +432,12 @@
   function setArea(area, scroll = false) {
     S.visibleArea = area;
     document.querySelectorAll('.main-nav [data-area]').forEach(b => { const active = b.dataset.area === area; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); });
-    $('area-calendario').classList.toggle('hidden', area !== 'calendario'); $('area-marco').classList.toggle('hidden', area !== 'marco');
+    $('area-inicio').classList.toggle('hidden', area !== 'inicio');
+    $('area-calendario').classList.toggle('hidden', area !== 'calendario');
+    $('area-marco').classList.toggle('hidden', area !== 'marco');
+    $('myProduct').closest('.product-select').classList.toggle('hidden', area !== 'calendario');
     if (area === 'marco' && location.hash !== '#marco') history.replaceState(null, '', location.pathname + location.search + '#marco');
-    if (area === 'calendario' && location.hash === '#marco') history.replaceState(null, '', location.pathname + location.search);
+    if (area !== 'marco' && location.hash === '#marco') history.replaceState(null, '', location.pathname + location.search);
     if (scroll) $('area-' + area).scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   document.querySelectorAll('.main-nav [data-area]').forEach(b => b.addEventListener('click', () => setArea(b.dataset.area, true)));
