@@ -436,8 +436,7 @@
     if (!course) { host.innerHTML = '<div class="course-empty"><b>Selecione um curso</b><p>Escolha um curso para consultar somente as informações aplicáveis.</p></div>'; return; }
     const isEad = /ead/i.test(course.modality), matrix = !isEad && M.data.matriz_cursos.grupos.find(g => g.cursos.includes(course.name));
     if (isEad) {
-      const ead = M.data.secoes.find(s => s.id === 'mudancas-ead');
-      host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)}</p><h3>${esc(course.name)}</h3><p>${esc(ead?.subtitulo || '')}</p></header><div class="course-facts">${(ead?.itens || []).map(item => `<article><span>${esc(item.titulo)}</span><strong>${esc(item.texto)}</strong></article>`).join('')}</div>${weeklyPlanHtml(course, null, true)}${ead?.tabela ? `<div class="m-tabela course-table"><h4>${esc(ead.tabela.titulo)}</h4><div class="table-wrap"><table><thead><tr>${ead.tabela.colunas.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${ead.tabela.linhas.map((row, i, all) => `<tr class="${i === all.length - 1 ? 'total' : ''}">${row.map((cell, j) => `<td class="${j ? 'n' : ''}">${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="sub">${esc(ead.tabela.nota || '')}</p></div>` : ''}</article>`;
+      host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)}</p><h3>${esc(course.name)}</h3><p>Confira acima as regras comuns EaD; abaixo, a rotina semanal deste curso, quando informada no material.</p></header>${weeklyPlanHtml(course, null, true)}</article>`;
       return;
     }
     host.innerHTML = `<article class="course-rule-card"><header><p class="eyebrow">${esc(course.modality)} · ${esc(course.area)} · ${esc(course.typeName)}</p><h3>${esc(course.name)}</h3></header>${/semipresencial/i.test(course.modality) ? activityGuideHtml() : ''}${weeklyPlanHtml(course, matrix, false)}</article>`;
@@ -474,10 +473,38 @@
     $('portfolioList').innerHTML = areas.length ? areas.map(a => `<details class="portfolio-area"><summary>${esc(a.area)} <span>${a.cursos.length}</span></summary><ul>${a.cursos.map(([name, type]) => `<li><span>${esc(name)}</span><em>${esc(M.data.portfolio.tipos[type])}</em></li>`).join('')}</ul></details>`).join('') : '<p class="empty">Nenhum curso encontrado.</p>';
     $('portfolioCount').textContent = `${areas.reduce((sum, a) => sum + a.cursos.length, 0)} curso(s)`;
   }
+  function eadOverviewHtml() {
+    const section = M.data.secoes.find(item => item.id === 'mudancas-ead');
+    if (!section) return '';
+    const item = label => section.itens?.find(entry => norm(entry.titulo) === norm(label));
+    const highlight = label => M.data.destaques?.find(entry => norm(entry.rotulo) === norm(label));
+    const duration = item('Duração das disciplinas');
+    const exam = item('Avaliação presencial');
+    const average = item('Média mínima para aprovação');
+    const durationSummary = highlight('Duração das disciplinas');
+    const examSummary = highlight('Avaliação presencial');
+    const averageSummary = highlight('Média mínima para aprovação');
+    const ead = M.data.portfolio.modalidades.find(modality => /ead/i.test(modality.nome));
+    const healthAreas = ead?.areas.filter(area => /sa[uú]de|bem-estar/i.test(area.area)) || [];
+    const healthList = healthAreas.map(area => `<details class="ead-health-area"><summary>${esc(area.area)} <span>${area.cursos.length} cursos</span></summary><ul>${area.cursos.map(([name]) => `<li>${esc(name)}</li>`).join('')}</ul></details>`).join('');
+    const table = section.tabela;
+    return `<section class="card ead-overview" aria-labelledby="eadOverviewTitle">
+      <header><p class="eyebrow">REGRAS GERAIS · A PARTIR DE 2027</p><h3 id="eadOverviewTitle">${esc(section.titulo)}</h3><p>${esc(section.subtitulo)}</p></header>
+      <div class="ead-overview-facts">
+        <article><span>${esc(duration?.titulo || '')}</span><strong>${esc(durationSummary?.valor || '')}</strong><p>${esc(duration?.texto || durationSummary?.detalhe || '')}</p></article>
+        <article><span>${esc(average?.titulo || '')}</span><strong>${esc(averageSummary?.valor || '')}</strong><p>${esc(averageSummary?.detalhe || average?.texto || '')}</p></article>
+        <article><span>${esc(exam?.titulo || '')}</span><strong>${esc(examSummary?.valor || '')}</strong><p>${esc(examSummary?.detalhe || exam?.texto || '')}</p></article>
+      </div>
+      ${table ? `<div class="ead-grade-summary"><div><h4>${esc(table.titulo)}</h4><p>Veja os componentes da composição regular e a pontuação de cada atividade.</p></div><div class="table-wrap"><table><thead><tr>${table.colunas.map(col => `<th>${esc(col)}</th>`).join('')}</tr></thead><tbody>${table.linhas.map((row, i, all) => `<tr class="${i === all.length - 1 ? 'total' : ''}">${row.map((cell, j) => `<td class="${j ? 'n' : ''}">${esc(cell)}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>` : ''}
+      <p class="ead-exception"><b>Atenção:</b> ${esc(table?.nota || '')} Confira também as orientações específicas do curso no Studeo.</p>
+      ${healthList ? `<details class="ead-health"><summary><span><b>Cursos EaD da área Saúde e Bem-estar</b><small>Esta regra geral também se aplica a essas áreas; a rotina depende do curso.</small></span><i aria-hidden="true"></i></summary><div class="ead-health-list">${healthList}</div></details>` : ''}
+    </section>`;
+  }
   function renderMarco() {
     const d = M.data;
     $('area-marco').innerHTML = `<section class="marco-heading"><div><p class="eyebrow">CONSULTA ACADÊMICA</p><h2 id="marcoTitle">Processo 51/2027</h2><p>${esc(d.aviso)}</p></div></section>
-      <section class="card marco-course-section" aria-labelledby="marcoCourseTitle"><header><p class="eyebrow">COMECE PELO CURSO</p><h3 id="marcoCourseTitle">Selecione o curso que deseja consultar</h3><p>Graduação EaD e cursos semipresenciais estão organizados por modalidade e área.</p></header><div class="course-controls"><label class="field"><span>Buscar curso</span><input id="courseSearch" type="search" placeholder="Ex.: Administração, Farmácia, Educação Física"></label><label class="field"><span>Curso</span><select id="courseSelect"><option value="">Selecione um curso</option></select></label><span class="sub" id="courseCount"></span></div><div id="courseCard"></div></section>
+      ${eadOverviewHtml()}
+      <section class="card marco-course-section" aria-labelledby="marcoCourseTitle"><header><p class="eyebrow">INFORMAÇÃO POR CURSO</p><h3 id="marcoCourseTitle">Agora consulte a rotina do seu curso</h3><p>As regras gerais EaD estão acima. Aqui você vê as semanas e particularidades que o material apresenta para cada curso.</p></header><div class="course-controls"><label class="field"><span>Buscar curso</span><input id="courseSearch" type="search" placeholder="Ex.: Administração, Farmácia, Educação Física"></label><label class="field"><span>Curso</span><select id="courseSelect"><option value="">Selecione um curso</option></select></label><span class="sub" id="courseCount"></span></div><div id="courseCard"></div></section>
       <section class="card marco-faq-section"><header><p class="eyebrow">ORIENTAÇÕES</p><h3>Perguntas frequentes</h3><p>Abra somente a dúvida que precisa consultar.</p></header><div class="faq-list" id="faqList"></div></section>
       <details class="card portfolio-card"><summary><span><b>Portfólio completo de cursos</b><small>${esc(d.portfolio.nota)}</small></span><i aria-hidden="true"></i></summary><div class="portfolio-body"><div class="portfolio-controls"><div class="segmented" id="portfolioModalities">${d.portfolio.modalidades.map((m, i) => `<button type="button" data-portfolio-modality="${i}" aria-pressed="${i === M.portfolioModality}" class="${i === M.portfolioModality ? 'active' : ''}">${esc(m.nome)}</button>`).join('')}</div><label class="field"><span>Buscar no portfólio</span><input id="portfolioSearch" type="search" placeholder="Digite o nome do curso"></label><span id="portfolioCount" class="sub"></span></div><div id="portfolioList" class="portfolio-list"></div></div></details>`;
     renderCourseOptions(); renderFaq(); renderPortfolio();
