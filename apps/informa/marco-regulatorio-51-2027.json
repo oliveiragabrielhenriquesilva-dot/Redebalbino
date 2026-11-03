@@ -249,7 +249,7 @@
           "Sociologia"
         ],
         "anos": 4,
-        "nota": "Cursos deste grupo com 4 anos.",
+        "nota": "Este curso tem 4 anos. O 5º ano aparece apenas em Letras Português – Inglês.",
         "grade": {
           "aulas": [
             1,
@@ -290,7 +290,7 @@
           "Letras Português – Inglês"
         ],
         "anos": 4,
-        "nota": "Curso com 5 anos; esta grade inclui as atividades específicas do 5º ano.",
+        "nota": "Letras Português – Inglês é o único curso deste grupo com 5 anos; a coluna do 5º ano aparece somente aqui.",
         "grade": {
           "aulas": [
             1,
