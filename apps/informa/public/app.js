@@ -201,29 +201,55 @@
     $('portCount').textContent = `${areas.reduce((n, a) => n + a.cursos.length, 0)} curso(s)`;
   }
   function renderMarco() {
-    const d = M.data, el = $('area-marco');
-    const secao = s => `<section class="card marco-sec" id="m-${esc(s.id)}"><header><h3>${esc(s.titulo)}</h3>${s.subtitulo ? `<p>${esc(s.subtitulo)}</p>` : ''}</header>
+    const d = M.data, el = $('area-marco'), mz = d.matriz_cursos;
+    const gruposMenu = [
+      { nome: 'Licenciaturas', grupos: ['Licenciaturas', 'Acompanhamento do Transtorno do Espectro Autista', 'Psicopedagogia'] },
+      { nome: 'Engenharias e áreas técnicas', grupos: ['Engenharias e Agronomia', 'Automação Industrial', 'Manutenção Industrial'] },
+      { nome: 'Saúde', grupos: ['Educação Física', 'Biomedicina', 'Farmácia'] }
+    ].map(c => ({ nome: c.nome, grupos: mz.grupos.map((g, i) => ({ ...g, indice: i })).filter(g => c.grupos.includes(g.nome)) }));
+    const opcoesCurso = termo => {
+      const q = norm(termo);
+      return gruposMenu.map(c => {
+        const opcoes = c.grupos.map(g => ({ ...g, cursos: g.cursos.filter(nome => !q || norm(nome).includes(q)) })).filter(g => g.cursos.length);
+        return opcoes.length ? `<optgroup label="${esc(c.nome)}">${opcoes.map(g => g.cursos.map(nome => `<option value="${g.indice}">${esc(nome)}</option>`).join('')).join('')}</optgroup>` : '';
+      }).join('');
+    };
+    const conteudoSecao = s => `
       ${s.itens ? `<div class="m-itens">${s.itens.map(i => `<div class="m-item"><b>${esc(i.titulo)}</b><p>${esc(i.texto)}</p></div>`).join('')}</div>` : ''}
       ${s.tabela ? `<div class="m-tabela"><h4>${esc(s.tabela.titulo)}</h4><div class="table-wrap"><table><thead><tr>${s.tabela.colunas.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${s.tabela.linhas.map((l, i, all) => `<tr class="${i === all.length - 1 ? 'total' : ''}">${l.map((c, j) => `<td class="${j ? 'n' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div><p class="sub">${esc(s.tabela.nota || '')}</p></div>` : ''}
       ${s.cartoes ? `<div class="m-cartoes">${s.cartoes.map(c => `<article class="m-cartao"><h4>${esc(c.titulo)}</h4><span class="chip">${esc(c.selo)}</span><ul>${c.pontos.map(p => `<li>${esc(p)}</li>`).join('')}</ul><p><b>Frequência:</b> ${esc(c.frequencia)}</p><p><b>Agendamento:</b> ${esc(c.agendamento)}</p></article>`).join('')}</div>` : ''}
-      ${s.nota ? `<p class="sub">${esc(s.nota)}</p>` : ''}</section>`;
-    const mz = d.matriz_cursos;
+      ${s.nota ? `<p class="sub m-section-note">${esc(s.nota)}</p>` : ''}`;
     el.innerHTML = `
-      <div class="section-head"><div><p class="eyebrow">Início de processo 51/2027</p><h2 id="marcoTitle">${esc(d.titulo)}</h2><p class="sub">${esc(d.fonte)}</p></div></div>
+      <div class="section-head"><div><p class="eyebrow">Conexão Pedagógica · Processo 51/2027</p><h2 id="marcoTitle">${esc(d.titulo)}</h2><p class="sub">${esc(d.fonte)}</p></div></div>
       <div class="fonte-aviso">${esc(d.aviso)}</div>
       <div class="m-destaques">${d.destaques.map(x => `<article class="now"><span class="now-prod">${esc(x.rotulo)}</span><strong>${esc(x.valor)}</strong><small>${esc(x.detalhe)}</small></article>`).join('')}</div>
-      <nav class="m-indice" aria-label="Tópicos">${d.secoes.map(s => `<a href="#m-${esc(s.id)}">${esc(s.titulo)}</a>`).join('')}<a href="#m-cursos">Atividades por curso</a><a href="#m-portfolio">Portfólio</a></nav>
-      ${d.secoes.slice(0, 2).map(secao).join('')}
-      <section class="card marco-sec" id="m-cursos"><header><h3>${esc(mz.titulo)}</h3><p>Escolha o curso para ver o que acontece em cada ano.</p></header>
-        <label class="field m-curso"><span>Curso</span><select id="cursoSel">${mz.grupos.map((g, i) => `<optgroup label="${esc(g.nome)}">${g.cursos.map(c => `<option value="${i}">${esc(c)}</option>`).join('')}</optgroup>`).join('')}</select></label>
+      <nav class="m-indice" aria-label="Ir direto para"><a href="#m-cursos">Atividades por curso</a><a href="#m-orientacoes">Regras acadêmicas</a><a href="#m-portfolio">Cursos disponíveis</a></nav>
+      <section class="card marco-sec" id="m-cursos"><header><h3>${esc(mz.titulo)}</h3><p>Busque e selecione o curso para consultar a matriz correspondente.</p></header>
+        <div class="m-course-filter">
+          <label class="field m-course-search"><span>Buscar curso</span><input id="cursoBusca" type="search" autocomplete="off" placeholder="Digite o nome do curso"></label>
+          <label class="field m-curso"><span>Curso</span><select id="cursoSel">${opcoesCurso('')}</select></label>
+          <span class="sub m-course-hint">A matriz aparece abaixo após a seleção.</span>
+        </div>
         <div id="gradeBox"></div><p class="sub">${esc(mz.nota)}</p></section>
-      ${d.secoes.slice(2).map(secao).join('')}
-      <section class="card marco-sec" id="m-portfolio"><header><h3>Portfólio de cursos</h3><p>${esc(d.portfolio.nota)}</p></header>
-        <div class="cal-controls"><div class="segmented" id="portMod">${d.portfolio.modalidades.map((m, i) => `<button type="button" data-mod="${i}" class="${i === M.mod ? 'active' : ''}">${esc(m.nome)}</button>`).join('')}</div>
-        <label class="field"><span>Buscar curso</span><input id="portQ" type="search" placeholder="Ex.: Pedagogia, Gestão, Dados"></label><span class="sub" id="portCount"></span></div>
-        <div class="port-grid" id="portList"></div></section>`;
-    const showGrade = () => { $('gradeBox').innerHTML = gradeHtml(mz.grupos[Number($('cursoSel').value)]); };
-    $('cursoSel').addEventListener('change', showGrade); showGrade();
+      <section class="card marco-sec" id="m-orientacoes"><header><h3>Regras e orientações do processo</h3><p>Abra somente o assunto que deseja consultar.</p></header>
+        <div class="m-accordions">${d.secoes.map((s, i) => `<details class="m-accordion" id="m-${esc(s.id)}" ${i === 0 ? 'open' : ''}><summary><span><b>${esc(s.titulo)}</b>${s.subtitulo ? `<small>${esc(s.subtitulo)}</small>` : ''}</span><i aria-hidden="true"></i></summary><div class="m-accordion-body">${conteudoSecao(s)}</div></details>`).join('')}</div></section>
+      <details class="card marco-sec m-portfolio-collapse" id="m-portfolio"><summary><span><b>Portfólio de cursos</b><small>${esc(d.portfolio.nota)}</small></span><i aria-hidden="true"></i></summary>
+        <div class="m-portfolio-body">
+          <div class="cal-controls"><div class="segmented" id="portMod">${d.portfolio.modalidades.map((m, i) => `<button type="button" data-mod="${i}" class="${i === M.mod ? 'active' : ''}">${esc(m.nome)}</button>`).join('')}</div>
+          <label class="field"><span>Buscar curso no portfólio</span><input id="portQ" type="search" placeholder="Ex.: Pedagogia, Gestão, Dados"></label><span class="sub" id="portCount"></span></div>
+          <div class="port-grid" id="portList"></div></div></details>`;
+    const preencherMatriz = termo => {
+      const sel = $('cursoSel'), previous = sel.value;
+      const html = opcoesCurso(termo);
+      sel.innerHTML = html || '<option value="">Nenhum curso encontrado</option>';
+      if (!html) { $('gradeBox').innerHTML = '<p class="empty">Não encontrei um curso com esse nome.</p>'; return; }
+      const valores = [...sel.options].map(o => o.value);
+      sel.value = valores.includes(previous) ? previous : valores[0];
+      M.grupo = Number(sel.value);
+      $('gradeBox').innerHTML = gradeHtml(mz.grupos[M.grupo]);
+    };
+    $('cursoBusca').addEventListener('input', e => preencherMatriz(e.target.value));
+    $('cursoSel').addEventListener('change', () => { M.grupo = Number($('cursoSel').value); $('gradeBox').innerHTML = gradeHtml(mz.grupos[M.grupo]); });
     el.querySelectorAll('[data-mod]').forEach(b => b.addEventListener('click', () => { M.mod = Number(b.dataset.mod); el.querySelectorAll('[data-mod]').forEach(x => x.classList.toggle('active', x === b)); renderPortfolio(); }));
     $('portQ').addEventListener('input', e => { M.portQ = e.target.value; renderPortfolio(); });
     renderPortfolio();
