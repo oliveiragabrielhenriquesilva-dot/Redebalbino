@@ -277,7 +277,11 @@ function readTutorRoster() {
 async function readJson(req, max = 64 * 1024) {
   const chunks = []; let size = 0;
   for await (const chunk of req) { size += chunk.length; if (size > max) throw Object.assign(new Error('Requisição muito grande.'), { status: 413 }); chunks.push(chunk); }
-  try { return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'); }
+  const raw = Buffer.concat(chunks).toString('utf8');
+  if (String(req.headers['content-type'] || '').toLowerCase().includes('application/x-www-form-urlencoded')) {
+    return Object.fromEntries(new URLSearchParams(raw));
+  }
+  try { return JSON.parse(raw || '{}'); }
   catch { throw Object.assign(new Error('JSON inválido.'), { status: 400 }); }
 }
 function sameOrigin(req) {
@@ -317,14 +321,31 @@ async function portalApi(req, res, url) {
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && !sameOrigin(req)) return jsonReply(res, 403, { error: 'Origem da solicitação inválida.' });
   if (method === 'POST' && p === '/api/portal/login') {
     const body = await readJson(req), ip = clientIp(req), now = Date.now();
+    const formPost = String(req.headers['content-type'] || '').toLowerCase().includes('application/x-www-form-urlencoded');
     const username = String(body.username || '').trim().toLowerCase().slice(0, 100) || '(vazio)';
     if (blockedLogin(ip, username, now)) return jsonReply(res, 401, { error: 'Usuário ou senha inválidos.' });
     const result = portal.login(body.username, body.password, req);
     if (!result) {
       recordLoginFailure(ip, username, now);
+      if (formPost) {
+        res.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
+        return res.end('<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Falha no acesso</title><body><h1>Usuário ou senha inválidos.</h1><p><a href="/">Voltar ao Portal e tentar novamente</a></p></body></html>');
+      }
       return jsonReply(res, 401, { error: 'Usuário ou senha inválidos.' });
     }
     loginAttempts.delete(`user:${username}`);
+    if (formPost) {
+      const targetValue = String(body.next || '');
+      let target = '/';
+      try {
+        const parsed = new URL(targetValue, 'http://gateway.local');
+        if (parsed.origin === 'http://gateway.local' && /^\/(?:matriculas|oportunidades|informa)(?:\/|$)/.test(parsed.pathname)) {
+          target = parsed.pathname + parsed.search + parsed.hash;
+        }
+      } catch {}
+      res.writeHead(303, { Location: target, 'Set-Cookie': result.cookie, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
+      return res.end();
+    }
     return jsonReply(res, 200, { user: result.user }, { 'Set-Cookie': result.cookie });
   }
   if (method === 'POST' && p === '/api/portal/logout') return jsonReply(res, 200, { ok: true }, { 'Set-Cookie': portal.logout(req) });
