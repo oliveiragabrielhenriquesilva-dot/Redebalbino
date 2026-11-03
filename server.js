@@ -417,6 +417,19 @@ const server = http.createServer((req, res) => {
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Content-Security-Policy', "frame-ancestors 'none'; object-src 'none'; base-uri 'none'");
   const url = new URL(req.url || '/', 'http://gateway.local');
+  // Credenciais em query string nunca autenticam. Remova-as antes de servir páginas,
+  // APIs ou redirecionamentos para evitar que permaneçam na barra e em referers.
+  const sensitiveQueryKey = /^(?:user(?:name)?|login|email|password|passwd|pass|senha|token|access_token|secret|credential)$/i;
+  const exposedKeys = [...url.searchParams.keys()].filter(key => sensitiveQueryKey.test(key));
+  if (exposedKeys.length) {
+    for (const key of exposedKeys) url.searchParams.delete(key);
+    res.writeHead(303, {
+      Location: url.pathname + url.search,
+      'Cache-Control': 'no-store',
+      'Referrer-Policy': 'no-referrer'
+    });
+    return res.end();
+  }
   if (url.pathname.startsWith('/api/informa/')) {
     informaApi(req, res, url).catch(error => jsonReply(res, 500, { error: error.message || 'Falha ao consultar o calendário.' }));
     return;
