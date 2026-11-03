@@ -21,10 +21,10 @@
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
     const button = $('themeToggle');
     if (button) {
-      button.innerHTML = isDark ? '☾ <span>Claro</span>' : '☀ <span>Escuro</span>';
+      button.innerHTML = isDark ? '☾ <span>Tema escuro</span>' : '☀ <span>Tema claro</span>';
       button.setAttribute('aria-pressed', String(isDark));
-      button.setAttribute('aria-label', `Alternar para tema ${isDark ? 'claro' : 'escuro'}`);
-      button.title = `Alternar para tema ${isDark ? 'claro' : 'escuro'}`;
+      button.setAttribute('aria-label', `${isDark ? 'Tema escuro' : 'Tema claro'}. Clique para alternar para o tema ${isDark ? 'claro' : 'escuro'}`);
+      button.title = `${isDark ? 'Tema escuro' : 'Tema claro'} · clique para alternar`;
     }
     if (persist) try { localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light'); } catch (_) { /* preferência indisponível */ }
   }
