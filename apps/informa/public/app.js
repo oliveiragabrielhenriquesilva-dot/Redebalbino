@@ -152,11 +152,10 @@
     return [...map.values()].sort((a, b) => score({ inicio: a.inicio, fim: a.fim }) - score({ inicio: b.inicio, fim: b.fim }));
   }
   function resultCard(group, focus = '') {
-    const products = [...new Set(group.rows.map(o => prodName(o.produto)))];
     const modules = [...new Set(group.rows.map(o => `${prodName(o.produto)} · ${modLabel(o.produto, o.modulo)}`))];
-    const representative = group.rows[0], stamp = focus === 'fim' ? `Termina em ${br(group.fim)}` : focus === 'inicio' ? `Começa em ${br(group.inicio)}` : group.inicio === group.fim ? `Data: ${br(group.inicio)}` : `${br(group.inicio)} a ${br(group.fim)}`;
+    const representative = group.rows[0], stamp = group.inicio === group.fim ? `Dia ${br(group.inicio)}` : focus === 'fim' ? `Termina em ${br(group.fim)}` : focus === 'inicio' ? `Começa em ${br(group.inicio)}` : `${br(group.inicio)} a ${br(group.fim)}`;
     const all = group.rows.map(o => observations(o)).filter(Boolean);
-    return `<article class="answer-event"><span class="st st-${status(representative)}">${esc(statusLabel[status(representative)])}</span><h3>${esc(group.name)}</h3><p class="answer-context">${esc(products.join(' · '))} · ${esc(modules.join(' / '))}</p><time class="answer-date" datetime="${esc(group.inicio)}">${esc(stamp)}</time><p class="answer-relative">${esc(relative(representative))}</p><button type="button" class="text-button" data-open-event="${esc(group.name)}">Ver detalhes do evento</button>${all.length ? `<p class="answer-note">${esc([...new Set(all)].join(' · '))}</p>` : ''}</article>`;
+    return `<article class="answer-event"><span class="st st-${status(representative)}">${esc(statusLabel[status(representative)])}</span><h3>${esc(group.name)}</h3><p class="answer-context">${esc(modules.join(' / '))}</p><time class="answer-date" datetime="${esc(group.inicio)}">${esc(stamp)}</time><p class="answer-relative">${esc(relative(representative))}</p><button type="button" class="text-button" data-open-event="${esc(group.name)}">Ver detalhes do evento</button>${all.length ? `<p class="answer-note">${esc([...new Set(all)].join(' · '))}</p>` : ''}</article>`;
   }
   function removeChip(token) {
     if (!token) return;
