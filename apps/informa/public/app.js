@@ -240,6 +240,17 @@
         $('gradeBox').innerHTML = gradeHtml(matriz);
         return;
       }
+      if (curso && /ead/i.test(curso.modalidade)) {
+        const regrasEaD = d.secoes.find(s => s.id === 'mudancas-ead');
+        $('gradeBox').innerHTML = `
+          <div class="m-course-context">
+            <strong>${esc(curso.nome)} · ${esc(curso.tipoNome)} · Graduação EaD</strong>
+            <p>O material apresenta regras gerais para todos os cursos EaD a partir de 2027, mas não traz uma matriz específica de atividades para este curso.</p>
+          </div>
+          ${regrasEaD ? conteudoSecao(regrasEaD) : ''}
+        `;
+        return;
+      }
       $('gradeBox').innerHTML = curso
         ? `<div class="empty m-course-empty"><strong>${esc(curso.nome)} · ${esc(curso.modalidade)}</strong><p>O portfólio inclui este curso, mas o quadro de atividades específico não consta no material apresentado. Consulte a matriz oficial do curso.</p></div>`
         : '';
