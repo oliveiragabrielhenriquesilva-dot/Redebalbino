@@ -995,11 +995,8 @@ function painelGestor(d, o) {
     </div>`;
   };
 
-  return `${cab}${kpis}${T.meta_rpv_parcial?avisoFinanceiro(d):''}${quadro}${quadroMatriculasExternas(d,o.umPolo)}${quadroSemVendas(d, R.hoje, o.umPolo)}${espacoEmDestaque()}
-    <div class="g-duas mt">
-      <div class="card"><div class="card-cab"><h2>Por produto</h2><span class="muted">realizado / meta · marca = esperado na data</span></div><div class="corpo">${grupoHTML}</div></div>
-      <div class="card"><div class="card-cab"><h2>Onde agir</h2><span class="muted">${alertas.length ? `${alertas.length} ponto(s)` : ''}</span></div><div class="corpo g-alertas">${alertasHTML}</div></div>
-    </div>
+  return `${cab}${kpis}<section class="card mt g-onde-agir"><div class="card-cab"><h2>Onde agir</h2><span class="muted">${alertas.length ? `${alertas.length} ponto(s) para acompanhar` : ''}</span></div><div class="corpo g-alertas">${alertasHTML}<div class="linha-acoes"><a class="btn" href="#/painel/polos">Ver polos</a><a class="btn" href="#/painel/produtos">Ver produtos</a><a class="btn" href="#/painel/equipe">Ver equipe</a></div></div></section>${quadro}${quadroMatriculasExternas(d,o.umPolo)}${quadroSemVendas(d, R.hoje, o.umPolo)}${espacoEmDestaque()}
+    <div class="card mt"><div class="card-cab"><h2>Por produto</h2><span class="muted">realizado / meta · marca = esperado na data</span></div><div class="corpo">${grupoHTML}</div></div>
     <div class="card mt"><div class="card-cab"><h2>Evolução acumulada</h2><span class="muted">realizado × esperado (calculado com as metas e Spaces atuais)</span></div><div class="corpo">${grafico()}</div></div>
     <details class="card mt"><summary class="g-sum">Produtos — realizado, meta e SAVE/GAP</summary><div class="corpo sem-pad"><table class="t"><thead><tr><th>Produto</th><th class="num">Realizado</th><th class="num">Meta</th><th>Atingido</th><th class="num">Esperado</th><th>SAVE/GAP</th><th class="num">Ticket</th></tr></thead><tbody>${tabela}
       <tr class="total"><td>Total</td><td class="num">${int(T.qtd)}</td><td class="num">${int(T.meta)}</td><td>${miniBarra(T.qtd, T.meta)}</td><td class="num">${int(H.total.esperado)}</td><td>${saveGap(H.total.saldo)}</td><td class="num">${qtdT(T) ? brl(T.valor / qtdT(T)) : '—'}</td></tr></tbody></table></div></details>
