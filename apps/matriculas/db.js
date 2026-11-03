@@ -380,9 +380,10 @@ function migrarV11() {
   if (versao >= 11) return;
   const norm = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   try {
-    const dir = path.join(DATA_DIR, 'backups'); fs.mkdirSync(dir, { recursive: true });
+    const dir = path.join(DATA_DIR, 'backups'); fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); fs.chmodSync(dir, 0o700);
     const copia = path.join(dir, `antes-v11-${Date.now()}.db`);
     db.exec(`VACUUM INTO '${copia.replace(/'/g, "''")}'`);
+    fs.chmodSync(copia, 0o600);
   } catch (e) { console.error('Aviso: não consegui criar o backup antes da v11:', e.message); }
   db.exec('BEGIN');
   try {
@@ -454,8 +455,8 @@ function migrarV14() {
   if (versao >= 14) return;
   const norm = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   try {
-    const dir = path.join(DATA_DIR, 'backups'); fs.mkdirSync(dir, { recursive: true });
-    db.exec(`VACUUM INTO '${path.join(dir, `antes-v14-${Date.now()}.db`).replace(/'/g, "''")}'`);
+    const dir = path.join(DATA_DIR, 'backups'); fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); fs.chmodSync(dir, 0o700);
+    const backup = path.join(dir, `antes-v14-${Date.now()}.db`); db.exec(`VACUUM INTO '${backup.replace(/'/g, "''")}'`); fs.chmodSync(backup, 0o600);
   } catch (e) { console.error('Aviso: não consegui criar o backup antes da v14:', e.message); }
   db.exec('BEGIN');
   try {
@@ -513,8 +514,8 @@ function migrarV19() {
   if (versao >= 19) return;
   const norm = x => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   try {
-    const dir = path.join(DATA_DIR, 'backups'); fs.mkdirSync(dir, { recursive: true });
-    db.exec(`VACUUM INTO '${path.join(dir, `antes-v19-${Date.now()}.db`).replace(/'/g, "''")}'`);
+    const dir = path.join(DATA_DIR, 'backups'); fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); fs.chmodSync(dir, 0o700);
+    const backup = path.join(dir, `antes-v19-${Date.now()}.db`); db.exec(`VACUUM INTO '${backup.replace(/'/g, "''")}'`); fs.chmodSync(backup, 0o600);
   } catch (e) { console.error('Aviso: não consegui criar o backup antes da v19:', e.message); }
   db.exec('BEGIN');
   try {
@@ -555,9 +556,10 @@ if (!db.prepare("SELECT 1 FROM config WHERE chave='credito_origem_v27'").get()) 
     if(origem)origens.push({tutor:t.id,polo:origem});
   }
   if(db.prepare('SELECT COUNT(*) n FROM matriculas').get().n){
-    const dir=path.join(DATA_DIR,'backups');fs.mkdirSync(dir,{recursive:true});
+    const dir=path.join(DATA_DIR,'backups');fs.mkdirSync(dir,{recursive:true,mode:0o700});fs.chmodSync(dir,0o700);
     const backup=path.join(dir,'antes-credito-origem-v27-'+Date.now()+'.db');
     db.exec("VACUUM INTO '"+backup.replace(/'/g,"''")+"'");
+    fs.chmodSync(backup,0o600);
   }
   db.exec('BEGIN');try{
     const salvar=db.prepare('UPDATE tutores SET polo_origem_id=? WHERE id=? AND polo_origem_id IS NULL');

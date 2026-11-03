@@ -25,10 +25,10 @@ function aplicarPendente(dataDir){
   const pendente=path.join(dataDir,'restauracao-pendente.db');if(!fs.existsSync(pendente))return;
   validarBackup(pendente);
   const destino=path.join(dataDir,'matriculas.db'),stamp=new Date().toISOString().replace(/[:.]/g,'-'),backups=path.join(dataDir,'backups');
-  fs.mkdirSync(backups,{recursive:true});
+  fs.mkdirSync(backups,{recursive:true,mode:0o700});fs.chmodSync(backups,0o700);
   if(fs.existsSync(destino)){
     const atual=new DatabaseSync(destino);
-    try{const copia=path.join(backups,'antes-restauracao-'+stamp+'.db');atual.exec("VACUUM INTO '"+copia.replace(/'/g,"''")+"'");}finally{atual.close();}
+    try{const copia=path.join(backups,'antes-restauracao-'+stamp+'.db');atual.exec("VACUUM INTO '"+copia.replace(/'/g,"''")+"'");fs.chmodSync(copia,0o600);}finally{atual.close();}
   }
   // O servidor anterior já deve estar encerrado: o bloqueio de instância é adquirido antes daqui.
   const novo=path.join(dataDir,'restauracao-pronta.db');fs.copyFileSync(pendente,novo);

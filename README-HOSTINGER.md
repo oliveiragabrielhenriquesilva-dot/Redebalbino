@@ -8,6 +8,7 @@ O projeto raiz é uma aplicação Node.js 24 que encaminha cada caminho ao respe
 - Node.js 24 ou superior.
 - Diretório gravável e persistente. Por padrão, os dados ficam em `~/central-balbino-runtime`; se necessário, ajuste `BALBINO_RUNTIME_DIR` para uma pasta persistente da sua hospedagem.
 - Definir `GOCHAT_ADMIN_USER`, `GOCHAT_ADMIN_PASSWORD` e `ARTES_ADMIN_PASSWORD` nas variáveis de ambiente do aplicativo.
+- Use uma senha forte e exclusiva para o Portal (12 caracteres ou mais). Renomeie o usuário administrador `admin` em **Usuários e acessos** quando a instalação já estiver configurada; o sistema não altera esse nome automaticamente.
 - Comando de inicialização: `npm start`.
 
 Não publique sem configurar as duas senhas. Não coloque credenciais no repositório.

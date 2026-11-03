@@ -53,13 +53,21 @@ function validarPeriodo(q) {
 }
 const tentativasLogin = new Map();
 function limitarLogin(req, login) {
-  const ip = req.socket.remoteAddress || 'local', agora = Date.now();
+  const agora = Date.now();
   for (const [k,v] of tentativasLogin) if (agora >= v.ate) tentativasLogin.delete(k);
-  for (const chave of ['ip:' + ip, 'conta:' + String(login || '').trim().toLowerCase()]) {
-    let t = tentativasLogin.get(chave);
-    if (!t) { t = { n:0, ate: agora + 15*60*1000 }; tentativasLogin.set(chave,t); }
-    if (t.n >= (chave.startsWith('ip:') ? 60 : 10)) falha(429, 'Muitas tentativas. Aguarde 15 minutos antes de tentar novamente.');
-    t.n++;
+  const remote = req.socket.remoteAddress || 'local';
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const trustedGateway = remote === '127.0.0.1' || remote === '::1' || remote.startsWith('::ffff:127.');
+  const ip = trustedGateway && forwarded ? forwarded : remote;
+  const accountKey = 'conta:' + String(login || '').trim().toLowerCase().slice(0, 100), ipKey = 'ip:' + ip;
+  const account = tentativasLogin.get(accountKey), byIp = tentativasLogin.get(ipKey);
+  if ((account?.n || 0) >= 5 || (byIp?.n || 0) >= 30) falha(401, 'Login ou senha incorretos');
+  return { accountKey, ipKey, agora };
+}
+function registrarFalhaLogin(limit) {
+  for (const key of [limit.accountKey, limit.ipKey]) {
+    const value = tentativasLogin.get(key);
+    tentativasLogin.set(key, { n: (value?.n || 0) + 1, ate: limit.agora + 15 * 60 * 1000 });
   }
 }
 function percentualCalendario(ciclo, spaces, data, modo, fer) {
@@ -103,7 +111,8 @@ function mascaraCpf(cpf) {
   return c.length === 11 ? `***.${c.slice(3, 6)}.${c.slice(6, 9)}-**` : (cpf ? '***' : '');
 }
 function registrar(usuario, acao, detalhe) {
-  run('INSERT INTO historico (usuario, acao, detalhe) VALUES (?, ?, ?)', usuario ? usuario.login : null, acao, detalhe ? String(detalhe).slice(0, 500) : null);
+  const safeDetail = detalhe ? String(detalhe).replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, '***.***.***-**').slice(0, 500) : null;
+  run('INSERT INTO historico (usuario, acao, detalhe) VALUES (?, ?, ?)', usuario ? usuario.login : null, acao, safeDetail);
 }
 
 // ---------------------------------------------------------------- calendário (dias úteis + feriados)
@@ -1480,11 +1489,10 @@ async function rotear(req, res) {
   }
   if (p === '/api/login' && m === 'POST') {
     const c = await lerCorpo(req);
-    limitarLogin(req,c.login);
+    const limite = limitarLogin(req,c.login);
     const u = get('SELECT * FROM usuarios WHERE login = ? AND ativo = 1', String(c.login || '').trim());
-    if (!u || !confereSenha(c.senha || '', u.senha_hash)) { await new Promise(r => setTimeout(r, 400)); falha(401, 'Login ou senha incorretos'); }
-    tentativasLogin.delete('conta:'+String(c.login||'').trim().toLowerCase());
-    const limiteIP=tentativasLogin.get('ip:'+(req.socket.remoteAddress||'local')); if(limiteIP)limiteIP.n=Math.max(0,limiteIP.n-1);
+    if (!u || !confereSenha(c.senha || '', u.senha_hash)) { registrarFalhaLogin(limite); await new Promise(r => setTimeout(r, 400)); falha(401, 'Login ou senha incorretos'); }
+    tentativasLogin.delete(limite.accountKey);
     const token = crypto.randomBytes(32).toString('hex');
     run('DELETE FROM sessoes WHERE expira < ?', Date.now());
     run('INSERT INTO sessoes (token, usuario_id, expira) VALUES (?, ?, ?)', token, u.id, Date.now() + SESSAO_DIAS * 864e5);
@@ -1820,9 +1828,9 @@ async function rotear(req, res) {
   if (p === '/api/backup-restaurar' && m === 'POST') {
     exigeAdmin();
     const c = await lerCorpo(req,60*1024*1024);
-    limitarLogin(req,usuario.login);
+    const limite = limitarLogin(req,usuario.login);
     const u = get('SELECT senha_hash FROM usuarios WHERE id=?',usuario.id);
-    if (!confereSenha(c.senha||'',u.senha_hash)) falha(403,'Senha de administrador incorreta');
+    if (!confereSenha(c.senha||'',u.senha_hash)) { registrarFalhaLogin(limite); falha(403,'Senha de administrador incorreta'); }
     let r;try { r=restauracao.preparar(DATA_DIR,c.base64); } catch(e){falha(400,e.message);}
     registrar(usuario,'preparou restauração de backup',r.matriculas+' matrícula(s) no backup');
     return enviarJson(res,200,{ok:true,msg:'Backup validado ('+r.matriculas+' matrículas). Feche a janela do servidor e abra iniciar.bat novamente. A restauração será aplicada e a base atual será preservada em dados/backups.'});
@@ -1885,10 +1893,11 @@ function backupAutomatico(forcar = false) {
   let arq;
   try {
     const dir = path.join(DATA_DIR, 'backups');
-    fs.mkdirSync(dir, { recursive: true });
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 }); fs.chmodSync(dir, 0o700);
     arq = path.join(dir, `matriculas-${hojeISO()}.db`);
     if (forcar && fs.existsSync(arq)) fs.unlinkSync(arq);
     if (!fs.existsSync(arq)) db.exec(`VACUUM INTO '${arq.replace(/'/g, "''")}'`);
+    fs.chmodSync(arq, 0o600);
     limparAntigos(dir);
   } catch (e) { console.error('Falha no backup automático:', e.message); return { ok: false, msg: 'Falha no backup local: ' + e.message }; }
 
@@ -1927,4 +1936,4 @@ function iniciarRotinasHospedadas() {
 }
 if (require.main === module) servidor.listen(PORT, process.env.HOST || '0.0.0.0', iniciarRotinasHospedadas);
 
-module.exports = { servidor, db, conciliacaoMA, oportunidades, painel, ritmo, previsaoSemana, diario, origensPolo, ritmoSemanal, paginaTutor, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, percentualCalendario, gestao, iniciarRotinasHospedadas };
+module.exports = { servidor, db, conciliacaoMA, oportunidades, painel, ritmo, previsaoSemana, diario, origensPolo, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, percentualCalendario, gestao, iniciarRotinasHospedadas };

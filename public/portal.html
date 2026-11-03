@@ -42,6 +42,18 @@
         </form>
       </section>
 
+      <section class="login-view hidden" id="changePasswordView" aria-labelledby="changePasswordTitle">
+        <div class="login-copy"><div class="eyebrow">Primeiro acesso</div><h1>Proteja seu<br><span>acesso.</span></h1><p>Defina uma senha pessoal para continuar usando os sistemas da Rede Balbino.</p></div>
+        <form class="login-card" id="changePasswordForm">
+          <p class="card-kicker">SEGURANÇA DA CONTA</p><h2 id="changePasswordTitle">Defina sua nova senha</h2>
+          <label for="currentPassword">Senha atual</label><input id="currentPassword" type="password" autocomplete="current-password" required>
+          <label for="newOwnPassword">Nova senha (mínimo 12 caracteres)</label><input id="newOwnPassword" type="password" minlength="12" autocomplete="new-password" required>
+          <label for="confirmOwnPassword">Confirme a nova senha</label><input id="confirmOwnPassword" type="password" minlength="12" autocomplete="new-password" required>
+          <button class="primary-btn" type="submit">Salvar nova senha <span aria-hidden="true">→</span></button>
+          <p class="form-error hidden" id="changePasswordError" role="alert"></p>
+        </form>
+      </section>
+
       <section class="dashboard hidden" id="dashboardView" aria-labelledby="dashboardTitle">
         <div class="dashboard-heading">
           <div><div class="eyebrow" id="todayLabel">Sistemas da equipe</div><h1 id="dashboardTitle"><span class="greet" id="greeting">Olá</span>, <span id="userName"></span></h1><p id="dashboardLead">Escolha um sistema ou comece pelo que precisa de atenção hoje.</p></div>

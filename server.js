@@ -204,11 +204,13 @@ function mountResponse(req, res, app) {
 function proxy(req, res, app, originalUrl) {
   if (!app.server) { res.writeHead(503, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(`O sistema ${app.key} ainda está iniciando.`); return; }
   const originalUrlValue = req.url;
+  const sourceIp = clientIp(req);
   req.url = originalUrl || '/';
   req.headers['accept-encoding'] = 'identity';
   req.headers['x-forwarded-prefix'] = app.prefix;
   req.headers['x-forwarded-host'] = req.headers.host || 'redebalbino.com.br';
   req.headers['x-forwarded-proto'] = req.headers['x-forwarded-proto'] || 'https';
+  req.headers['x-forwarded-for'] = sourceIp;
   const access = portal.forApp(req, app.key);
   req.headers['x-balbino-portal'] = access.status === 'allowed' ? JSON.stringify({ app: app.key, id: access.user.id, name: access.user.name, username: access.user.username, account: access.account }) : '';
   mountResponse(req, res, app);
@@ -227,6 +229,7 @@ async function informaApi(req, res, url) {
   if (!['/api/informa/calendario', '/api/informa/marco'].includes(url.pathname)) return jsonReply(res, 404, { error: 'Endpoint não encontrado.' });
   const user = portal.current(req);
   if (!user) return jsonReply(res, 401, { error: 'Entre no portal para consultar o Balbino Informa.' });
+  if (user.must_change_password) return jsonReply(res, 403, { error: 'Defina sua nova senha no Portal para continuar.' });
   if (req.method !== 'GET') return jsonReply(res, 405, { error: 'Método não permitido.' }, { Allow: 'GET' });
   // Marco Regulatório 51/2027: conteúdo em arquivo de dados (apps/informa/marco-regulatorio-51-2027.json).
   if (url.pathname === '/api/informa/marco') {
@@ -283,6 +286,28 @@ function sameOrigin(req) {
   try { return new URL(origin).host === String(req.headers.host || '').toLowerCase(); } catch { return false; }
 }
 const loginAttempts = new Map();
+function clientIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const throughProxy = Boolean(req.headers['x-forwarded-proto'] || req.headers['x-forwarded-host']);
+  return throughProxy && forwarded ? forwarded : (req.socket.remoteAddress || 'unknown');
+}
+function loginCounter(key, now) {
+  const value = loginAttempts.get(key);
+  if (!value || value.until <= now) return { count: 0, until: now + 15 * 60 * 1000 };
+  return value;
+}
+function pruneLoginAttempts(now) {
+  for (const [key, value] of loginAttempts) if (value.until <= now) loginAttempts.delete(key);
+}
+function blockedLogin(ip, username, now) {
+  pruneLoginAttempts(now);
+  return loginCounter(`user:${username}`, now).count >= 5 || loginCounter(`ip:${ip}`, now).count >= 30;
+}
+function recordLoginFailure(ip, username, now) {
+  for (const key of [`user:${username}`, `ip:${ip}`]) {
+    const entry = loginCounter(key, now); entry.count++; loginAttempts.set(key, entry);
+  }
+}
 async function portalApi(req, res, url) {
   const method = req.method, p = url.pathname;
   if (method === 'GET' && p === '/api/portal/me') {
@@ -291,20 +316,25 @@ async function portalApi(req, res, url) {
   }
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && !sameOrigin(req)) return jsonReply(res, 403, { error: 'Origem da solicitação inválida.' });
   if (method === 'POST' && p === '/api/portal/login') {
-    const ip = req.socket.remoteAddress || 'unknown', now = Date.now(), old = loginAttempts.get(ip);
-    if (old && old.until > now && old.count >= 10) return jsonReply(res, 429, { error: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' });
-    const body = await readJson(req), result = portal.login(body.username, body.password, req);
+    const body = await readJson(req), ip = clientIp(req), now = Date.now();
+    const username = String(body.username || '').trim().toLowerCase().slice(0, 100) || '(vazio)';
+    if (blockedLogin(ip, username, now)) return jsonReply(res, 401, { error: 'Usuário ou senha inválidos.' });
+    const result = portal.login(body.username, body.password, req);
     if (!result) {
-      const entry = old && old.until > now ? old : { count: 0, until: now + 10 * 60 * 1000 };
-      entry.count++; loginAttempts.set(ip, entry);
+      recordLoginFailure(ip, username, now);
       return jsonReply(res, 401, { error: 'Usuário ou senha inválidos.' });
     }
-    loginAttempts.delete(ip);
+    loginAttempts.delete(`user:${username}`);
     return jsonReply(res, 200, { user: result.user }, { 'Set-Cookie': result.cookie });
   }
   if (method === 'POST' && p === '/api/portal/logout') return jsonReply(res, 200, { ok: true }, { 'Set-Cookie': portal.logout(req) });
   const actor = portal.current(req);
   if (!actor) return jsonReply(res, 401, { error: 'Entre no portal para continuar.' });
+  if (method === 'POST' && p === '/api/portal/password') {
+    try { const body = await readJson(req); portal.changeOwnPassword(req, body.currentPassword, body.password); return jsonReply(res, 200, { ok: true }); }
+    catch (error) { return jsonReply(res, 400, { error: error.message }); }
+  }
+  if (actor.must_change_password) return jsonReply(res, 403, { error: 'Defina sua nova senha para continuar.' });
   if (!actor.is_admin) return jsonReply(res, 403, { error: 'Acesso restrito ao administrador.' });
   if (method === 'GET' && p === '/api/portal/users') return jsonReply(res, 200, { users: portal.listUsers() });
   if (method === 'GET' && p === '/api/portal/tutor-users/preview') {
@@ -349,7 +379,8 @@ const INFORMA_FILES = new Map([
   ['/style.css', 'style.css']
 ]);
 function serveInforma(req, res, url) {
-  if (!portal.current(req)) {
+  const currentUser = portal.current(req);
+  if (!currentUser || currentUser.must_change_password) {
     res.writeHead(302, { Location: '/?next=' + encodeURIComponent(url.pathname + url.search), 'Cache-Control': 'no-store' });
     return res.end();
   }
@@ -379,6 +410,12 @@ function serveInforma(req, res, url) {
 }
 
 const server = http.createServer((req, res) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Content-Security-Policy', "frame-ancestors 'none'; object-src 'none'; base-uri 'none'");
   const url = new URL(req.url || '/', 'http://gateway.local');
   if (url.pathname.startsWith('/api/informa/')) {
     informaApi(req, res, url).catch(error => jsonReply(res, 500, { error: error.message || 'Falha ao consultar o calendário.' }));
@@ -409,7 +446,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/oportunidades' || url.pathname.startsWith('/oportunidades/')) {
     const access=portal.forApp(req,'matriculas');
     if(access.status!=='allowed'){
-      if(url.pathname.includes('/api/')||access.status==='forbidden')return jsonReply(res,access.status==='forbidden'?403:401,{error:access.status==='forbidden'?'Seu acesso não inclui Matrículas.':'Entre no portal para continuar.'});
+      if(url.pathname.includes('/api/')||access.status==='forbidden'||access.status==='password_change_required')return jsonReply(res,access.status==='unauthenticated'?401:403,{error:access.status==='password_change_required'?'Defina sua nova senha no Portal para continuar.':access.status==='forbidden'?'Seu acesso não inclui Matrículas.':'Entre no portal para continuar.'});
       res.writeHead(302,{Location:`/?next=${encodeURIComponent(url.pathname+url.search)}`,'Cache-Control':'no-store'});return res.end();
     }
     if(url.pathname==='/oportunidades'){res.writeHead(308,{Location:'/oportunidades/'+url.search});return res.end()}
@@ -441,7 +478,7 @@ const server = http.createServer((req, res) => {
     const portalAssets = { '/': ['portal.html', 'text/html; charset=utf-8'], '/index.html': ['portal.html', 'text/html; charset=utf-8'], '/portal.css': ['portal.css', 'text/css; charset=utf-8'], '/portal.js': ['portal.js', 'text/javascript; charset=utf-8'] };
     if (portalAssets[url.pathname]) {
       const [file, type] = portalAssets[url.pathname], content = fs.readFileSync(path.join(ROOT, 'public', file));
-      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); return res.end(content);
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" }); return res.end(content);
     }
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('Caminho não encontrado.');
   }
@@ -449,12 +486,15 @@ const server = http.createServer((req, res) => {
   const access = portal.forApp(req, app.key);
   const childPath = url.pathname.slice(app.prefix.length) || '/';
   const childMethod = req.method;
+  if (app.key === 'matriculas' && ['/api/worker/boas-vindas', '/api/worker/boas-vindas/status'].includes(childPath)) {
+    return proxy(req, res, app, childPath + url.search);
+  }
   const isNativeLogout = (app.key === 'matriculas' && childPath === '/api/logout' && childMethod === 'POST') ||
     (app.key === 'artes' && childPath === '/api/sair' && childMethod === 'POST') ||
     (app.key === 'chat' && childPath === '/api/auth/logout' && childMethod === 'POST');
   if (isNativeLogout) return jsonReply(res, 200, { ok: true }, { 'Set-Cookie': portal.logout(req) });
   if (access.status !== 'allowed') {
-    if (url.pathname.includes('/api/')) return jsonReply(res, access.status === 'forbidden' ? 403 : 401, { error: access.status === 'forbidden' ? 'Seu acesso não inclui este sistema.' : 'Entre no portal para continuar.' });
+    if (url.pathname.includes('/api/')) return jsonReply(res, access.status === 'unauthenticated' ? 401 : 403, { error: access.status === 'password_change_required' ? 'Defina sua nova senha no Portal para continuar.' : access.status === 'forbidden' ? 'Seu acesso não inclui este sistema.' : 'Entre no portal para continuar.' });
     res.writeHead(302, { Location: `/?next=${encodeURIComponent(`${app.prefix}${url.pathname.slice(app.prefix.length)}${url.search}`)}`, 'Cache-Control': 'no-store' }); return res.end();
   }
   proxy(req, res, app, url.pathname.slice(app.prefix.length) + url.search);
@@ -464,7 +504,7 @@ server.on('upgrade', (req, socket, head) => {
   const app = apps.find(a => url.pathname.startsWith(a.prefix + '/'));
   if (!app) { socket.destroy(); return; }
   const access = portal.forApp(req, app.key);
-  if (access.status !== 'allowed') { socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'); socket.destroy(); return; }
+  if (access.status !== 'allowed') { socket.write(`HTTP/1.1 ${access.status === 'unauthenticated' ? '401 Unauthorized' : '403 Forbidden'}\r\nConnection: close\r\n\r\n`); socket.destroy(); return; }
   if (!app.server?.listenerCount('upgrade')) { socket.destroy(); return; }
   req.url = url.pathname.slice(app.prefix.length) + url.search;
   req.headers['x-balbino-portal'] = JSON.stringify({ app: app.key, id: access.user.id, name: access.user.name, username: access.user.username, account: access.account });

@@ -29,10 +29,12 @@
   }
   function render() {
     const logged = Boolean(me);
+    const mustChangePassword = logged && Boolean(me.mustChangePassword);
     show($('loginView'), !logged && $('setupWarning').dataset.configured !== 'false');
-    show($('dashboardView'), logged);
+    show($('changePasswordView'), mustChangePassword);
+    show($('dashboardView'), logged && !mustChangePassword);
     show($('logoutBtn'), logged);
-    if (!logged) return;
+    if (!logged || mustChangePassword) return;
     $('userName').textContent = me.name;
     show($('manageUsersBtn'), me.isAdmin);
     const grid = $('appGrid'); grid.replaceChildren();
@@ -86,8 +88,7 @@
         const s2 = document.createElement('small'); s2.textContent = sub;
         a.append(l, v, s2); grid.append(a);
       }
-      const nomeProcesso = String(d.ciclo.nome || '').replace(/^(?:ciclo|processo)\s*/i, '').trim();
-      $('todayTitle').textContent = `Processo ${nomeProcesso}${d.polo_restrito ? ' · ' + d.polo_restrito : ''}`;
+      $('todayTitle').textContent = `Processo ${d.ciclo.nome}${d.polo_restrito ? ' · ' + d.polo_restrito : ''}`;
       $('todayMeta').textContent = `Matrículas com RA confirmado, como no painel do Matrículas${d.pendentes_ra ? ` · ${n(d.pendentes_ra)} lançada(s) aguardando RA` : ''}`;
       show(panel, true);
     } catch { show(panel, false); }
@@ -109,6 +110,23 @@
       if (next) { try { const target = new URL(next, location.origin); if (target.origin === location.origin && /^\/(matriculas|oportunidades|informa)(?:\/|$)/.test(target.pathname)) location.assign(target.href); } catch {} }
     } catch (err) { error.textContent = err.message; show(error, true); }
     finally { button.disabled = false; }
+  });
+  $('changePasswordForm').addEventListener('submit', async event => {
+    event.preventDefault();
+    const error = $('changePasswordError'), button = event.submitter;
+    show(error, false);
+    if ($('newOwnPassword').value !== $('confirmOwnPassword').value) {
+      error.textContent = 'A confirmação não corresponde à nova senha.'; show(error, true); return;
+    }
+    if ($('newOwnPassword').value === $('currentPassword').value) {
+      error.textContent = 'A nova senha deve ser diferente da atual.'; show(error, true); return;
+    }
+    if (button) button.disabled = true;
+    try {
+      await request('/api/portal/password', { method: 'POST', body: JSON.stringify({ currentPassword: $('currentPassword').value, password: $('newOwnPassword').value }) });
+      $('changePasswordForm').reset(); await refresh(); toast('Senha atualizada. As outras sessões foram encerradas.');
+    } catch (err) { error.textContent = err.message; show(error, true); }
+    finally { if (button) button.disabled = false; }
   });
   $('logoutBtn').addEventListener('click', async () => { try { await request('/api/portal/logout', { method: 'POST', body: '{}' }); } catch {} me = null; render(); });
   $('manageUsersBtn').addEventListener('click', async () => { $('usersDialog').showModal(); await loadUsers(); });

@@ -34,7 +34,8 @@ function sanitizeUser(row) {
     apps: cleanApps(parseJSON(row.apps_json, [])),
     accounts: parseJSON(row.accounts_json, {}),
     isAdmin: Boolean(row.is_admin),
-    active: Boolean(row.active)
+    active: Boolean(row.active),
+    mustChangePassword: Boolean(row.must_change_password)
   };
 }
 function cookieValue(req) {
@@ -67,6 +68,7 @@ function createPortalAuth(runtimeDir, env = process.env) {
       accounts_json TEXT NOT NULL DEFAULT '{}',
       is_admin INTEGER NOT NULL DEFAULT 0,
       active INTEGER NOT NULL DEFAULT 1,
+      must_change_password INTEGER NOT NULL DEFAULT 0,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
@@ -78,6 +80,8 @@ function createPortalAuth(runtimeDir, env = process.env) {
     CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions(expires_at);
   `);
 
+  const userColumns = new Set(db.prepare('PRAGMA table_info(users)').all().map(column => column.name));
+  if (!userColumns.has('must_change_password')) db.exec('ALTER TABLE users ADD COLUMN must_change_password INTEGER NOT NULL DEFAULT 0');
   const total = db.prepare('SELECT COUNT(*) n FROM users').get().n;
   let bootstrap = { configured: true, created: false };
   if (!total) {
@@ -136,6 +140,7 @@ function createPortalAuth(runtimeDir, env = process.env) {
     const row = findSession(req);
     if (!row) return { status: 'unauthenticated', user: null };
     const user = sanitizeUser(row);
+    if (user.mustChangePassword) return { status: 'password_change_required', user };
     if (!user.apps.includes(app)) return { status: 'forbidden', user };
     const account = user.accounts[app] || (user.isAdmin && app === 'matriculas' ? '@admin' : user.username);
     return { status: 'allowed', user, account };
@@ -159,8 +164,8 @@ function createPortalAuth(runtimeDir, env = process.env) {
     if (apps.includes('chat') && !accounts.chat) throw new Error('Informe o usuário que essa pessoa já usa no Balbino Chat.');
     const { salt, hash } = hashPassword(password), now = Date.now(), id = crypto.randomUUID();
     db.prepare(`INSERT INTO users
-      (id,name,username,password_salt,password_hash,apps_json,accounts_json,is_admin,active,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?)`).run(id, name, username, salt, hash, JSON.stringify(apps), JSON.stringify(accounts), 0, 1, now, now);
+      (id,name,username,password_salt,password_hash,apps_json,accounts_json,is_admin,active,must_change_password,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`).run(id, name, username, salt, hash, JSON.stringify(apps), JSON.stringify(accounts), 0, 1, 1, now, now);
     return sanitizeUser(getUserById.get(id));
   }
   function createTutorUsers(tutors, password) {
@@ -190,8 +195,8 @@ function createPortalAuth(runtimeDir, env = process.env) {
       if (collision) throw new Error(`O login ${row.username} já pertence a outra conta do portal.`);
     }
     const insert = db.prepare(`INSERT INTO users
-      (id,name,username,password_salt,password_hash,apps_json,accounts_json,is_admin,active,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?)`);
+      (id,name,username,password_salt,password_hash,apps_json,accounts_json,is_admin,active,must_change_password,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`);
     const created = [], existing = [];
     const now = Date.now();
     db.exec('BEGIN IMMEDIATE');
@@ -200,7 +205,7 @@ function createPortalAuth(runtimeDir, env = process.env) {
         if (row.existing) { existing.push({ name: row.name, username: row.existing.username, active: Boolean(row.existing.active) }); continue; }
         const { salt, hash } = hashPassword(password), id = crypto.randomUUID();
         insert.run(id, row.name, row.username, salt, hash,
-          JSON.stringify(['matriculas']), JSON.stringify({ matriculas: row.account }), 0, 1, now, now);
+          JSON.stringify(['matriculas']), JSON.stringify({ matriculas: row.account }), 0, 1, 1, now, now);
         created.push({ name: row.name, username: row.username });
       }
       db.exec('COMMIT');
@@ -230,8 +235,18 @@ function createPortalAuth(runtimeDir, env = process.env) {
   function changePassword(id, password) {
     if (String(password || '').length < 12) throw new Error('A senha precisa ter pelo menos 12 caracteres.');
     const { salt, hash } = hashPassword(password);
-    db.prepare('UPDATE users SET password_salt=?,password_hash=?,updated_at=? WHERE id=?').run(salt, hash, Date.now(), id);
+    db.prepare('UPDATE users SET password_salt=?,password_hash=?,must_change_password=1,updated_at=? WHERE id=?').run(salt, hash, Date.now(), id);
     db.prepare('DELETE FROM sessions WHERE user_id=?').run(id);
+  }
+  function changeOwnPassword(req, currentPassword, newPassword) {
+    const row = findSession(req);
+    if (!row || !passwordMatches(currentPassword, row.password_salt, row.password_hash)) throw new Error('A senha atual está incorreta.');
+    if (String(newPassword || '').length < 12) throw new Error('A nova senha precisa ter pelo menos 12 caracteres.');
+    if (passwordMatches(newPassword, row.password_salt, row.password_hash)) throw new Error('A nova senha deve ser diferente da atual.');
+    const { salt, hash } = hashPassword(newPassword), token = cookieValue(req), now = Date.now();
+    db.prepare('UPDATE users SET password_salt=?,password_hash=?,must_change_password=0,updated_at=? WHERE id=?').run(salt, hash, now, row.id);
+    db.prepare('DELETE FROM sessions WHERE user_id=? AND token<>?').run(row.id, token);
+    db.prepare('UPDATE sessions SET expires_at=? WHERE token=? AND user_id=?').run(now + SESSION_MS, token, row.id);
   }
   function setActive(id, active, actorId) {
     const target = getUserById.get(id);
@@ -246,7 +261,7 @@ function createPortalAuth(runtimeDir, env = process.env) {
     return sanitizeUser(getUserById.get(id));
   }
 
-  return { db, bootstrap, login, logout, current, forApp, publicUser, listUsers, createUser, createTutorUsers, updateUser, changePassword, setActive, sessionCookie };
+  return { db, bootstrap, login, logout, current, forApp, publicUser, listUsers, createUser, createTutorUsers, updateUser, changePassword, changeOwnPassword, setActive, sessionCookie };
 }
 
 module.exports = { createPortalAuth };
