@@ -7,8 +7,8 @@
   <meta name="description" content="Consulta do Calendário Administrativo Unicesumar para a equipe da Rede Balbino.">
   <title>Balbino Informa</title>
   <link rel="icon" href="/brand/monograma-rede-balbino.webp" type="image/webp">
-  <link rel="stylesheet" href="/informa/style.css">
-  <script src="/informa/app.js" defer></script>
+  <link rel="stylesheet" href="/informa/style.css?v=20261103b">
+  <script src="/informa/app.js?v=20261103b" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -16,25 +16,32 @@
       <span class="brand-mark" aria-hidden="true"><img src="/brand/monograma-rede-balbino-branco.webp" alt=""></span>
       <span><small>REDE BALBINO</small><strong>Informa</strong></span>
     </a>
-    <nav><a href="/">Portal</a><a href="#marco">Marco Regulatório 51/2027</a></nav>
+    <nav><a href="/">Portal da Rede</a></nav>
   </header>
 
   <main>
     <nav class="areas" role="tablist" aria-label="Áreas do Balbino Informa">
       <button type="button" role="tab" class="area-tab active" data-area="calendario" aria-selected="true">Calendário acadêmico</button>
-      <button type="button" role="tab" class="area-tab" data-area="marco" aria-selected="false">Marco Regulatório – 51/2027 <span class="novo">novo</span></button>
+      <button type="button" role="tab" class="area-tab" data-area="marco" aria-selected="false">Conexão Pedagógica · 51/2027</button>
     </nav>
     <section class="hero" aria-labelledby="heroTitle">
-      <p class="eyebrow" id="today">Calendário Unicesumar</p>
-      <h1 id="heroTitle">O que você precisa <span>saber hoje?</span></h1>
-      <form class="ask" id="askForm" role="search">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
-        <label class="visually-hidden" for="q">Pergunte ou busque</label>
-        <input id="q" type="search" autocomplete="off" placeholder="Ex.: geração de RA do módulo 54 · média mínima 2027 · ASM de Farmácia">
-        <button type="submit">Consultar</button>
-      </form>
-      <div class="understood hidden" id="understood" aria-live="polite"></div>
-      <div class="suggestions" id="suggestions" aria-label="Perguntas frequentes"></div>
+      <div class="hero-copy">
+        <p class="eyebrow"><span id="today">Consulta acadêmica</span></p>
+        <h1 id="heroTitle">Calendário acadêmico <span>e orientações</span></h1>
+        <p class="hero-description">Consulte atividades, avaliações e prazos por curso. As orientações do Processo 51/2027 ficam em uma área própria.</p>
+      </div>
+      <div class="hero-consult">
+        <p class="consult-title">O que você precisa consultar?</p>
+        <form class="ask" id="askForm" role="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
+          <label class="visually-hidden" for="q">Pergunte ou busque no calendário</label>
+          <input id="q" type="search" autocomplete="off" placeholder="Ex.: prova presencial, atividade de estudo, módulo 54">
+          <button type="submit">Buscar</button>
+        </form>
+        <div class="understood hidden" id="understood" aria-live="polite"></div>
+        <div class="suggestions-head"><strong>Atalhos de consulta</strong><span>Escolha um assunto</span></div>
+        <div class="suggestions" id="suggestions" aria-label="Atalhos de consulta"></div>
+      </div>
     </section>
 
     <div class="erro hidden" id="erro" role="alert"></div>
