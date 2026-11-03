@@ -468,6 +468,11 @@ const server = http.createServer((req, res) => {
     '/brand/monograma-rede-balbino.webp': 'monograma-rede-balbino.webp',
     '/brand/monograma-rede-balbino-branco.webp': 'monograma-rede-balbino-branco.webp'
   };
+  if (url.pathname === '/brand/balbino.css') {
+    const content = fs.readFileSync(path.join(ROOT, 'brand', 'balbino.css'));
+    res.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'no-store' });
+    return res.end(content);
+  }
   if (brandAssets[url.pathname]) {
     const content = fs.readFileSync(path.join(ROOT, 'brand', brandAssets[url.pathname]));
     res.writeHead(200, { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });

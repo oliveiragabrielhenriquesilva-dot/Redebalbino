@@ -1,0 +1,45 @@
+:root {
+  --brand-navy: #0b1730;
+  --brand-navy-2: #101e3b;
+  --brand-card: rgba(19, 35, 62, .92);
+  --brand-line: rgba(177, 197, 230, .18);
+  --brand-text: #edf2f7;
+  --brand-muted: #9aaecb;
+  --brand-blue: #3b82f6;
+  --brand-cyan: #5aa7ff;
+  --brand-teal: #77d9d0;
+  --brand-font: Inter, "Segoe UI", Arial, sans-serif;
+}
+
+html[data-tema="escuro"] {
+  color-scheme: dark;
+  --bg: var(--brand-navy);
+  --surface: rgba(19, 35, 62, .92);
+  --surface-2: rgba(24, 42, 73, .92);
+  --line: var(--brand-line);
+  --line-strong: rgba(177, 197, 230, .28);
+  --text: var(--brand-text);
+  --text-2: #c6d4e9;
+  --text-3: var(--brand-muted);
+  --accent: var(--brand-blue);
+  --accent-soft: rgba(59, 130, 246, .18);
+  --side: #0a1530;
+  --font: var(--brand-font);
+}
+
+html[data-tema="escuro"] body,
+html[data-theme="dark"] body {
+  background: radial-gradient(ellipse at 10% 0%, rgba(37,99,235,.19), transparent 34%),
+    radial-gradient(ellipse at 90% 100%, rgba(20,184,166,.10), transparent 32%),
+    linear-gradient(145deg, var(--brand-navy) 0%, var(--brand-navy-2) 54%, var(--brand-navy) 100%);
+  background-attachment: fixed;
+  font-family: var(--brand-font);
+}
+
+.portal-link {
+  color: #174ea6;
+  background: #eaf2ff;
+  border-color: #c5d8f4;
+  font-weight: 750;
+}
+.portal-link:hover { background: #dceaff; border-color: #9bbcf0; color: #123d87; }
