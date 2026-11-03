@@ -7,7 +7,7 @@
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
     const button = $('themeToggle');
     if (button) {
-      button.innerHTML = isDark ? '☾ <span>Escuro</span>' : '☀ <span>Claro</span>';
+      button.innerHTML = isDark ? '☾ <span>Tema escuro</span>' : '☀ <span>Tema claro</span>';
       button.setAttribute('aria-pressed', String(isDark));
       button.setAttribute('aria-label', `Tema ${isDark ? 'escuro' : 'claro'} ativo. Alternar para tema ${isDark ? 'claro' : 'escuro'}`);
       button.title = `Tema ${isDark ? 'escuro' : 'claro'} ativo · clique para alternar`;
