@@ -75,3 +75,21 @@ main:has(.dashboard:not(.hidden)){justify-content:flex-start}
 :root[data-theme="light"] .user-tag{background:#eaf1ff;color:#2857a0}
 :root[data-theme="light"] .toast{border-color:#cbd8e8;background:#fff;color:#203955;box-shadow:0 12px 34px rgba(20,43,75,.16)}
 @media(max-width:600px){.topbar{height:auto;min-height:72px;padding:10px 0;flex-wrap:wrap;gap:8px}.top-actions{width:100%;justify-content:flex-end;gap:8px}.theme-toggle{min-height:36px;padding:0 10px;font-size:11px}.secure-label{padding:7px 10px}}
+
+
+/* Reforço de contraste no tema claro do Portal. */
+.brand-mark-light{display:none}
+:root[data-theme="light"] .brand-mark-dark{display:none}
+:root[data-theme="light"] .brand-mark-light{display:block}
+:root[data-theme="light"] .brand-mark{background:#fff;border-color:#c7d5e6}
+:root[data-theme="light"] .eyebrow{color:#087c75}
+:root[data-theme="light"] .eyebrow:before{background:linear-gradient(90deg,#286be8,#087c75)}
+:root[data-theme="light"] .login-copy h1 span,:root[data-theme="light"] .dashboard-heading h1 span{color:#245db5}
+:root[data-theme="light"] .section-label,:root[data-theme="light"] .app-number{color:#4e6684}
+:root[data-theme="light"] .theme-toggle{border-color:#b8c9de;background:#fff;color:#274466;box-shadow:0 2px 7px rgba(20,43,75,.06)}
+:root[data-theme="light"] .theme-toggle:hover{border-color:#779ac6;background:#edf4ff;color:#174f9f}
+:root[data-theme="light"] .secure-label,:root[data-theme="light"] .user-chip{border-color:#c3d1e2;color:#294563}
+:root[data-theme="light"] .today-head span,:root[data-theme="light"] .app-card p,:root[data-theme="light"] .app-shortcuts a{color:#526985}
+:root[data-theme="light"] .today-tile small,:root[data-theme="light"] footer{color:#536983}
+:root[data-theme="light"] .today-tile span{color:#415a78}
+:root[data-theme="light"] .app-icon{border-color:#c9d7e8}
