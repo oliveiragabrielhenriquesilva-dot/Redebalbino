@@ -519,7 +519,6 @@
     $('area-inicio').classList.toggle('hidden', area !== 'inicio');
     $('area-calendario').classList.toggle('hidden', area !== 'calendario');
     $('area-marco').classList.toggle('hidden', area !== 'marco');
-    $('myProduct').closest('.product-select').classList.toggle('hidden', area !== 'calendario');
     const targetHash = area === 'marco' ? '#marco' : area === 'calendario' ? '#calendario' : '';
     if (location.hash !== targetHash) history.replaceState(null, '', location.pathname + location.search + targetHash);
     if (scroll) $('area-' + area).scrollIntoView({ behavior: 'smooth', block: 'start' });
