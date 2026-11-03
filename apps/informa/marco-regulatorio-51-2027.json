@@ -92,7 +92,7 @@
           ],
           "frequencia": "Requer presença com registro de frequência para aprovação.",
           "agendamento": "Requer agendamento via Studeo, conforme orientações nos ambientes das disciplinas do curso.",
-          "onde": "O local depende do modelo acadêmico do curso: Polo de Apoio (sala ou laboratório) quando indicado; para Licenciaturas e o curso de Acompanhamento do Transtorno do Espectro Autista, o slide informa atividade teórica em Mova Play."
+          "onde": "Presencialidade no Polo de Apoio, com duração de 3 horas por encontro. O curso define se será em sala, laboratório ou outro espaço indicado no Studeo; para Licenciaturas e Acompanhamento do Transtorno do Espectro Autista, o vídeo informa presencialidade teórica no Mova Play."
         },
         {
           "titulo": "Atividade Síncrona Mediada (ASM)",
@@ -105,7 +105,7 @@
           ],
           "frequencia": "Requer participação com registro de frequência para aprovação.",
           "agendamento": "Requer agendamento via Studeo, conforme orientações nos ambientes das disciplinas do curso.",
-          "onde": "Online e em tempo real. O vídeo não determina um local físico obrigatório; pode ser acompanhada de casa com conexão, salvo orientação específica no Studeo."
+          "onde": "Online e em tempo real, com duração de 3 horas por encontro. Pode ser acompanhada de casa ou de outro local com conexão; não exige deslocamento ao Polo, salvo orientação específica no Studeo."
         },
         {
           "titulo": "Aulas ao vivo",
@@ -118,7 +118,7 @@
           ],
           "frequencia": "A participação é essencial para o ritmo de aprendizagem, mas não registra nem conta frequência para aprovação.",
           "agendamento": "Não requer agendamento: seguir o ensalamento e as informações do mural de avisos e do calendário da disciplina, no Studeo.",
-          "onde": "Online, via Teams."
+          "onde": "Online, via Teams, com duração de 1 hora e 30 minutos por encontro. Pode ser acompanhada de casa; não exige ida ao Polo."
         }
       ]
     },
@@ -161,6 +161,10 @@
         {
           "titulo": "Farmácia – 5º ano",
           "texto": "Cada módulo é composto por 2 disciplinas de natureza distinta: 1 de estágio curricular supervisionado e 1 de natureza comum."
+        },
+        {
+          "titulo": "Engenharia e Agronomia – TCC no 5º ano",
+          "texto": "Nos módulos em que houver Trabalho de Conclusão de Curso como 3ª disciplina no 5º ano, o vídeo prevê um encontro presencial adicional de 3 horas. A semana e o local desse encontro devem ser conferidos no Studeo para cada disciplina."
         }
       ],
       "nota": "A distribuição das atividades pode variar conforme o curso e a matriz curricular."
