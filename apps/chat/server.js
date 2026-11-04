@@ -308,7 +308,7 @@ async function integrationApi(req,res,url){
   if(!welcomeIntegration.verifyToken(req.headers['x-token']))return json(res,401,{error:'X-Token inválido ou ainda não configurado.'},headers);
   if(method==='GET'&&p==='/api/integracao/saude')return json(res,200,{...welcomeIntegration.health(),envio_ativado:welcomeIntegration.publicConfig().enabled},headers);
   if(method==='POST'&&p==='/api/integracao/ativar-fila'){
-    try{welcomeIntegration.updateConfig({enabled:true});welcomeIntegration.start();pushLog('INTEGRACAO_BOAS_VINDAS_ATIVADA_POR_MATRICULAS',{});return json(res,200,{ok:true,envio_ativado:true,...welcomeIntegration.health()},headers)}
+    try{welcomeIntegration.resume();welcomeIntegration.updateConfig({enabled:true});welcomeIntegration.start();pushLog('INTEGRACAO_BOAS_VINDAS_ATIVADA_POR_MATRICULAS',{});return json(res,200,{ok:true,envio_ativado:true,...welcomeIntegration.health()},headers)}
     catch(e){return json(res,400,{error:`Não foi possível ativar a fila de boas-vindas: ${e.message}`},headers)}
   }
   if(method==='POST'&&p==='/api/integracao/boas-vindas'){
