@@ -451,6 +451,18 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
   // ------------------------------------------------------------------ rotas /api/ma/*
   async function rotas(req, res, p, m, q, usuario) {
     if (!p.startsWith('/api/ma/')) return false;
+    if (p === '/api/ma/boas-vindas-token' && (m === 'GET' || m === 'POST')) {
+      if (!ehAdmin(usuario)) falha(403, 'Apenas administradores podem configurar o token do Balbino Chat.');
+      if (m === 'GET') {
+        const tokenArquivo = lerWelcomeChatTokenArquivo();
+        enviarJson(res, 200, { configurado: Boolean(tokenArquivo || process.env.BALBINO_CHAT_TOKEN), origem: tokenArquivo ? 'painel' : process.env.BALBINO_CHAT_TOKEN ? 'ambiente' : 'nenhuma' }); return true;
+      }
+      const c = await lerCorpo(req), token = String(c.token || '').trim();
+      if (!/^bc_[A-Za-z0-9_-]{40,60}$/.test(token)) falha(400, 'Token inválido. Gere um X-Token no Balbino Chat e cole o valor completo.');
+      gravarWelcomeChatToken(token);
+      registrar(usuario, 'configurou o token do Balbino Chat', 'Token armazenado no servidor; valor oculto');
+      enviarJson(res, 200, { ok: true, configurado: true, origem: 'painel' }); return true;
+    }
     const exigeLancar = () => { if (!podeLancar(usuario)) falha(403, 'Seu usuário não pode registrar posições oficiais'); };
     const exigeAdmin = () => { if (!ehAdmin(usuario)) falha(403, 'Apenas administradores'); };
     if (p === '/api/ma/conciliacao' && m === 'GET') { enviarJson(res, 200, conciliacao(q, usuario)); return true; }
@@ -614,7 +626,16 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
   }
   const poloDaFonte = (nome) => { const s1 = sugerir('polo', nome); return s1.local_ids.length === 1 ? s1.local_ids[0] : null; };
   const welcomeChatBase=()=>String(process.env.BALBINO_CHAT_URL||'http://127.0.0.1:3001').replace(/\/$/,'');
-  const welcomeChatToken=()=>String(process.env.BALBINO_CHAT_TOKEN||'').trim();
+  const welcomeChatTokenFile=path.join(DATA_DIR,'integracoes','balbino-chat-token.json');
+  function lerWelcomeChatTokenArquivo(){try{return String(JSON.parse(fs.readFileSync(welcomeChatTokenFile,'utf8')).token||'').trim()}catch{return''}}
+  function gravarWelcomeChatToken(token){
+    fs.mkdirSync(path.dirname(welcomeChatTokenFile),{recursive:true});
+    const tmp=welcomeChatTokenFile+'.'+process.pid+'.tmp';
+    fs.writeFileSync(tmp,JSON.stringify({token}),{mode:0o600});
+    fs.renameSync(tmp,welcomeChatTokenFile);
+    try{fs.chmodSync(welcomeChatTokenFile,0o600)}catch{}
+  }
+  const welcomeChatToken=()=>lerWelcomeChatTokenArquivo()||String(process.env.BALBINO_CHAT_TOKEN||'').trim();
   function welcomeConfig(){try{return JSON.parse(cfg('boas_vindas','{}')||'{}')}catch{return{}}}
   function autoWelcomeEnabled(){return welcomeConfig().automatica===true}
   let welcomeChatFilaAtivada=false, welcomeChatFilaErro=null;
