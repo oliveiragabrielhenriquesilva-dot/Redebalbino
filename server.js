@@ -541,7 +541,8 @@ const server = http.createServer((req, res) => {
   const chatWelcomeApi =
     (childPath === '/api/integracao/ativar-fila' && childMethod === 'POST') ||
     (childPath === '/api/integracao/boas-vindas' && childMethod === 'POST') ||
-    (childPath === '/api/integracao/boas-vindas/status' && childMethod === 'GET');
+    (childPath === '/api/integracao/boas-vindas/status' && childMethod === 'GET') ||
+    (childPath === '/api/integracao/saude' && childMethod === 'GET');
   if (app.key === 'chat' && chatWelcomeApi) return proxy(req, res, app, childPath + url.search);
   const isNativeLogout = (app.key === 'matriculas' && childPath === '/api/logout' && childMethod === 'POST') ||
     (app.key === 'artes' && childPath === '/api/sair' && childMethod === 'POST') ||
