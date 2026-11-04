@@ -451,6 +451,20 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
   // ------------------------------------------------------------------ rotas /api/ma/*
   async function rotas(req, res, p, m, q, usuario) {
     if (!p.startsWith('/api/ma/')) return false;
+    if (p === '/api/ma/boas-vindas-token/test' && m === 'POST') {
+      if (!ehAdmin(usuario)) falha(403, 'Apenas administradores podem testar a integração do Balbino Chat.');
+      const token = welcomeChatToken();
+      if (!token) { enviarJson(res, 200, { ok: false, etapa: 'token', mensagem: 'Nenhum X-Token foi salvo no Matrículas.' }); return true; }
+      try {
+        const resp = await fetch(welcomeChatBase() + '/api/integracao/saude', { headers: { 'X-Token': token }, signal: AbortSignal.timeout(10000) });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.status === 401) { enviarJson(res, 200, { ok: false, etapa: 'token', mensagem: 'O Balbino Chat rejeitou o token que está salvo no Matrículas.' }); return true; }
+        if (!resp.ok) { enviarJson(res, 200, { ok: false, etapa: 'chat', mensagem: 'O Chat respondeu HTTP ' + resp.status + '.' }); return true; }
+        enviarJson(res, 200, { ok: true, etapa: 'chat', ...data }); return true;
+      } catch (e) {
+        enviarJson(res, 200, { ok: false, etapa: 'rede', mensagem: 'Não foi possível alcançar o Balbino Chat: ' + String(e.message || e).slice(0, 180) }); return true;
+      }
+    }
     if (p === '/api/ma/boas-vindas-token' && (m === 'GET' || m === 'POST')) {
       if (!ehAdmin(usuario)) falha(403, 'Apenas administradores podem configurar o token do Balbino Chat.');
       if (m === 'GET') {
