@@ -660,7 +660,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     const rawName=String(row.nome||'').trim().replace(/\s+/g,' '),smallWords=new Set(['de','da','do','das','dos','e']),name=rawName.toLowerCase().split(/\s+/).map((w,i)=>i&&smallWords.has(w)?w:w.charAt(0).toLocaleUpperCase('pt-BR')+w.slice(1)).join(' ');
     let course=String(row.curso_nome||'').trim();const prefix=/^(gradua[cç][aã]o|licenciatura|bacharelado|superior de tecnologia|tecn[oó]logo|t[eé]cnico|curso superior de tecnologia|p[oó]s[- ]gradua[cç][aã]o( lato sensu)?|especializa[cç][aã]o|mba)( em| -)?\s+/i;for(let i=0;i<2;i++)course=course.replace(prefix,'');course=course.toLowerCase().split(/\s+/).map((w,i)=>i&&new Set(['de','da','do','das','dos','e','em','para','a','o','na','no']).has(w)?w:w.charAt(0).toLocaleUpperCase('pt-BR')+w.slice(1)).join(' ');
     const vars={primeiro_nome:name.split(' ')[0]||name,nome,curso:course,polo,produto,ra:String(row.ra||'')};
-    return String(model).replace(/\{(\w+)\}/g,(m,k)=>Object.hasOwn(vars,k)?vars[k]:m);
+    return String(model).replace(/\{\{?(\w+)\}?\}/g,(m,k)=>Object.hasOwn(vars,k.toLowerCase())?vars[k.toLowerCase()]:m);
   }
   async function enviarBoasVindasPendentes(){
     if(String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim())return{enviados:0,erro:null};
