@@ -925,7 +925,7 @@ function bvTexto(a) {
   const c = bvConfig(), modelo = (a.produto_id && c.produtos[a.produto_id]) || c.padrao;
   const nome = nomeProprioMA(a.nome), primeiro = nome.split(' ')[0] || nome;
   const vars = { primeiro_nome: primeiro, nome, curso: cursoCurtoMA(a.curso_nome), polo: a.polo || '', produto: a.produto || '', ra: a.ra || '' };
-  return modelo.replace(/\{(\w+)\}/g, (m, k) => k in vars ? vars[k] : m);
+  return modelo.replace(/\{\{?(\w+)\}?\}/g, (m, k) => Object.hasOwn(vars, k.toLowerCase()) ? vars[k.toLowerCase()] : m);
 }
 async function telaBoasVindas(c) {
   const ciclo = cicloAtual();
@@ -975,7 +975,7 @@ function modalModeloBV(depois) {
     <p class="muted" style="font-size:12px">Prévia: <span id="bv-prev" style="white-space:pre-wrap"></span></p></div>
     <footer><button class="btn" data-fechar>Cancelar</button><button class="btn" id="bv-reset">Voltar ao texto sugerido</button><button class="btn prim" id="bv-ok">Salvar</button></footer>`, 720);
   api('/api/ma/boas-vindas-token').then(d=>{const st=$('#bv-chat-token-status',m);if(st)st.textContent=d.configurado?'X-Token configurado ('+(d.origem==='painel'?'no sistema':'no ambiente')+'). Gere outro só se precisar substituir.':'Nenhum X-Token configurado. Cole um token gerado no Balbino Chat.'}).catch(()=>{const st=$('#bv-chat-token-status',m);if(st)st.textContent='Não foi possível verificar o token; somente administradores podem fazer isso.'});
-  const prev = () => { $('#bv-prev', m).textContent = $('#bv-padrao', m).value.replace(/\{(\w+)\}/g, (x, k) => ({ primeiro_nome: 'Maria', nome: 'Maria da Silva', curso: 'Pedagogia', polo: 'Franca', produto: 'Semi - Licenciatura', ra: '27234017-5' })[k] ?? x); };
+  const prev = () => { $('#bv-prev', m).textContent = $('#bv-padrao', m).value.replace(/\{\{?(\w+)\}?\}/g, (x, k) => ({ primeiro_nome: 'Maria', nome: 'Maria da Silva', curso: 'Pedagogia', polo: 'Franca', produto: 'Semi - Licenciatura', ra: '27234017-5' })[k.toLowerCase()] ?? x); };
   $('#bv-padrao', m).oninput = prev; prev();
   $('#bv-reset', m).onclick = () => { $('#bv-padrao', m).value = BV_PADRAO; prev(); };
   $('#bv-ok', m).onclick = async () => {
