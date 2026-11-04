@@ -105,6 +105,7 @@ async function startApps() {
       app.server = mod.server;
       app.health = mod.healthStatus;
       app.shutdown = mod.gracefulShutdown;
+      globalThis.__BALBINO_CHAT_WELCOME_BRIDGE__ = mod.matriculasWelcomeBridge;
       console.log('[chat] Balbino Chat ativo no roteador central.');
     });
     await boot('matriculas', async app => {
