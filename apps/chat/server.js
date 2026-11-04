@@ -852,4 +852,14 @@ function healthStatus() {
   } };
 }
 
-export { server, gracefulShutdown, healthStatus };
+function assertWelcomeToken(token){
+  if(welcomeIntegration.verifyToken(token))return;
+  const error=new Error('X-Token inválido ou ainda não configurado.');error.code='INVALID_TOKEN';throw error;
+}
+const matriculasWelcomeBridge=Object.freeze({
+  health(token){assertWelcomeToken(token);return{...welcomeIntegration.health(),envio_ativado:welcomeIntegration.publicConfig().enabled}},
+  activate(token){assertWelcomeToken(token);welcomeIntegration.resume();welcomeIntegration.updateConfig({enabled:true});welcomeIntegration.start();pushLog('INTEGRACAO_BOAS_VINDAS_ATIVADA_POR_MATRICULAS',{});return{ok:true,envio_ativado:true,...welcomeIntegration.health()}},
+  enqueue(token,itens){assertWelcomeToken(token);return welcomeIntegration.enqueue(itens)},
+  statuses(token,ids){assertWelcomeToken(token);return{statuses:welcomeIntegration.statuses(ids)}}
+});
+export { server, gracefulShutdown, healthStatus, matriculasWelcomeBridge };
