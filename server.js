@@ -13,6 +13,7 @@ const RUNTIME = path.resolve(process.env.BALBINO_RUNTIME_DIR || path.join(os.hom
 const portal = createPortalAuth(RUNTIME);
 const PORT = Number(process.env.PORT || 3000);
 const apps = [
+  { key: 'chat', prefix: '/chat', server: null, status: 'starting', error: null },
   { key: 'matriculas', prefix: '/matriculas', server: null, status: 'starting', error: null }
 ];
 
@@ -90,12 +91,22 @@ async function startApps() {
   process.env.MATRICULAS_DATA_DIR = path.join(RUNTIME, 'matriculas');
 
   const portOriginal = process.env.PORT;
+  process.env.BALBINO_CHAT_URL = `http://127.0.0.1:${portOriginal || 3000}/chat`;
   try {
     const boot = async (key, action) => {
       const app = apps.find(a => a.key === key);
       try { await action(app); app.status = 'ready'; }
       catch (error) { app.status = 'error'; app.error = error; console.error(`[${key}] falha ao iniciar:`, error.stack || error.message); }
     };
+    await boot('chat', async app => {
+      process.env.PORT = '3113';
+      process.env.BALBINO_RUNTIME_DIR = path.join(RUNTIME, 'chat');
+      const mod = await import(pathToFileURL(path.join(ROOT, 'apps', 'chat', 'server.js')).href);
+      app.server = mod.server;
+      app.health = mod.healthStatus;
+      app.shutdown = mod.gracefulShutdown;
+      console.log('[chat] Balbino Chat ativo no roteador central.');
+    });
     await boot('matriculas', async app => {
       process.env.PORT = '3111';
       const mod = require(path.join(ROOT, 'apps', 'matriculas', 'server.js'));
@@ -476,7 +487,6 @@ const server = http.createServer((req, res) => {
   }
   if (url.pathname === '/informa' || url.pathname.startsWith('/informa/')) return serveInforma(req, res, url);
   if (url.pathname === '/artes' || url.pathname.startsWith('/artes/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Gerador de Artes está temporariamente desativado.');
-  if (url.pathname === '/chat' || url.pathname.startsWith('/chat/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Balbino Chat está temporariamente desativado.');
   if (url.pathname === '/oportunidades' || url.pathname.startsWith('/oportunidades/')) {
     const access=portal.forApp(req,'matriculas');
     if(access.status!=='allowed'){
@@ -528,6 +538,11 @@ const server = http.createServer((req, res) => {
   if (app.key === 'matriculas' && ['/api/worker/boas-vindas', '/api/worker/boas-vindas/status'].includes(childPath)) {
     return proxy(req, res, app, childPath + url.search);
   }
+  const chatWelcomeApi =
+    (childPath === '/api/integracao/ativar-fila' && childMethod === 'POST') ||
+    (childPath === '/api/integracao/boas-vindas' && childMethod === 'POST') ||
+    (childPath === '/api/integracao/boas-vindas/status' && childMethod === 'GET');
+  if (app.key === 'chat' && chatWelcomeApi) return proxy(req, res, app, childPath + url.search);
   const isNativeLogout = (app.key === 'matriculas' && childPath === '/api/logout' && childMethod === 'POST') ||
     (app.key === 'artes' && childPath === '/api/sair' && childMethod === 'POST') ||
     (app.key === 'chat' && childPath === '/api/auth/logout' && childMethod === 'POST');
@@ -550,7 +565,7 @@ server.on('upgrade', (req, socket, head) => {
   app.server.emit('upgrade', req, socket, head);
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /matriculas, /oportunidades, /informa`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /oportunidades, /informa`));
 startApps().catch(error => {
   console.error('Não foi possível preparar os sistemas:', error);
 });
