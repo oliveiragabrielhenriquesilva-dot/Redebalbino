@@ -617,6 +617,21 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
   const welcomeChatToken=()=>String(process.env.BALBINO_CHAT_TOKEN||'').trim();
   function welcomeConfig(){try{return JSON.parse(cfg('boas_vindas','{}')||'{}')}catch{return{}}}
   function autoWelcomeEnabled(){return welcomeConfig().automatica===true}
+  let welcomeChatFilaAtivada=false, welcomeChatFilaErro=null;
+  async function garantirFilaBoasVindasAtiva(){
+    if(welcomeChatFilaAtivada)return true;
+    const token=welcomeChatToken();
+    if(!token||!autoWelcomeEnabled()||String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim())return false;
+    try{
+      const resp=await fetch(welcomeChatBase()+'/api/integracao/ativar-fila',{method:'POST',headers:{'X-Token':token},signal:AbortSignal.timeout(10000)}),data=await resp.json().catch(()=>({}));
+      if(!resp.ok||data.ok!==true)throw new Error(data.error||('Balbino Chat respondeu HTTP '+resp.status));
+      welcomeChatFilaAtivada=true;welcomeChatFilaErro=null;return true;
+    }catch(e){
+      const msg=String(e.message||e).slice(0,300);
+      if(msg!==welcomeChatFilaErro)console.error('[boas-vindas] não foi possível ativar a fila do Balbino Chat:',msg);
+      welcomeChatFilaErro=msg;return false;
+    }
+  }
   function welcomeMessage(row){
     const productId=produtoDoCurso()[row.curso_cod]||null,product=productId?get('SELECT nome FROM produtos WHERE id=?',productId)?.nome||'':'';
     const poloId=poloDaFonte(row.polo_fonte),polo=poloId?get('SELECT nome FROM polos WHERE id=?',poloId)?.nome||row.polo_fonte:row.polo_fonte||'';
@@ -629,6 +644,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
   async function enviarBoasVindasPendentes(){
     if(String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim())return{enviados:0,erro:null};
     const token=welcomeChatToken();if(!token||!autoWelcomeEnabled())return{enviados:0,erro:null};
+    if(!await garantirFilaBoasVindasAtiva())return{enviados:0,erro:welcomeChatFilaErro};
     const rows=all("SELECT id,ciclo_id,candidato,nome,ra,curso_cod,curso_nome,polo_fonte,celular,boas_vindas_chat_id FROM ma_lista_alunos WHERE ativo=1 AND ra<>'' AND celular IS NOT NULL AND celular<>'' AND boas_vindas_chat_status='PENDENTE' ORDER BY id LIMIT 100");
     if(!rows.length)return{enviados:0,erro:null};
     const itens=rows.map(r=>{const id=r.boas_vindas_chat_id||`matricula:${r.ciclo_id}:${r.id}`;if(!r.boas_vindas_chat_id)run('UPDATE ma_lista_alunos SET boas_vindas_chat_id=? WHERE id=?',id,r.id);return{id_externo:id,telefone:String(r.celular).replace(/\D/g,''),nome:r.nome||'',mensagem:welcomeMessage(r)}});
