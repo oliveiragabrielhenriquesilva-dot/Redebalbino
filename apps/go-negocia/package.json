@@ -1,0 +1,18 @@
+{
+  "name": "go-negocia",
+  "version": "0.2.0",
+  "private": true,
+  "description": "GO Negocia — Atendimento financeiro para escolas. Incremento 1: instituições, permissões, carteira, atendimento e fila.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch server.js",
+    "migrar": "node --disable-warning=ExperimentalWarning scripts/migrar.js",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed-sintetico.js",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/*.test.js"
+  },
+  "dependencies": {}
+}

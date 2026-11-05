@@ -1,0 +1,8 @@
+.env
+runtime/
+runtime-*/
+*.sqlite
+*.sqlite-*
+
+# Planilhas locais nunca fazem parte do código de deploy.
+scripts/dados/
