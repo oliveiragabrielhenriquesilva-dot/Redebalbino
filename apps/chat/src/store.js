@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
-import { dataDir } from './runtime-paths.js';
+import { dataDir, backupsDir } from './runtime-paths.js';
 
 const base=dataDir;
 const legacyFile=path.join(base,'store.json');
@@ -59,7 +59,22 @@ const seed={
     networkMode:true,
     operationalResetAt:0,
     metaEmbeddedSignup:{appId:'',appSecret:'',configId:'',graphVersion:'v23.0'},
-    matriculas:{enabled:true,monitorAllGroups:true,groupIds:[],polos:[],courseProductMap:{}}
+    matriculas:{enabled:false,monitorAllGroups:true,groupIds:[],polos:[],courseProductMap:{}},
+    pendenciaSeq:0,
+    faqPergunta:'Pode escrever sua dúvida em uma mensagem que eu procuro a resposta para você. 🙂',
+    faqConfirmacao:'Isso resolveu sua dúvida?\n1 – Sim, obrigado\n2 – Falar com um atendente',
+    faqResolvido:'Que bom! 😊 Se precisar de mais alguma coisa, é só mandar mensagem.',
+    faqTransferindo:'Certo! Um atendente vai continuar seu atendimento por aqui.',
+    faqNaoEncontrado:'Não encontrei essa resposta por aqui. Vou te passar para um atendente. 🙂',
+    pendenciaAvisoPadrao:'Olá{, nome}! Seu pedido {protocolo} ({titulo}) foi concluído. ✅',
+    pendenciaPedirDescricao:'Certo! Descreva em uma mensagem o que você precisa sobre *{tipo}* (ex.: curso, período, para que serve).',
+    pendenciaConfirmacao:'Pronto! Seu pedido *{protocolo}* ({tipo}) foi registrado. ✅\nPrazo: até {prazo}.\nAvisaremos aqui quando estiver pronto.',
+    pendenciaTipos:[
+      {id:'pt-declaracao',name:'Declaração',departmentId:null,prazoDias:2,mensagemConclusao:'Olá{, nome}! Sua declaração ({protocolo}) está pronta. ✅',active:true},
+      {id:'pt-documentos',name:'Documentos',departmentId:null,prazoDias:3,mensagemConclusao:'',active:true},
+      {id:'pt-financeiro',name:'Financeiro / Boleto',departmentId:null,prazoDias:1,mensagemConclusao:'',active:true},
+      {id:'pt-outro',name:'Outro',departmentId:null,prazoDias:2,mensagemConclusao:'',active:true}
+    ]
   },
   users:[{id:'u-admin',name:'Administrador',username:'admin',role:'SUPER_ADMIN',status:'OFFLINE',departmentId:'d-comercial',email:'',active:true}],
   departments:[
@@ -67,7 +82,7 @@ const seed={
     {id:'d-financeiro',name:'Financeiro',distribution:'LEAST_BUSY',active:true},
     {id:'d-suporte',name:'Pedagógico',distribution:'ROUND_ROBIN',active:true}
   ],
-  contacts:[],conversations:[],messages:[],groups:[],channels:[],deals:[],followups:[],scheduledMessages:[],
+  contacts:[],conversations:[],messages:[],groups:[],channels:[],deals:[],followups:[],pendencias:[],scheduledMessages:[],
   automations:[
     {id:'a1',name:'Boas-vindas automáticas',trigger:'FIRST_CONTACT',action:'SEND_WELCOME',enabled:true},
     {id:'a2',name:'Fora do horário',trigger:'OUT_OF_HOURS',action:'SEND_AWAY',enabled:true},
@@ -77,7 +92,7 @@ const seed={
     {id:'q1',shortcut:'/horario',text:'Nosso horário de atendimento é de segunda a sexta-feira, das 8h às 18h.'},
     {id:'q2',shortcut:'/obrigado',text:'Obrigado pelo contato! Ficamos à disposição.'}
   ],
-  knowledge:[],webhooks:[],apiKeys:[],officialConnections:[],messageTemplates:[],contactLists:[],campaigns:[],leadBases:[],leadEntries:[],leadEvents:[],leadSheets:[],matriculas:[],
+  knowledge:[],knowledgeMisses:[],webhooks:[],apiKeys:[],officialConnections:[],messageTemplates:[],contactLists:[],campaigns:[],leadBases:[],leadEntries:[],leadEvents:[],leadSheets:[],matriculas:[],
   connections:[{id:'principal',name:'WhatsApp principal',phone:'',state:'DISCONNECTED',qr:null,lastEventAt:null,connectedAt:null}],
   logs:[]
 };
@@ -112,15 +127,19 @@ const deleteAllMessagesStmt=sql.prepare('DELETE FROM messages');
 let saveTimer=null,dirtyCore=false;
 const dirtyMessageIds=new Set(),deletedMessageIds=new Set();
 const messageById=new Map(),messageBuckets=new Map(),bucketDirty=new Set();
+// v0.15.0: índice por ID do WhatsApp — evita varrer todas as mensagens a cada recibo/reação/edição.
+const messagesByExternal=new Map();
+function indexExternal(m){if(!m?.externalId)return;const k=String(m.externalId);let set=messagesByExternal.get(k);if(!set){set=new Set();messagesByExternal.set(k,set)}set.add(m)}
+function unindexExternal(m,oldId){if(!oldId)return;const set=messagesByExternal.get(String(oldId));if(set){set.delete(m);if(!set.size)messagesByExternal.delete(String(oldId))}}
 const wrappedTargets=new WeakSet();
 
 function uidInternal(prefix='id'){return `${prefix}_${randomUUID()}`}
 function parseJson(text,fallback){try{return JSON.parse(text)}catch{return fallback}}
 function normalizeState(input={}){
   const db={...structuredClone(seed),...(input||{})};
-  const arrays=['users','departments','contacts','conversations','messages','groups','channels','deals','followups','scheduledMessages','automations','quickReplies','knowledge','webhooks','apiKeys','officialConnections','messageTemplates','contactLists','campaigns','leadBases','leadEntries','leadEvents','leadSheets','matriculas','connections','logs'];
+  const arrays=['users','departments','contacts','conversations','messages','groups','channels','deals','followups','pendencias','knowledgeMisses','scheduledMessages','automations','quickReplies','knowledge','webhooks','apiKeys','officialConnections','messageTemplates','contactLists','campaigns','leadBases','leadEntries','leadEvents','leadSheets','matriculas','connections','logs'];
   for(const k of arrays)if(!Array.isArray(db[k]))db[k]=[];
-  db.settings={...seed.settings,...(db.settings||{}),businessHours:{...seed.settings.businessHours,...(db.settings?.businessHours||{})},metaEmbeddedSignup:{...seed.settings.metaEmbeddedSignup,...(db.settings?.metaEmbeddedSignup||{})},matriculas:{...seed.settings.matriculas,...(db.settings?.matriculas||{}),courseProductMap:{...seed.settings.matriculas.courseProductMap,...(db.settings?.matriculas?.courseProductMap||{})}}};
+  db.settings={...seed.settings,...(db.settings||{}),pendenciaTipos:Array.isArray(db.settings?.pendenciaTipos)?db.settings.pendenciaTipos:structuredClone(seed.settings.pendenciaTipos),businessHours:{...seed.settings.businessHours,...(db.settings?.businessHours||{})},metaEmbeddedSignup:{...seed.settings.metaEmbeddedSignup,...(db.settings?.metaEmbeddedSignup||{})},matriculas:{...seed.settings.matriculas,...(db.settings?.matriculas||{}),courseProductMap:{...seed.settings.matriculas.courseProductMap,...(db.settings?.matriculas?.courseProductMap||{})}}};
   const queuePalette=['#2563eb','#16a34a','#eab308','#8b5cf6','#06b6d4','#e11d48'];
   db.departments=db.departments.map((d,i)=>({...d,active:d.active!==false,distribution:d.distribution||'LEAST_BUSY',order:Number.isFinite(Number(d.order))?Number(d.order):i+1,color:/^#[0-9a-f]{6}$/i.test(String(d.color||''))?String(d.color):queuePalette[i%queuePalette.length],greeting:String(d.greeting||''),closeTicket:Boolean(d.closeTicket)}));
   db.version='0.14.0';
@@ -164,7 +183,7 @@ function normalizeState(input={}){
   const allowedInteraction=new Set(['AUTO','BUTTONS','LIST','TEXT']);
   db.settings.queueFlowNodes=db.settings.queueFlowNodes.slice(0,30).map((node,ni)=>{
     const id=cleanId(node?.id,`etapa_${ni+1}`);
-    return {id,title:String(node?.title||`Etapa ${ni+1}`).trim().slice(0,500),interaction:allowedInteraction.has(String(node?.interaction||'AUTO').toUpperCase())?String(node.interaction||'AUTO').toUpperCase():'AUTO',captureKey:cleanId(node?.captureKey||'', '').slice(0,40),options:(Array.isArray(node?.options)?node.options:[]).slice(0,20).map((o,oi)=>({id:cleanId(o?.id,`${id}_opcao_${oi+1}`),label:String(o?.label||'').trim().slice(0,80),value:String(o?.value||o?.label||'').trim().slice(0,120),afterMessage:String(o?.afterMessage||'').trim().slice(0,1000),nextNodeId:o?.nextNodeId?cleanId(o.nextNodeId,''):null,departmentId:o?.departmentId||null})).filter(o=>o.label)};
+    return {id,title:String(node?.title||`Etapa ${ni+1}`).trim().slice(0,500),interaction:allowedInteraction.has(String(node?.interaction||'AUTO').toUpperCase())?String(node.interaction||'AUTO').toUpperCase():'AUTO',captureKey:cleanId(node?.captureKey||'', '').slice(0,40),options:(Array.isArray(node?.options)?node.options:[]).slice(0,20).map((o,oi)=>({id:cleanId(o?.id,`${id}_opcao_${oi+1}`),label:String(o?.label||'').trim().slice(0,80),value:String(o?.value||o?.label||'').trim().slice(0,120),afterMessage:String(o?.afterMessage||'').trim().slice(0,1000),nextNodeId:o?.nextNodeId?cleanId(o.nextNodeId,''):null,departmentId:o?.departmentId||null,pendenciaTipoId:o?.pendenciaTipoId?String(o.pendenciaTipoId).slice(0,60):null,faqBot:Boolean(o?.faqBot)})).filter(o=>o.label)};
   }).filter(n=>n.id&&n.title&&n.options.length);
   const flowIds=new Set(db.settings.queueFlowNodes.map(n=>n.id));
   for(const node of db.settings.queueFlowNodes)for(const option of node.options){if(option.nextNodeId&&!flowIds.has(option.nextNodeId))option.nextNodeId=null;if(option.departmentId&&!db.departments.some(d=>d.id===option.departmentId&&d.active!==false))option.departmentId=null}
@@ -192,21 +211,21 @@ function wrapMessage(raw){
   const target=raw;
   if(wrappedTargets.has(target))return target;
   const proxy=new Proxy(target,{
-    set(t,p,v){const old=t[p];t[p]=v;if(old!==v&&t.id){dirtyMessageIds.add(t.id);dirtyCore=false;schedulePersist(450)}return true},
+    set(t,p,v){const old=t[p];t[p]=v;if(p==='externalId'&&old!==v){const px=messageById.get(t.id);if(px){unindexExternal(px,old);indexExternal(px)}}if(old!==v&&t.id){dirtyMessageIds.add(t.id);dirtyCore=false;schedulePersist(450)}return true},
     deleteProperty(t,p){if(p in t){delete t[p];if(t.id){dirtyMessageIds.add(t.id);schedulePersist(450)}}return true}
   });
   wrappedTargets.add(proxy);
   return proxy;
 }
 function rebuildMessageIndexes(){
-  messageById.clear();messageBuckets.clear();bucketDirty.clear();
+  messageById.clear();messageBuckets.clear();bucketDirty.clear();messagesByExternal.clear();
   for(let i=0;i<db.messages.length;i++){
     const m=wrapMessage(db.messages[i]);db.messages[i]=m;messageById.set(m.id,m);
     if(!messageBuckets.has(m.conversationId))messageBuckets.set(m.conversationId,[]);
-    messageBuckets.get(m.conversationId).push(m);bucketDirty.add(m.conversationId);
+    messageBuckets.get(m.conversationId).push(m);bucketDirty.add(m.conversationId);indexExternal(m);
   }
 }
-function indexMessage(m){messageById.set(m.id,m);if(!messageBuckets.has(m.conversationId))messageBuckets.set(m.conversationId,[]);messageBuckets.get(m.conversationId).push(m);bucketDirty.add(m.conversationId)}
+function indexMessage(m){messageById.set(m.id,m);indexExternal(m);if(!messageBuckets.has(m.conversationId))messageBuckets.set(m.conversationId,[]);messageBuckets.get(m.conversationId).push(m);bucketDirty.add(m.conversationId)}
 function sortedBucket(conversationId){const b=messageBuckets.get(conversationId)||[];if(bucketDirty.has(conversationId)){b.sort((a,z)=>Number(a.createdAt||0)-Number(z.createdAt||0)||String(a.id).localeCompare(String(z.id)));bucketDirty.delete(conversationId)}return b}
 function coreSnapshot(){const out={...db,messages:undefined};delete out.messages;return out}
 function writeFull(){
@@ -282,6 +301,41 @@ if(coreRow?.payload){
 }
 // v0.14.0: reparo seguro de identidade/conversas para instalações que vieram das versões multiconexão anteriores.
 try{repairMultiConnectionData({reason:'startup-v0.14.0'})}catch(e){console.error('Falha no reparo multiconexão de inicialização:',e)}
+// v0.15.0: módulos removidos (Central de Leads, Funil, Campanhas/Listas, API Oficial, Matrículas no Chat).
+// Os dados existentes são exportados para um arquivo de backup e retirados do banco principal,
+// que é regravado a cada alteração — é isso que deixava o sistema pesado.
+{
+  const removed=['leadBases','leadEntries','leadEvents','leadSheets','deals','contactLists','campaigns','officialConnections','messageTemplates','matriculas'];
+  const payload={};let total=0;
+  for(const k of removed){const rows=Array.isArray(db[k])?db[k]:[];if(rows.length){payload[k]=rows;total+=rows.length}}
+  const leadFields=['leadStatus','leadNextFollowupAt','leadStatusUpdatedAt'];
+  const contactLeadData=(db.contacts||[]).filter(c=>leadFields.some(f=>c[f]!=null)).map(c=>({id:c.id,phone:c.phone,name:c.name,...Object.fromEntries(leadFields.filter(f=>c[f]!=null).map(f=>[f,c[f]]))}));
+  if(contactLeadData.length)payload.contactLeadData=contactLeadData;
+  const meta=db.settings?.metaEmbeddedSignup||{};if(meta.appId||meta.appSecret||meta.configId)payload.metaEmbeddedSignup=meta;
+  if(db.settings?.matriculas&&Object.keys(db.settings.matriculas).length)payload.matriculasSettings=db.settings.matriculas;
+  if(total||contactLeadData.length||payload.metaEmbeddedSignup){
+    try{
+      fs.mkdirSync(backupsDir,{recursive:true});
+      const file=path.join(backupsDir,`modulos-removidos-v0.15.0-${Date.now()}.json`);
+      fs.writeFileSync(file,JSON.stringify({createdAt:new Date().toISOString(),note:'Dados dos módulos removidos do Balbino Chat v0.15.0',...payload}));
+      for(const k of removed)db[k]=[];
+      for(const c of db.contacts||[])for(const f of leadFields)delete c[f];
+      db.settings.metaEmbeddedSignup={appId:'',appSecret:'',configId:'',graphVersion:'v23.0'};
+      db.settings.matriculas={...(db.settings.matriculas||{}),enabled:false};
+      dirtyCore=true;
+      console.log(`[v0.15.0] ${total} registros de módulos removidos exportados para ${file}`);
+    }catch(e){console.error('[v0.15.0] Falha ao exportar dados dos módulos removidos — nada foi apagado:',e.message)}
+  }
+}
+// v0.15.0: "Tarefas" (followups) viram Pendências. Nada é perdido: cada retorno vira uma pendência.
+if(!db.settings.pendenciasMigradas){
+  for(const f of db.followups||[]){
+    db.settings.pendenciaSeq=Number(db.settings.pendenciaSeq||0)+1;
+    const conv=db.conversations.filter(c=>c.contactId===f.contactId).sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0))[0]||null;
+    db.pendencias.push({id:uidInternal('pd'),protocolo:`PEND-${String(db.settings.pendenciaSeq).padStart(4,'0')}`,contactId:f.contactId||null,conversationId:conv?.id||null,departmentId:conv?.departmentId||null,tipoId:null,titulo:f.reason||'Retornar contato',descricao:'',responsavelId:f.ownerId||null,status:f.status==='DONE'?'CONCLUIDA':'NOVA',prazo:f.when?String(f.when).slice(0,10):null,origem:'TAREFA_ANTIGA',createdAt:Number(f.createdAt||Date.now()),createdBy:f.ownerId||null,updatedAt:Date.now(),concluidaEm:f.status==='DONE'?Date.now():null,historico:[{at:Date.now(),acao:'MIGRADA_DE_TAREFA'}]});
+  }
+  db.followups=[];db.settings.pendenciasMigradas=true;dirtyCore=true;
+}
 // Migrações de esquema/configuração são persistidas no SQLite sem bloquear a inicialização.
 dirtyCore=true;schedulePersist(100);
 
@@ -421,9 +475,19 @@ export function handleInboundConversationState(conversation,{source='WHATSAPP'}=
   return {changed:false};
 }
 
-export function addMessage(message,{historical=false}={}){const cv=db.conversations.find(x=>x.id===message?.conversationId);const raw={id:uidInternal('m'),status:'SENT',createdAt:Date.now(),favorite:false,reactions:[],instanceId:message?.instanceId||cv?.instanceId||null,...message};const m=wrapMessage(raw);db.messages.push(m);indexMessage(m);dirtyMessageIds.add(m.id);const c=db.conversations.find(x=>x.id===m.conversationId);if(c){c.updatedAt=Math.max(Number(c.updatedAt||0),Number(m.createdAt||0));if(!historical&&m.direction==='IN')c.unread=(c.unread||0)+1;else if(historical)c.unread=0;const humanOutbound=!historical&&m.direction==='OUT'&&String(m.type||'').toUpperCase()!=='NOTE'&&!m.auto&&!m.scheduledId&&db.users.some(u=>u.id===m.authorId);if(humanOutbound&&(db.leadEntries||[]).some(e=>e.contactId===c.contactId)){const ct=db.contacts.find(x=>x.id===c.contactId);if(ct&&(!ct.leadStatus||ct.leadStatus==='NOVO'))ct.leadStatus='EM_ATENDIMENTO'}}schedulePersist(historical?900:250);return m}
+export function addMessage(message,{historical=false}={}){const cv=db.conversations.find(x=>x.id===message?.conversationId);const raw={id:uidInternal('m'),status:'SENT',createdAt:Date.now(),favorite:false,reactions:[],instanceId:message?.instanceId||cv?.instanceId||null,...message};if(message?.createdAt==null&&!historical){const last=sortedBucket(raw.conversationId).at(-1);if(last&&Number(last.createdAt||0)>=raw.createdAt)raw.createdAt=Number(last.createdAt)+1}/* v0.15.0: mensagens criadas em sequência nunca empatam no horário */const m=wrapMessage(raw);db.messages.push(m);indexMessage(m);dirtyMessageIds.add(m.id);const c=db.conversations.find(x=>x.id===m.conversationId);if(c){c.updatedAt=Math.max(Number(c.updatedAt||0),Number(m.createdAt||0));if(!historical&&m.direction==='IN')c.unread=(c.unread||0)+1;else if(historical)c.unread=0;const humanOutbound=!historical&&m.direction==='OUT'&&String(m.type||'').toUpperCase()!=='NOTE'&&!m.auto&&!m.scheduledId&&db.users.some(u=>u.id===m.authorId);if(humanOutbound&&(db.leadEntries||[]).some(e=>e.contactId===c.contactId)){const ct=db.contacts.find(x=>x.id===c.contactId);if(ct&&(!ct.leadStatus||ct.leadStatus==='NOVO'))ct.leadStatus='EM_ATENDIMENTO'}}schedulePersist(historical?900:250);return m}
 export function addHistoricalMessage(message){return addMessage({...message,historical:true},{historical:true})}
 export function findMessageById(id){return messageById.get(id)||null}
+// v0.15.0 • Pendências — criação compartilhada (atendente e triagem automática)
+export function hojeSaoPaulo(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo'}).format(new Date())}
+export function prazoEmDiasSaoPaulo(dias=0){const d=new Date(`${hojeSaoPaulo()}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+Math.max(0,Number(dias)||0));return d.toISOString().slice(0,10)}
+export function createPendencia({contactId,conversationId=null,departmentId=null,tipoId=null,titulo,descricao='',responsavelId=null,prazo=null,origem='ATENDENTE',createdBy=null}){
+  const tipo=(db.settings.pendenciaTipos||[]).find(t=>t.id===tipoId)||null;
+  db.settings.pendenciaSeq=Number(db.settings.pendenciaSeq||0)+1;
+  const x={id:uidInternal('pd'),protocolo:`PEND-${String(db.settings.pendenciaSeq).padStart(4,'0')}`,contactId,conversationId,departmentId:departmentId||tipo?.departmentId||null,tipoId:tipo?.id||null,titulo:String(titulo||tipo?.name||'Pedido').slice(0,200),descricao:String(descricao||'').slice(0,2000),responsavelId:responsavelId||tipo?.responsavelId||null,status:'NOVA',prazo:/^\d{4}-\d{2}-\d{2}$/.test(String(prazo||''))?prazo:prazoEmDiasSaoPaulo(tipo?.prazoDias??2),origem,createdAt:Date.now(),createdBy,updatedAt:Date.now(),concluidaEm:null,historico:[{at:Date.now(),userId:createdBy,acao:origem==='TRIAGEM'?'CRIADA_PELA_TRIAGEM':'CRIADA'}]};
+  db.pendencias.push(x);schedulePersist();pushLog('PENDENCIA_CREATED',{pendenciaId:x.id,protocolo:x.protocolo,origem,userId:createdBy});return x;
+}
+export function messagesByExternalId(externalId){if(!externalId)return[];const set=messagesByExternal.get(String(externalId));if(!set)return[];return[...set].filter(m=>messageById.get(m.id)===m)}
 export function messageExistsExternalId(externalId,instanceId=null){if(!externalId)return false;return db.messages.some(m=>m.externalId===externalId&&(!instanceId||String(m.instanceId||db.conversations.find(c=>c.id===m.conversationId)?.instanceId||'')===String(instanceId)))}
 export function messagesForConversation(conversationId){return sortedBucket(conversationId)}
 export function pagedMessages(conversationId,{limit=120,before=0}={}){const bucket=sortedBucket(conversationId);let end=bucket.length;if(before){let i=end-1;while(i>=0&&Number(bucket[i].createdAt||0)>=Number(before))i--;end=i+1}const start=Math.max(0,end-limit);return{messages:bucket.slice(start,end),hasMore:start>0,oldestAt:bucket[start]?.createdAt||null,count:bucket.length,lastMessage:bucket.at(-1)||null}}

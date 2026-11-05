@@ -1,4 +1,5 @@
-import { all, save, addMessage, pushLog } from './store.js';
+import { all, save, addMessage, pushLog, messagesForConversation, createPendencia, uid } from './store.js';
+import { buscarFaq, normalizarTexto } from './faq.js';
 
 function timeInSaoPaulo(){
   const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date());
@@ -116,8 +117,81 @@ function captureChoice(contact,conversation,node,option){
   conversation.triagePath=Array.isArray(conversation.triagePath)?conversation.triagePath:[];
   conversation.triagePath.push({nodeId:node.id,optionId:option.id,label:option.label,value:option.value||option.label,at:Date.now()});
 }
+function modeloPendencia(modelo,dados){return String(modelo||'').replace(/\{([^{}\w]*)(\w+)\}/g,(_,pre,k)=>dados[k]?pre+dados[k]:'')}
+function primeiroNome(contact){const n=String(contact?.name||'').trim();return n&&!/^\+?\d+$/.test(n)?n.split(' ')[0]:''}
+// v0.15.0 • opção do fluxo que abre pendência: pede a descrição; a próxima mensagem cria a pendência.
+async function iniciarPendenciaPelaTriagem({conversation,contact,node,option,settings,sendReply}){
+  const tipo=(settings.pendenciaTipos||[]).find(t=>t.id===option.pendenciaTipoId&&t.active!==false);if(!tipo)return false;
+  conversation.triageStatus='AWAITING_PENDENCIA';conversation.triagePendencia={tipoId:tipo.id,nodeId:node.id,optionId:option.id,label:option.label,departmentId:option.departmentId||tipo.departmentId||null};conversation.updatedAt=Date.now();save();
+  pushLog('PENDENCIA_TRIAGEM_INICIADA',{conversationId:conversation.id,tipoId:tipo.id,optionId:option.id});
+  const texto=String(option.afterMessage||'').trim()||modeloPendencia(settings.pendenciaPedirDescricao||'Descreva em uma mensagem o que você precisa.',{tipo:tipo.name,nome:primeiroNome(contact)});
+  if(settings.queueRoutingEnabled!==false)await sendAutomated({conversation,sendReply,text:texto,auto:'PENDENCIA_PEDIR_DESCRICAO',meta:{flowNodeId:node.id,optionId:option.id}});
+  return true;
+}
+async function concluirPendenciaPelaTriagem({conversation,contact,text,settings,sendReply}){
+  const db=all(),info=conversation.triagePendencia||{},tipo=(settings.pendenciaTipos||[]).find(t=>t.id===info.tipoId)||null;
+  const descricao=String(text||'').trim()||'(o contato enviou um arquivo/áudio — veja na conversa)';
+  const x=createPendencia({contactId:contact.id,conversationId:conversation.id,departmentId:info.departmentId||null,tipoId:tipo?.id||null,titulo:`${tipo?.name||info.label||'Pedido'}: ${descricao.replace(/\s+/g,' ').slice(0,80)}`,descricao,origem:'TRIAGEM'});
+  conversation.pendenciaTriagemId=x.id;delete conversation.triagePendencia;
+  const dep=info.departmentId?db.departments.find(d=>d.id===info.departmentId&&d.active!==false):null;
+  conversation.ownerId=null;conversation.status='WAITING';conversation.queuedAt=conversation.queuedAt||Date.now();conversation.triageStatus='ROUTED';conversation.departmentId=dep?.id||conversation.departmentId||null;conversation.queueRoutedAt=Date.now();conversation.updatedAt=Date.now();delete conversation.triageFlowNodeId;save();
+  if(dep&&settings.queueAutoAssignAfterRouting===true)assignConversation(conversation);
+  pushLog('PENDENCIA_CRIADA_PELA_TRIAGEM',{conversationId:conversation.id,pendenciaId:x.id,protocolo:x.protocolo,departmentId:conversation.departmentId});
+  if(settings.queueRoutingEnabled!==false)await sendAutomated({conversation,sendReply,text:modeloPendencia(settings.pendenciaConfirmacao||'Seu pedido {protocolo} foi registrado. Prazo: até {prazo}.',{protocolo:x.protocolo,tipo:tipo?.name||'pedido',prazo:String(x.prazo||'').split('-').reverse().join('/'),nome:primeiroNome(contact),titulo:x.titulo}),auto:'PENDENCIA_REGISTRADA',meta:{pendenciaId:x.id,protocolo:x.protocolo}});
+  return true;
+}
+// ===== v0.15.0 • FAQ automático =====
+function enviarParaFila(conversation,departmentId,settings){
+  const db=all(),dep=departmentId?db.departments.find(d=>d.id===departmentId&&d.active!==false):null;
+  conversation.ownerId=null;conversation.status='WAITING';conversation.queuedAt=conversation.queuedAt||Date.now();conversation.triageStatus='ROUTED';conversation.departmentId=dep?.id||conversation.departmentId||null;conversation.queueRoutedAt=Date.now();conversation.updatedAt=Date.now();delete conversation.triageFlowNodeId;delete conversation.triageFaq;save();
+  if(dep&&settings.queueAutoAssignAfterRouting===true)assignConversation(conversation);
+}
+async function iniciarFaq({conversation,node,option,settings,sendReply}){
+  conversation.triageStatus='AWAITING_FAQ_QUESTION';conversation.triageFaq={departmentId:option.departmentId||null,optionId:option.id,nodeId:node.id,tentativas:0};conversation.updatedAt=Date.now();save();
+  pushLog('FAQ_INICIADO',{conversationId:conversation.id,optionId:option.id});
+  if(settings.queueRoutingEnabled!==false)await sendAutomated({conversation,sendReply,text:String(option.afterMessage||'').trim()||settings.faqPergunta||'Escreva sua dúvida em uma mensagem.',auto:'FAQ_PERGUNTA'});
+  return true;
+}
+async function responderFaq({conversation,contact,text,settings,sendReply}){
+  const db=all(),info=conversation.triageFaq||{};info.tentativas=Number(info.tentativas||0)+1;conversation.triageFaq=info;
+  const achou=String(text||'').trim()?buscarFaq(text,db.knowledge||[],{departmentId:info.departmentId}):null;
+  if(!achou){
+    db.knowledgeMisses=[{id:uid('kbm'),text:String(text||'(mensagem sem texto)').slice(0,500),at:Date.now(),conversationId:conversation.id,contactId:contact?.id||null,contactName:contact?.name||''},...(db.knowledgeMisses||[])].slice(0,500);
+    pushLog('FAQ_SEM_RESPOSTA',{conversationId:conversation.id,text:String(text||'').slice(0,120)});
+    if(settings.queueRoutingEnabled!==false)await sendAutomated({conversation,sendReply,text:settings.faqNaoEncontrado||'Vou te passar para um atendente.',auto:'FAQ_SEM_RESPOSTA'});
+    enviarParaFila(conversation,info.departmentId,settings);return true;
+  }
+  const k=achou.item;k.hits=Number(k.hits||0)+1;k.lastHitAt=Date.now();
+  info.ultimaRespostaId=k.id;conversation.triageStatus='AWAITING_FAQ_FEEDBACK';conversation.faqRespostas=[...(conversation.faqRespostas||[]),{knowledgeId:k.id,title:k.title,pergunta:String(text||'').slice(0,300),at:Date.now()}].slice(-10);conversation.updatedAt=Date.now();save();
+  pushLog('FAQ_RESPONDIDO',{conversationId:conversation.id,knowledgeId:k.id,score:achou.score});
+  if(settings.queueRoutingEnabled!==false){
+    await sendAutomated({conversation,sendReply,text:k.content,auto:'FAQ_RESPOSTA',meta:{knowledgeId:k.id,title:k.title}});
+    await sendAutomated({conversation,sendReply,text:settings.faqConfirmacao||'Isso resolveu sua dúvida?\n1 – Sim\n2 – Falar com um atendente',auto:'FAQ_CONFIRMACAO'});
+  }
+  return true;
+}
+async function feedbackFaq({conversation,contact,text,settings,sendReply}){
+  const t=normalizarTexto(text),info=conversation.triageFaq||{};
+  const sim=/^(1|sim|s|resolveu|resolvido|ok|certo|obrigad[oa]|valeu|era isso|isso mesmo)( .*)?$/.test(t)&&!/^(1 )?nao/.test(t);
+  const atendente=/^(2|nao|n|atendente|humano|pessoa|falar com (um )?atendente)( .*)?$/.test(t);
+  if(sim&&!atendente){
+    const k=(all().knowledge||[]).find(x=>x.id===info.ultimaRespostaId);if(k)k.resolved=Number(k.resolved||0)+1;
+    if(settings.queueRoutingEnabled!==false)await sendAutomated({conversation,sendReply,text:settings.faqResolvido||'Que bom! Se precisar, é só chamar.',auto:'FAQ_RESOLVIDO'});
+    conversation.status='CLOSED';conversation.closedAt=Date.now();conversation.closeReason='Resolvido pelo FAQ';conversation.resolvidoPeloBot=true;conversation.triageStatus='ROUTED';conversation.unread=0;conversation.ownerId=null;conversation.updatedAt=Date.now();delete conversation.triageFaq;delete conversation.triageFlowNodeId;delete conversation.queuedAt;save();
+    pushLog('FAQ_RESOLVIDO',{conversationId:conversation.id,knowledgeId:info.ultimaRespostaId||null});return true;
+  }
+  if(atendente||Number(info.tentativas||0)>=3){
+    if(settings.queueRoutingEnabled!==false)await sendAutomated({conversation,sendReply,text:settings.faqTransferindo||'Um atendente vai continuar por aqui.',auto:'FAQ_TRANSFERIDO'});
+    pushLog('FAQ_TRANSFERIDO',{conversationId:conversation.id,knowledgeId:info.ultimaRespostaId||null});
+    enviarParaFila(conversation,info.departmentId,settings);return true;
+  }
+  // qualquer outra mensagem é tratada como uma nova dúvida
+  return responderFaq({conversation,contact,text,settings,sendReply});
+}
 async function routeChoice({conversation,contact,node,option,settings,sendReply,sendChoice}){
   const db=all();captureChoice(contact,conversation,node,option);
+  if(option.faqBot)return iniciarFaq({conversation,node,option,settings,sendReply});
+  if(option.pendenciaTipoId&&await iniciarPendenciaPelaTriagem({conversation,contact,node,option,settings,sendReply}))return true;
   const afterMessage=String(option.afterMessage||'').trim();
   if(option.nextNodeId){
     const next=flowNode(settings,option.nextNodeId);
@@ -150,6 +224,9 @@ async function routeChoice({conversation,contact,node,option,settings,sendReply,
 async function processQueueRouting({contact,conversation,text,interaction,sendReply,sendChoice,firstContact}){
   const db=all(),settings=db.settings,nodes=flowNodes(settings);
   if(settings.queueRoutingEnabled===false||!nodes.length||conversation.ownerId||conversation.isGroup||conversation.isChannel)return false;
+  if(conversation.triageStatus==='AWAITING_PENDENCIA')return concluirPendenciaPelaTriagem({conversation,contact,text,settings,sendReply});
+  if(conversation.triageStatus==='AWAITING_FAQ_QUESTION')return responderFaq({conversation,contact,text,settings,sendReply});
+  if(conversation.triageStatus==='AWAITING_FAQ_FEEDBACK')return feedbackFaq({conversation,contact,text,settings,sendReply});
   if(conversation.triageStatus==='ROUTED')return false;
 
   // Um primeiro contato sempre recebe a primeira etapa antes de qualquer tentativa de interpretar o texto inicial.
@@ -171,7 +248,7 @@ async function processQueueRouting({contact,conversation,text,interaction,sendRe
 }
 export async function processIncoming({contact,conversation,text,interaction=null,sendReply,sendChoice=null}){
   const db=all(), lower=String(text||'').toLowerCase();
-  const incoming=db.messages.filter(m=>m.conversationId===conversation.id&&m.direction==='IN');
+  const incoming=messagesForConversation(conversation.id).filter(m=>m.direction==='IN');
   const firstContact=incoming.length===1;
 
   if(await processQueueRouting({contact,conversation,text,interaction,sendReply,sendChoice,firstContact}))return;
@@ -194,7 +271,7 @@ export async function processIncoming({contact,conversation,text,interaction=nul
   if(db.settings.autoRepliesEnabled!==false){
     if(firstContact&&db.automations.some(a=>a.enabled&&a.trigger==='FIRST_CONTACT'))replies.push({text:db.settings.welcomeMessage||'Olá! Recebemos sua mensagem.',auto:'FIRST_CONTACT'});
     if(outsideBusinessHours(db.settings)&&db.automations.some(a=>a.enabled&&a.trigger==='OUT_OF_HOURS')){
-      const recently=db.messages.some(m=>m.conversationId===conversation.id&&m.direction==='OUT'&&m.auto==='OUT_OF_HOURS'&&Date.now()-m.createdAt<12*3600000);
+      const recently=messagesForConversation(conversation.id).some(m=>m.direction==='OUT'&&m.auto==='OUT_OF_HOURS'&&Date.now()-m.createdAt<12*3600000);
       if(!recently)replies.push({text:db.settings.awayMessage,auto:'OUT_OF_HOURS'});
     }
   }

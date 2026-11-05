@@ -1,9 +1,8 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import { all, save, flush, pushLog, upsertWhatsAppContact, upsertWhatsAppGroup, upsertWhatsAppChannel, getGroupByJid, getChannelByJid, ensureConversation, addMessage, addHistoricalMessage, markMessagesDirty, uid, handleInboundConversationState, registerConnectionSelfIdentity, repairMultiConnectionData } from '../store.js';
+import { all, save, flush, pushLog, messagesByExternalId, upsertWhatsAppContact, upsertWhatsAppGroup, upsertWhatsAppChannel, getGroupByJid, getChannelByJid, ensureConversation, addMessage, addHistoricalMessage, markMessagesDirty, uid, handleInboundConversationState, registerConnectionSelfIdentity, repairMultiConnectionData } from '../store.js';
 import { processIncoming } from '../automation-engine.js';
-import { processMatriculaMessage } from '../matricula-engine.js';
 import { findMessageForInstance, messagesForExternalIdInstance, externalMessageKey, messageBelongsToInstance } from '../message-identity.js';
 import { uploadsDir, sessionsDir, uploadDiskPath } from '../runtime-paths.js';
 
@@ -511,7 +510,7 @@ function quotedReference(msg,{conversationId=null,isGroup=false}={}){
     // que exista no nosso banco; depois para contextos que carreguem quotedMessage.
     const ranked=contexts.map((ctx,index)=>{
       const externalId=quoteContextExternalId(ctx),quotedMessage=quoteContextQuotedMessage(ctx);
-      const quoteInstanceId=conversationId?db.conversations.find(c=>c.id===conversationId)?.instanceId:null;const existing=externalId?db.messages.find(m=>m.externalId===externalId&&(!conversationId||m.conversationId===conversationId))||(quoteInstanceId?findMessageForInstance(db,externalId,quoteInstanceId):db.messages.find(m=>m.externalId===externalId)):null;
+      const quoteInstanceId=conversationId?db.conversations.find(c=>c.id===conversationId)?.instanceId:null;const byExternal=externalId?messagesByExternalId(externalId):[];const existing=externalId?byExternal.find(m=>!conversationId||m.conversationId===conversationId)||(quoteInstanceId?findMessageForInstance(db,externalId,quoteInstanceId):byExternal[0]):null;
       let score=0;if(existing)score+=1000;if(quotedMessage)score+=500;if(externalId)score+=200;if(ctx.participant||ctx.participantPn||ctx.participantAlt)score+=20;score-=index;
       return{ctx,externalId,quotedMessage,existing,score,index};
     }).sort((a,b)=>b.score-a.score);
@@ -985,7 +984,7 @@ async function connectInstanceOnce(instanceId='principal'){
         if(isChannel){cv.unread=0;cv.status='HISTORY';cv.archivedAt=cv.updatedAt;delete cv.closedAt;delete cv.closeReason;save()}
         pushLog('MESSAGE_SAVED_IMMEDIATELY',{instanceId,conversationId:cv.id,messageId:record.id,externalId:record.externalId,type:record.type,remoteJid:jid,remoteJidAlt:altJid,isGroup,isChannel,fromMe,contactId:contact.id,hasQuoted:Boolean(record.quoted),quotedExternalId:record.quoted?.externalId||null});
         emit('message.received',{conversationId:cv.id,message:record,isGroup,isChannel});emit('conversation.updated',{conversationId:cv.id,isGroup,isChannel});
-        if(isGroup){try{const matricula=processMatriculaMessage(record);if(matricula)emit('matriculas.updated',{matriculaId:matricula.id,status:matricula.status,groupId:matricula.groupId})}catch(e){pushLog('MATRICULA_PROCESSING_ERROR',{instanceId,messageId:record.id,error:String(e?.message||e)})}}
+        // Central de Matrículas removida do Balbino Chat (o sistema Matrículas separado continua).
 
         if(msgType!=='TEXT'){
           Promise.resolve().then(async()=>{

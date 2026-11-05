@@ -1,0 +1,256 @@
+/* =====================================================================
+   Balbino Chat • Visual v2 (v0.15.0)
+   Camada carregada por último. Mantém a identidade Rede Balbino
+   (brand/balbino.css: navy, azul, ciano, Inter) e funciona nos dois temas.
+   ===================================================================== */
+:root{
+  --v2-radius:12px; --v2-radius-sm:9px;
+  --v2-side:#0a1428; --v2-side-hover:rgba(255,255,255,.05); --v2-side-active:rgba(59,130,246,.16);
+  --v2-side-text:#aebbd0; --v2-side-text-strong:#eef3fa; --v2-side-label:#6f7f99;
+  --v2-surface:var(--panel,#11161d); --v2-surface-2:var(--panel2,#151b23);
+  --v2-shadow:0 1px 2px rgba(0,0,0,.18),0 8px 24px rgba(0,0,0,.14);
+  --v2-focus:0 0 0 3px rgba(59,130,246,.28);
+}
+:root[data-theme="light"]{
+  --v2-side:#ffffff; --v2-side-hover:#f1f5fb; --v2-side-active:#e8f0fe;
+  --v2-side-text:#4b5d75; --v2-side-text-strong:#0f1d35; --v2-side-label:#8a9ab0;
+  --v2-shadow:0 1px 2px rgba(15,29,53,.06),0 8px 24px rgba(15,29,53,.06);
+}
+
+/* ---------- Base e tipografia ---------- */
+:root body{font-family:var(--brand-font,Inter,"Segoe UI",Arial,sans-serif);font-size:14px;letter-spacing:0;-webkit-font-smoothing:antialiased}
+:root .page h2,:root .section-title h2{font-size:18px;font-weight:650;letter-spacing:-.01em}
+:root .small{font-size:12px}
+:root b,:root strong{font-weight:600}
+
+/* ---------- Menu lateral ---------- */
+:root .sidebar{background:var(--v2-side)!important;background-image:none!important;border-right:1px solid var(--line)!important;padding:14px 10px!important}
+:root .sidebar .brand{padding:4px 8px 14px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+:root .nav{gap:2px}
+:root .nav button,:root .nav .nav-module-toggle{min-height:36px;padding:7px 10px!important;border-radius:var(--v2-radius-sm)!important;font-size:13.5px!important;font-weight:500!important;color:var(--v2-side-text)!important;background:transparent!important;box-shadow:none!important;gap:10px!important;transition:background .12s,color .12s}
+:root .nav button:hover,:root .nav .nav-module-toggle:hover{background:var(--v2-side-hover)!important;color:var(--v2-side-text-strong)!important}
+:root .nav button.active{background:var(--v2-side-active)!important;color:var(--v2-side-text-strong)!important;font-weight:600!important;position:relative}
+:root .nav button.active::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent,#3b82f6)}
+:root .nav .nav-module-sub{border-left:1px solid var(--line)!important;margin-left:12px!important;padding-left:4px!important}
+:root .nav .nav-module-sub button{min-height:32px;font-size:13px!important;gap:8px!important;padding:6px 8px!important}
+:root .nav .nav-module-sub .v2-ico{width:16px;height:16px;flex-basis:16px}
+:root .nav button .label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+:root .sidebar{display:flex!important;flex-direction:column!important;min-height:0}
+:root .sidebar nav.nav{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;padding-bottom:8px}
+:root .nav-section-label{color:var(--v2-side-label)!important;font-size:11px!important;font-weight:600!important;letter-spacing:.08em!important;margin:16px 10px 6px!important}
+:root .nav .v2-ico{width:18px;height:18px;flex:0 0 18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.9}
+:root .nav button.active .v2-ico{opacity:1;stroke:var(--accent,#3b82f6)}
+:root .nav .badge{margin-left:auto;font-size:11px;font-weight:600;min-width:20px;height:20px;padding:0 6px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center}
+:root .sidebar .foot{flex:0 0 auto;border-top:1px solid var(--line);padding:10px 8px 2px!important;background:transparent!important}
+:root .sidebar .foot,:root .sidebar .foot *{color:var(--v2-side-text)!important}
+:root .sidebar .foot .btn{background:transparent!important;border:1px solid var(--line)!important}
+
+/* ---------- Barra superior: menos ruído ---------- */
+:root .topbar{gap:8px!important;padding:10px 18px!important;border-bottom:1px solid var(--line);background:transparent}
+:root .topbar .pill,:root .topbar .top-icon-btn,:root .topbar .zoom-control,:root .topbar .theme-toggle,:root .topbar .portal-link{height:32px;border-radius:999px!important;font-size:12px!important;font-weight:500!important;background:transparent!important;border:1px solid var(--line)!important;box-shadow:none!important}
+:root .topbar .zoom-control{opacity:.65}
+:root .topbar .zoom-control:hover{opacity:1}
+:root .topbar .input.global{height:36px;border-radius:999px!important;max-width:380px}
+:root .topbar h1,:root #pageTitle{font-size:18px!important;font-weight:650!important}
+
+/* ---------- Cartões, botões, campos ---------- */
+:root .card{border-radius:var(--v2-radius)!important;border:1px solid var(--line)!important;box-shadow:var(--v2-shadow)!important;background:var(--v2-surface)!important}
+:root .btn{border-radius:var(--v2-radius-sm)!important;font-weight:500!important;min-height:34px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:6px;transition:background .12s,border-color .12s,transform .05s}
+:root .btn.small{min-height:28px;padding:0 10px;font-size:12.5px!important}
+:root .btn:active{transform:translateY(1px)}
+:root .btn.primary{font-weight:600!important;box-shadow:0 1px 2px rgba(37,99,235,.35)!important}
+:root .btn:focus-visible,:root .input:focus,:root select:focus,:root textarea:focus{outline:none!important;box-shadow:var(--v2-focus)!important;border-color:var(--accent,#3b82f6)!important}
+:root .input,:root select.input,:root textarea.input{border-radius:var(--v2-radius-sm)!important;min-height:38px;font-size:14px}
+:root textarea.input{line-height:1.45}
+:root label.small.muted,:root .page label.small{display:block;margin:10px 0 5px;font-weight:500;color:var(--muted)}
+:root .chip{border-radius:999px!important;font-size:12px!important;font-weight:500!important}
+
+/* ---------- Atendimentos: lista ---------- */
+:root .conv-filters.primary-filters{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px!important}
+:root .conv-filters .chip{display:inline-flex!important;align-items:center;justify-content:center;gap:5px;padding:0 6px!important;min-height:32px;white-space:nowrap;font-size:12px!important;min-width:0;overflow:hidden}
+:root .conv-filters .chip .filter-badge,:root .conv-filters .chip .badge{position:static!important;flex:0 0 auto;transform:none!important;margin:0!important}
+:root .history-filter-btn{background:transparent!important;border:1px dashed var(--line)!important;color:var(--muted)!important;font-weight:500!important}
+:root .conv{border-radius:var(--v2-radius-sm)!important;margin:2px 6px!important;border:1px solid transparent!important;transition:background .12s}
+:root .conv:hover{background:var(--v2-surface-2)!important}
+:root .conv.active{border-color:var(--accent,#3b82f6)!important;background:var(--v2-side-active)!important}
+
+/* ---------- Atendimentos: conversa ---------- */
+:root .chat-head{padding:12px 18px!important;gap:12px!important}
+:root .chat-head .actions .btn{min-height:32px;font-size:12.5px!important}
+:root .messages{padding:18px 22px!important}
+:root .msg{max-width:min(68%,640px)!important;padding:9px 12px 7px!important;border-radius:14px!important;box-shadow:none!important;line-height:1.45}
+:root .msg.out{border-bottom-right-radius:4px!important}
+:root .msg:not(.out):not(.note){border-bottom-left-radius:4px!important}
+:root .msg .meta{font-size:11px!important;opacity:.75;margin-top:3px}
+/* ações da mensagem só aparecem ao passar o mouse (ou tocar) */
+:root .msg .msg-actions{opacity:0;max-height:0;overflow:hidden;margin:0!important;padding:0!important;border:0!important;transition:opacity .12s,max-height .12s}
+:root .msg:hover .msg-actions,:root .msg:focus-within .msg-actions{opacity:1;max-height:40px;margin-top:4px!important}
+@media (hover:none){:root .msg .msg-actions{opacity:1;max-height:40px}}
+:root .day-sep{font-size:11.5px!important;font-weight:500!important;padding:3px 10px!important;border-radius:999px!important}
+:root .queue-banner,:root .lock-banner{border-radius:var(--v2-radius)!important;padding:10px 14px!important;font-size:13px}
+
+/* ---------- Caixa de envio: avisos compactos ---------- */
+:root .composer{padding:10px 14px 12px!important;gap:6px!important}
+:root .composer-connection-info,:root .composer-state-hint{font-size:11.5px!important;padding:3px 2px!important;border:0!important;background:transparent!important;color:var(--muted)!important;min-height:0!important}
+:root .composer-icon-btn{min-height:30px;min-width:30px;border-radius:8px!important}
+:root .composer textarea,:root .compose-row textarea{border-radius:var(--v2-radius)!important;min-height:44px}
+
+/* ---------- Pendências (v2) ---------- */
+:root .pend-col{border-radius:var(--v2-radius)!important;background:var(--v2-surface)!important}
+:root .pend-card{border-radius:10px!important;transition:border-color .12s,transform .12s}
+:root .pend-card:hover{border-color:var(--accent,#3b82f6)!important}
+
+/* ---------- Modais ---------- */
+:root .modal-card,:root #modal .card{border-radius:16px!important}
+
+/* ---------- Rolagem discreta ---------- */
+:root *{scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+:root ::-webkit-scrollbar{width:8px;height:8px}
+:root ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+
+/* ---------- Ajustes do tema claro ---------- */
+:root[data-theme="light"] .composer-mode.active{background:var(--accent,#3b82f6)!important;color:#fff!important}
+:root[data-theme="light"] .composer-mode{color:#4b5d75!important}
+:root[data-theme="light"] .avatar{background:#e8eef7!important;color:#24364f!important}
+:root[data-theme="light"] .btn.danger-soft{color:#c0392b!important;border-color:#f3c7c1!important;background:#fff5f4!important}
+:root[data-theme="light"] .topbar .pill,:root[data-theme="light"] .topbar .top-icon-btn{color:#24364f!important}
+:root[data-theme="light"] .msg:not(.out):not(.note){background:#ffffff!important;border:1px solid #e3e9f2!important}
+:root[data-theme="light"] .history-filter-btn{color:#7a5b10!important;border-color:#e6cf8f!important;background:#fffaf0!important}
+
+:root .topbar #pageTitle,:root .topbar h1,:root .topbar h2{white-space:nowrap;flex:0 0 auto;max-width:none}
+:root .topbar .input.global{flex:1 1 180px;min-width:120px}
+
+/* ---------- Passada visual tela a tela ---------- */
+/* Relatórios: seção da Central de Leads (removida) e Usuários: filas duplicadas (têm tela própria) */
+:root .card:has(#leadReportCards){display:none!important}
+:root #team .card:has(#newDepartment){display:none!important}
+:root #team > .grid.cols-2:has(#newDepartment){grid-template-columns:1fr!important}
+/* Conexões: ações secundárias agrupadas */
+:root .conn-more{position:relative;display:inline-block}
+:root .conn-more>summary{list-style:none;cursor:pointer}
+:root .conn-more>summary::-webkit-details-marker{display:none}
+:root .conn-more[open]{flex-basis:100%}
+:root .conn-more-menu{position:static;margin-top:6px;display:flex;flex-direction:column;gap:4px;min-width:210px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--panel,#11161d);box-shadow:var(--v2-shadow)}
+:root .conn-more-menu{flex-direction:row!important;flex-wrap:wrap;min-width:0!important}
+:root .conn-more-menu .btn{justify-content:flex-start}
+/* Conversa vazia: esconde voltar/avatar sem função */
+:root .chat:not(.has-conversation) .chat-back{display:none}
+/* Tabelas */
+:root .table th,:root table th{font-size:11px!important;letter-spacing:.06em;font-weight:600!important;color:var(--muted)!important}
+:root .table td,:root table td{padding-top:10px!important;padding-bottom:10px!important}
+:root .table tr:hover td{background:var(--v2-surface-2)}
+:root .chat:not(.has-conversation) #chatAvatar{display:none}
+/* Tema claro: contraste dos botões da conversa */
+:root[data-theme="light"] .page#inbox .chat-status-action{background:#ecfdf3!important;border-color:#86d9a8!important;color:#15803d!important;opacity:1!important}
+:root[data-theme="light"] .page#inbox .danger-soft{background:#fff1f1!important;border-color:#f5b5b5!important;color:#b42318!important;opacity:1!important}
+
+/* =====================================================================
+   Conversa v2 — cabeçalho limpo, balões estilo WhatsApp, envio moderno
+   ===================================================================== */
+:root{--v2-in:#1a2433;--v2-in-line:#243146;--v2-out:#1d3f7a;--v2-out-line:#2b5aa8;--v2-chat-bg:#0b1322}
+:root[data-theme="light"]{--v2-in:#ffffff;--v2-in-line:#e2e8f1;--v2-out:#dbe8ff;--v2-out-line:#b9cff7;--v2-chat-bg:#f3f6fb}
+
+/* Cabeçalho */
+:root .page#inbox .chat-head{min-height:68px;padding:10px 18px!important;border-bottom:1px solid var(--line)!important;background:var(--v2-surface)!important}
+:root .page#inbox .chat-head .avatar{width:42px!important;height:42px!important;border-radius:50%!important}
+:root .page#inbox .chat-name-row{gap:8px!important;align-items:center}
+:root .page#inbox #chatName{font-size:16px!important;font-weight:650!important}
+:root .page#inbox .chat-meta-line{font-size:12px!important;color:var(--muted)!important;gap:6px!important;margin-top:2px}
+:root .page#inbox .chat-queue-pill{font-size:11px!important;padding:2px 8px!important;border-radius:999px!important}
+:root .page#inbox .chat-connection-line{font-size:11.5px!important;background:transparent!important;border:0!important;padding:0!important;margin-top:3px!important;color:var(--muted)!important}
+:root .page#inbox .chat-head .actions{gap:6px!important;align-items:center}
+:root .page#inbox .chat-head .actions .btn{min-height:34px!important;padding:0 12px!important;border-radius:10px!important;font-size:13px!important;font-weight:500!important;box-shadow:none!important}
+:root .page#inbox .claim-btn{background:var(--accent,#2563eb)!important;border-color:var(--accent,#2563eb)!important;color:#fff!important;font-weight:600!important}
+:root .page#inbox .chat-status-action{font-weight:600!important}
+
+/* Faixa do contato */
+:root .page#inbox .contact-summary-strip{display:flex!important;flex-wrap:wrap;gap:4px 16px!important;padding:7px 18px!important;background:transparent!important;border-bottom:1px solid var(--line)!important;font-size:12px!important;color:var(--muted)!important}
+:root .page#inbox .contact-summary-strip.hidden{display:none!important}
+:root .page#inbox .contact-summary-strip>*{border:0!important;background:transparent!important;padding:0!important;min-height:0!important;font-size:12px!important}
+
+/* Área das mensagens */
+:root .page#inbox .messages{background:var(--v2-chat-bg)!important;padding:20px 8% 20px!important;gap:6px!important}
+:root .page#inbox .msg{font-size:14px!important;line-height:1.45!important;padding:8px 12px 6px!important;border-radius:14px!important;max-width:min(64%,620px)!important;box-shadow:0 1px 1px rgba(0,0,0,.12)!important}
+:root .page#inbox .msg:not(.out):not(.note){background:var(--v2-in)!important;border:1px solid var(--v2-in-line)!important;border-bottom-left-radius:4px!important}
+:root .page#inbox .msg.out{background:var(--v2-out)!important;border:1px solid var(--v2-out-line)!important;border-bottom-right-radius:4px!important}
+:root[data-theme="light"] .page#inbox .msg.out{color:#0f1d35!important}
+:root .page#inbox .msg.note{background:rgba(247,184,75,.12)!important;border:1px dashed rgba(247,184,75,.45)!important}
+:root .page#inbox .msg .meta{display:flex;justify-content:flex-end;gap:6px;font-size:11px!important;opacity:.7}
+:root .page#inbox .msg .status-tag{background:transparent!important;border:0!important;padding:0!important;font-size:11px!important}
+:root .page#inbox .msg .read-flow{max-height:0;overflow:hidden;opacity:0;font-size:10.5px;transition:opacity .12s,max-height .12s;text-align:right}
+:root .page#inbox .msg:hover .read-flow{max-height:30px;opacity:.7;margin-top:2px}
+:root .page#inbox .day-sep{align-self:center;background:var(--v2-surface)!important;border:1px solid var(--line)!important;color:var(--muted)!important;margin:10px 0!important}
+:root .page#inbox .hist-msg{opacity:.62}
+
+/* Envio */
+:root .page#inbox .composer{background:var(--v2-surface)!important;border-top:1px solid var(--line)!important}
+:root .page#inbox .composer-toolbar{gap:4px!important;align-items:center}
+:root .page#inbox .composer-icon-btn,:root .page#inbox .tool-label-btn{background:transparent!important;border:0!important;color:var(--muted)!important;min-height:30px!important;border-radius:8px!important;font-size:12.5px!important}
+:root .page#inbox .composer-icon-btn:hover,:root .page#inbox .tool-label-btn:hover{background:var(--v2-surface-2)!important;color:var(--text)!important}
+:root .page#inbox .composer-mode-tabs{background:var(--v2-surface-2)!important;border-radius:9px!important;padding:2px!important;border:0!important}
+:root .page#inbox .composer-mode{border-radius:7px!important;font-size:12.5px!important;padding:5px 12px!important}
+:root .page#inbox .compose-row{gap:8px!important;align-items:flex-end}
+:root .page#inbox .compose-row textarea{min-height:46px!important;border-radius:23px!important;padding:12px 18px!important;font-size:14px!important;background:var(--v2-surface-2)!important}
+:root .page#inbox .send-modern{width:46px!important;height:46px!important;min-height:46px!important;border-radius:50%!important;padding:0!important}
+
+/* Cabeçalho: identidade e ações lado a lado, sem sobreposição */
+:root .page#inbox .chat-head{display:flex!important;align-items:center!important;gap:12px!important;flex-wrap:nowrap!important}
+:root .page#inbox .chat-identity{flex:1 1 auto!important;min-width:0!important;overflow:hidden}
+:root .page#inbox .chat-identity *{min-width:0}
+:root .page#inbox .chat-meta-line,:root .page#inbox .chat-connection-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+:root .page#inbox .chat-head .actions{position:static!important;flex:0 0 auto!important;margin-left:auto!important;flex-wrap:nowrap!important}
+:root .page#inbox .claim-btn,:root[data-theme="light"] .page#inbox .claim-btn{color:#fff!important}
+@media (max-width:1280px){:root .page#inbox .chat-head .actions .btn{padding:0 9px!important;font-size:12.5px!important}}
+
+/* Ficha do aluno no painel do contato */
+:root #chatName,:root #chatAvatar{cursor:pointer}
+:root #chatName:hover{text-decoration:underline;text-underline-offset:3px}
+:root .ficha-aluno{display:grid;gap:8px;margin:10px 0 14px}
+:root .ficha-meta{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11.5px;color:var(--muted)}
+:root .ficha-titulo{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:13px}
+:root .ficha-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+:root .ficha-grid>div{background:var(--v2-surface-2);border:1px solid var(--line);border-radius:10px;padding:7px 9px;display:grid;gap:1px;min-width:0}
+:root .ficha-grid span{font-size:11px;color:var(--muted)}
+:root .ficha-grid b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:root .ficha-pend{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 9px;border:1px solid var(--line);border-radius:10px;margin-bottom:5px;font-size:12.5px;color:var(--text)}
+:root .ficha-pend.atrasada{border-color:var(--danger,#ff5d6c)}
+:root .ficha-chip{font-size:11px;padding:2px 8px;border-radius:999px;white-space:nowrap;background:var(--v2-surface-2);border:1px solid var(--line)}
+:root .ficha-chip.st-CONCLUIDA{color:#16a34a;border-color:rgba(22,163,74,.4)}
+:root .ficha-chip.st-ANDAMENTO{color:#3b82f6;border-color:rgba(59,130,246,.4)}
+:root .ficha-chip.st-AGUARDANDO_ALUNO{color:#d97706;border-color:rgba(217,119,6,.4)}
+/* Painel do contato aberto: 3 colunas sem sobreposição; ações ficam só com ícone quando falta espaço */
+@media (min-width:1100px){
+  :root .card.inbox.show-details{grid-template-columns:minmax(240px,300px) minmax(0,1fr) 340px!important}
+  :root .card.inbox.show-details>.chat{position:relative!important;left:auto!important;transform:none!important;min-width:0}
+  :root .card.inbox.show-details .contact-side{display:block!important;position:relative!important;width:auto!important;overflow-y:auto}
+}
+@media (min-width:1100px){
+  :root .page#inbox .card.inbox.show-details{grid-template-columns:340px minmax(0,1fr) 350px!important}
+  :root .page#inbox .card.inbox.show-details>.conv-list{min-width:0!important;width:auto!important;overflow:hidden}
+  :root .page#inbox .card.inbox.show-details>.contact-side{position:static!important;grid-column:3!important;width:auto!important;height:100%!important;border-left:1px solid var(--line)!important;padding:14px!important;overflow-y:auto!important;transform:none!important}
+  :root .page#inbox .card.inbox.show-details>.chat{grid-column:2!important}
+}
+
+/* Conversa estreita (painel aberto ou tela menor): botões descem para a 2ª linha do cabeçalho */
+:root .page#inbox .card.inbox.show-details .chat-head{flex-wrap:wrap!important;row-gap:8px!important}
+:root .page#inbox .card.inbox.show-details .chat-head .actions{flex:1 1 100%!important;margin-left:0!important;justify-content:flex-start!important;flex-wrap:wrap!important}
+@media (max-width:1350px){:root .page#inbox .chat-head{flex-wrap:wrap!important;row-gap:8px!important}:root .page#inbox .chat-head .actions{flex:1 1 100%!important;margin-left:0!important;justify-content:flex-start!important;flex-wrap:wrap!important}}
+:root #fichaAtend a{color:var(--accent,#3b82f6);font-weight:500}
+:root[data-theme="dark"] #fichaAtend a,:root:not([data-theme="light"]) #fichaAtend a{color:#7fb2ff}
+:root .page#inbox .card.inbox.show-details .chat-head .actions{display:flex!important;width:100%!important;max-width:none!important;grid-template-columns:none!important}
+@media (max-width:1350px){:root .page#inbox .chat-head .actions{display:flex!important;width:100%!important;max-width:none!important;grid-template-columns:none!important}}
+:root .page#inbox .chat-head .actions .btn{flex:0 0 auto!important;width:auto!important}
+:root .page#inbox .card.inbox.show-details .chat-head .actions .btn{padding:0 9px!important;font-size:12px!important;min-height:30px!important}
+:root .page#inbox .card.inbox.show-details .chat-head .actions{gap:5px!important}
+:root .page#inbox .card.inbox.show-details .chat-head .actions{flex-wrap:nowrap!important}
+:root .page#inbox .card.inbox.show-details .chat-head .actions .btn{flex:0 1 auto!important;min-width:0!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (min-width:900px){:root .page#inbox .chat-back{display:none!important}}
+/* Logo no tema claro: monograma colorido e nome escuro */
+:root[data-theme="light"] .sidebar .brand-logo-img{content:url("/brand/monograma-rede-balbino.webp")}
+:root[data-theme="light"] .sidebar .brand,:root[data-theme="light"] .sidebar .brand-text{color:#0f1d35!important}
+:root .sidebar .brand{display:flex!important;align-items:center;gap:10px}
+:root .sidebar .brand .logo{background:transparent!important;box-shadow:none!important}
+:root .sidebar .brand-text{font-size:17px;font-weight:700;letter-spacing:-.01em}
+:root .sidebar .brand .logo{width:38px!important;height:38px!important;min-width:38px;overflow:visible!important;display:flex!important;align-items:center;justify-content:center}
+:root .sidebar .brand-logo-img{width:38px!important;height:38px!important;max-width:38px!important;object-fit:contain!important}
+:root[data-theme="light"] .sidebar .brand-text{display:block!important;visibility:visible!important;opacity:1!important}
