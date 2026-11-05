@@ -46,7 +46,34 @@ function matriculaSummary(rows=[]){
 }
 
 function cookies(req){return Object.fromEntries((req.headers.cookie||'').split(';').map(x=>x.trim()).filter(Boolean).map(x=>{const i=x.indexOf('=');return[decodeURIComponent(x.slice(0,i)),decodeURIComponent(x.slice(i+1))]}))}
-function currentUser(req){if(process.env.CENTRAL_BALBINO_EMBEDDED==='1'){try{const portal=JSON.parse(req.headers['x-balbino-portal']||'null');if(!portal||portal.app!=='chat')return null;const key=String(portal.account||'').toLowerCase();const dbUser=all().users.find(x=>x.active!==false&&(key==='@admin'?x.role==='SUPER_ADMIN':String(x.username||'').toLowerCase()===key));if(!dbUser)return null;return{id:dbUser.id,name:dbUser.name,username:dbUser.username,role:dbUser.role,departmentId:dbUser.departmentId||null,access:dbUser.access||null,uiPreferences:dbUser.uiPreferences||null}}catch{return null}}const sid=cookies(req)['gochat.sid'];return sid?sessions.get(sid)||null:null}
+function currentUser(req){
+  if(process.env.CENTRAL_BALBINO_EMBEDDED==='1'){
+    try{
+      const portal=JSON.parse(req.headers['x-balbino-portal']||'null');
+      if(!portal||portal.app!=='chat')return null;
+      const key=String(portal.account||'').trim().toLowerCase();
+      if(!key)return null;
+      const users=all().users;
+      let dbUser=users.find(x=>x.active!==false&&(key==='@admin'?x.role==='SUPER_ADMIN':String(x.username||'').toLowerCase()===key));
+      if(!dbUser&&key!=='@admin'){
+        // O portal já validou a sessão e a permissão de Chat. Cria somente o perfil
+        // básico inexistente, sem alterar contas ou credenciais previamente cadastradas.
+        if(users.some(x=>String(x.username||'').toLowerCase()===key))return null;
+        dbUser={id:uid('u'),name:String(portal.name||portal.username||key).trim().slice(0,100)||key,username:key,role:'AGENT',status:'OFFLINE',departmentId:null,email:'',active:true,access:{allConnections:true,connectionIds:[],allDepartments:true,departmentIds:[],allGroups:true,groupIds:[]}};
+        users.push(dbUser);
+        save();
+        pushLog('PORTAL_USER_PROVISIONED',{userId:dbUser.id,username:key});
+      }
+      if(!dbUser)return null;
+      return{id:dbUser.id,name:dbUser.name,username:dbUser.username,role:dbUser.role,departmentId:dbUser.departmentId||null,access:dbUser.access||null,uiPreferences:dbUser.uiPreferences||null};
+    }catch(error){
+      console.error('[chat] Falha ao autenticar usuário do portal:',error.message);
+      return null;
+    }
+  }
+  const sid=cookies(req)['gochat.sid'];
+  return sid?sessions.get(sid)||null:null;
+}
 function auth(req,res){const u=currentUser(req);if(!u){json(res,401,{error:'AUTH_REQUIRED'});return null}return u}
 function secureCookieEnabled(){const configured=String(process.env.COOKIE_SECURE??'').trim().toLowerCase();if(configured==='true')return true;if(configured==='false')return false;return process.env.NODE_ENV==='production'}
 function setSession(res,u){const sid=crypto.randomBytes(24).toString('hex');sessions.set(sid,u);const secure=secureCookieEnabled();res.setHeader('Set-Cookie',`gochat.sid=${sid}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200${secure?'; Secure':''}`)}
