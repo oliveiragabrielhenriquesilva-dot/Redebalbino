@@ -155,13 +155,13 @@ function createPortalAuth(runtimeDir, env = process.env) {
     const apps = cleanApps(input.apps);
     const accounts = {
       ...(apps.includes('matriculas') ? { matriculas: String(input.matriculasLogin || '').trim().slice(0, 100) } : {}),
-      ...(apps.includes('chat') ? { chat: String(input.chatUsername || '').trim().slice(0, 100) } : {})
+      ...(apps.includes('chat') ? { chat: String(input.chatUsername || username).trim().slice(0, 100) } : {})
     };
     if (!name || !/^[a-z0-9._-]{2,80}$/.test(username)) throw new Error('Informe nome e usuário (2 a 80 caracteres: letras, números, ponto, hífen ou sublinhado).');
     if (password.length < 12) throw new Error('A senha precisa ter pelo menos 12 caracteres.');
     if (!apps.length) throw new Error('Selecione pelo menos um sistema.');
     if (apps.includes('matriculas') && !accounts.matriculas) throw new Error('Informe o login que essa pessoa já usa no Matrículas.');
-    if (apps.includes('chat') && !accounts.chat) throw new Error('Informe o usuário que essa pessoa já usa no Balbino Chat.');
+    if (apps.includes('chat') && (!accounts.chat || accounts.chat.toLowerCase()==='@admin')) throw new Error('Informe um usuário válido para o Balbino Chat.');
     const { salt, hash } = hashPassword(password), now = Date.now(), id = crypto.randomUUID();
     db.prepare(`INSERT INTO users
       (id,name,username,password_salt,password_hash,apps_json,accounts_json,is_admin,active,must_change_password,created_at,updated_at)
@@ -222,12 +222,12 @@ function createPortalAuth(runtimeDir, env = process.env) {
     const apps = cleanApps(input.apps);
     const accounts = {
       ...(apps.includes('matriculas') ? { matriculas: String(input.matriculasLogin || '').trim().slice(0, 100) } : {}),
-      ...(apps.includes('chat') ? { chat: String(input.chatUsername || '').trim().slice(0, 100) } : {})
+      ...(apps.includes('chat') ? { chat: String(input.chatUsername || parseJSON(row.accounts_json, {}).chat || row.username).trim().slice(0, 100) } : {})
     };
     if (!name) throw new Error('Informe o nome.');
     if (!apps.length && row.is_admin) throw new Error('O administrador deve manter acesso a pelo menos um sistema.');
     if (apps.includes('matriculas') && !accounts.matriculas) throw new Error('Informe o login que essa pessoa já usa no Matrículas.');
-    if (apps.includes('chat') && !accounts.chat) throw new Error('Informe o usuário que essa pessoa já usa no Balbino Chat.');
+    if (apps.includes('chat') && (!accounts.chat || (accounts.chat.toLowerCase()==='@admin' && !row.is_admin))) throw new Error('Informe um usuário válido para o Balbino Chat.');
     if (row.is_admin && id === actorId) throw new Error('As permissões do administrador principal não podem ser alteradas aqui.');
     db.prepare('UPDATE users SET name=?,apps_json=?,accounts_json=?,updated_at=? WHERE id=?').run(name, JSON.stringify(apps), JSON.stringify(accounts), Date.now(), id);
     return sanitizeUser(getUserById.get(id));
