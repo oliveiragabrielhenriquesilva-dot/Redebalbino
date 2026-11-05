@@ -89,3 +89,8 @@ agendamentos, automações, IA/conhecimento, API/integrações, relatórios, mí
 - **Clicar no nome ou na foto do contato** abre o painel com a **Ficha do aluno**: Polo, Curso, RA (editáveis),
   Perfil (da triagem), pendências do contato com situação, e atendimentos anteriores (com atalho para ver na conversa).
 - Com o painel aberto, as três colunas ficam lado a lado sem sobrepor; botões ajustam o tamanho.
+
+## Aparência: 3 modos + cores da marca
+- Modos **Claro**, **Escuro** e **Híbrido** (menu navy + conteúdo claro). Cada pessoa troca no botão ☀/🌙/🌗 do topo; a escolha fica salva no usuário.
+- **Configurações › Aparência** (admin): modo padrão para quem ainda não escolheu, cor principal e cor de destaque, com prévia e "Restaurar cores da Rede Balbino".
+- Nova rota `GET/PUT /api/appearance`; preferências aceitam `theme: hybrid`.
