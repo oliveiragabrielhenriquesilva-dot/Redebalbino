@@ -254,3 +254,56 @@
 :root .sidebar .brand .logo{width:38px!important;height:38px!important;min-width:38px;overflow:visible!important;display:flex!important;align-items:center;justify-content:center}
 :root .sidebar .brand-logo-img{width:38px!important;height:38px!important;max-width:38px!important;object-fit:contain!important}
 :root[data-theme="light"] .sidebar .brand-text{display:block!important;visibility:visible!important;opacity:1!important}
+
+/* =====================================================================
+   v0.15.0 • 3 modos de aparência: Claro · Escuro · Híbrido
+   As cores da marca vêm de --accent (principal) e --v2-hl (destaque),
+   definidas em Configurações › Aparência.
+   ===================================================================== */
+:root{--v2-hl:#22d3ee}
+:root .badge,:root .nav .count,:root .nav-badge,:root .unread,:root .conv .count{background:var(--v2-hl)!important;color:#06202a!important;font-weight:700!important}
+:root .btn.primary{background:var(--accent,#2563eb)!important;border-color:var(--accent,#2563eb)!important;color:#fff!important}
+:root .btn.primary:hover{background:var(--accent2,#1d4ed8)!important}
+:root .page#inbox .msg.out{background:color-mix(in srgb,var(--accent,#2563eb) 22%,var(--v2-chat-bg))!important;border-color:color-mix(in srgb,var(--accent,#2563eb) 40%,transparent)!important}
+
+/* ---------- ESCURO (premium) ---------- */
+:root[data-skin="dark"] body{background:radial-gradient(1200px 600px at 85% -10%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 60%),#080f1d!important}
+:root[data-skin="dark"] .card{background:rgba(17,26,43,.82)!important;border-color:rgba(255,255,255,.07)!important;backdrop-filter:blur(6px)}
+:root[data-skin="dark"] .btn.primary{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--v2-hl)))!important;border:0!important;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 35%,transparent)!important}
+:root[data-skin="dark"] .sidebar{background:#070d19!important}
+:root[data-skin="dark"] .nav button.active{background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 28%,transparent),transparent)!important}
+:root[data-skin="dark"] .nav button.active::before{background:var(--v2-hl)!important;box-shadow:0 0 10px var(--v2-hl)}
+:root[data-skin="dark"] .sidebar .brand-logo-img{filter:drop-shadow(0 0 10px color-mix(in srgb,var(--v2-hl) 45%,transparent))}
+
+/* ---------- CLARO (acolhedor: fundo suave + cartões brancos flutuantes) ---------- */
+:root[data-skin="light"] body,:root[data-skin="light"] .main{background:#eef2f7!important}
+:root[data-skin="light"] .card{background:#fff!important;border:1px solid #e6ebf2!important;border-radius:16px!important;box-shadow:0 1px 2px rgba(15,29,53,.04),0 10px 30px rgba(15,29,53,.06)!important}
+:root[data-skin="light"] .sidebar{background:#fff!important;margin:10px 0 10px 10px;border-radius:18px;border:1px solid #e6ebf2!important;box-shadow:0 10px 30px rgba(15,29,53,.06);height:calc(100vh - 20px)!important}
+:root[data-skin="light"] .nav button.active{background:color-mix(in srgb,var(--accent) 12%,#fff)!important;color:var(--accent2)!important}
+:root[data-skin="light"] .nav button.active::before{display:none}
+
+/* ---------- HÍBRIDO (menu navy da Rede Balbino + conteúdo claro) ---------- */
+:root[data-skin="hybrid"]{
+  --v2-side:#0b1730; --v2-side-hover:rgba(255,255,255,.06); --v2-side-active:color-mix(in srgb,var(--accent) 30%,transparent);
+  --v2-side-text:#b4c2d8; --v2-side-text-strong:#ffffff; --v2-side-label:#7488a8;
+}
+:root[data-skin="hybrid"] body,:root[data-skin="hybrid"] .main{background:#f4f7fb!important}
+:root[data-skin="hybrid"] .sidebar{background:linear-gradient(180deg,#0b1730,#0a1326)!important;border-right:0!important}
+:root[data-skin="hybrid"] .sidebar .brand{border-bottom-color:rgba(255,255,255,.08)!important}
+:root[data-skin="hybrid"] .sidebar .brand-logo-img{content:url("/brand/monograma-rede-balbino-branco.webp")!important}
+:root[data-skin="hybrid"] .sidebar .brand,:root[data-skin="hybrid"] .sidebar .brand-text{color:#fff!important}
+:root[data-skin="hybrid"] .nav .nav-module-sub{border-left-color:rgba(255,255,255,.1)!important}
+:root[data-skin="hybrid"] .nav button.active::before{background:var(--v2-hl)!important}
+:root[data-skin="hybrid"] .sidebar .small,:root[data-skin="hybrid"] .sidebar .muted{color:#8ea0bc!important}
+:root[data-skin="hybrid"] .sidebar .btn,:root[data-skin="hybrid"] .sidebar button:not(.active){color:#c8d4e6!important;border-color:rgba(255,255,255,.12)!important}
+:root[data-skin="hybrid"] .card{background:#fff!important;border-color:#e3e9f1!important}
+
+/* ---------- Card Configurações › Aparência ---------- */
+.apar-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:10px}
+.apar-cor{display:flex;align-items:center;gap:8px}
+.apar-cor input[type=color]{width:44px;height:34px;border:1px solid var(--line);border-radius:8px;padding:2px;background:transparent;cursor:pointer}
+.apar-previa{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;padding:12px;border:1px dashed var(--line);border-radius:12px}
+.apar-badge{background:var(--v2-hl);color:#06202a;font-weight:700;border-radius:999px;padding:2px 9px;font-size:12px}
+.apar-msg{background:color-mix(in srgb,var(--accent) 22%,transparent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);padding:6px 10px;border-radius:12px 12px 4px 12px;font-size:13px}
+:root .toast{background:#0f1d35!important;color:#fff!important;border:1px solid rgba(255,255,255,.12)!important}
+:root .toast.error,:root .toast.err{background:#b42318!important}
