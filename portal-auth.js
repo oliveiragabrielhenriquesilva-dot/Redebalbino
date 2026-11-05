@@ -141,8 +141,8 @@ function createPortalAuth(runtimeDir, env = process.env) {
     if (!row) return { status: 'unauthenticated', user: null };
     const user = sanitizeUser(row);
     if (user.mustChangePassword) return { status: 'password_change_required', user };
-    if (!user.apps.includes(app)) return { status: 'forbidden', user };
-    const account = user.accounts[app] || (user.isAdmin && app === 'matriculas' ? '@admin' : user.username);
+    if (!user.apps.includes(app) && !(user.isAdmin && app === 'chat')) return { status: 'forbidden', user };
+    const account = user.isAdmin && app === 'chat' ? '@admin' : (user.accounts[app] || (user.isAdmin && app === 'matriculas' ? '@admin' : user.username));
     return { status: 'allowed', user, account };
   }
   function listUsers() {
