@@ -174,12 +174,15 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     return { poloId, polos, produtos, produtoId };
   }
 
-  function tipoProduto(nomeProduto, codigoCurso) {
+  function tipoProduto(nomeProduto, codigoCurso, nomeCurso) {
     const produto = norm(nomeProduto);
     const codigo = norm(codigoCurso);
-    if (/(^| )pos( |$)/.test(produto) || /(^| )epos( |$)/.test(codigo)) return 'pos';
-    if (/(^| )tecnico( |$)/.test(produto) || /(^| )(etec|tec)( |$)/.test(codigo)) return 'tecnico';
-    if (produto || /(^| )(egrad|grad)( |$)/.test(codigo)) return 'graduacao';
+    const curso = norm(nomeCurso);
+    const texto = `${produto} ${codigo} ${curso}`;
+    if (/(^| )(pos|mba|especializacao|lato sensu)( |$)/.test(texto)) return 'pos';
+    if (/(^| )(tecnico|etec|tec)( |$)/.test(texto)) return 'tecnico';
+    if (/(^| )(graduacao|bacharelado|licenciatura|egrad|grad)( |$)/.test(texto) || /superior de tecnologia/.test(curso)) return 'graduacao';
+    if (produto) return 'graduacao';
     return 'sem';
   }
 
@@ -247,7 +250,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
         polo_id, polo: polo_id ? ctx.polos[polo_id] || o.polo_fonte : (o.polo_fonte ? `${o.polo_fonte} (não identificado)` : 'Polo não informado'),
         polo_key: polo_id ? String(polo_id) : 'sem', polo_fonte: o.polo_fonte || '',
         curso, curso_key: norm(curso) || 'sem', curso_cod: o.curso_cod || '',
-        produto_id, produto: produto_id ? ctx.produtos[produto_id] || '' : '', produto_key: produto_id ? String(produto_id) : 'sem', produto_tipo: tipoProduto(produto_id ? ctx.produtos[produto_id] || '' : '', o.curso_cod),
+        produto_id, produto: produto_id ? ctx.produtos[produto_id] || '' : '', produto_key: produto_id ? String(produto_id) : 'sem', produto_tipo: tipoProduto(produto_id ? ctx.produtos[produto_id] || '' : '', o.curso_cod, o.curso_nome),
         tutor_origem: o.responsavel_origem || '', tutor_key: norm(o.responsavel_origem) || 'sem',
         responsavel_key: respKey || 'sem', responsavel: o.resp_tutor_nome || o.resp_usuario_nome || '',
         status_origem: o.status_origem || '', status_key: norm(o.status_origem) || 'sem',
