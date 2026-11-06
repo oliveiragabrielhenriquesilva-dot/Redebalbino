@@ -174,6 +174,15 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     return { poloId, polos, produtos, produtoId };
   }
 
+  function tipoProduto(nomeProduto, codigoCurso) {
+    const produto = norm(nomeProduto);
+    const codigo = norm(codigoCurso);
+    if (/(^| )pos( |$)/.test(produto) || /(^| )epos( |$)/.test(codigo)) return 'pos';
+    if (/(^| )tecnico( |$)/.test(produto) || /(^| )(etec|tec)( |$)/.test(codigo)) return 'tecnico';
+    if (produto || /(^| )(egrad|grad)( |$)/.test(codigo)) return 'graduacao';
+    return 'sem';
+  }
+
   function indiceRA(cicloId) {
     const lista = all("SELECT id, candidato, ra, nome, cpf, polo_fonte, curso_nome, data_pagto, data_inscricao FROM ma_lista_alunos WHERE ciclo_id=? AND ativo=1 AND ra<>''", cicloId);
     const porCpf = new Map(), porNome = new Map(), porId = new Map();
@@ -238,7 +247,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
         polo_id, polo: polo_id ? ctx.polos[polo_id] || o.polo_fonte : (o.polo_fonte ? `${o.polo_fonte} (não identificado)` : 'Polo não informado'),
         polo_key: polo_id ? String(polo_id) : 'sem', polo_fonte: o.polo_fonte || '',
         curso, curso_key: norm(curso) || 'sem', curso_cod: o.curso_cod || '',
-        produto_id, produto: produto_id ? ctx.produtos[produto_id] || '' : '', produto_key: produto_id ? String(produto_id) : 'sem',
+        produto_id, produto: produto_id ? ctx.produtos[produto_id] || '' : '', produto_key: produto_id ? String(produto_id) : 'sem', produto_tipo: tipoProduto(produto_id ? ctx.produtos[produto_id] || '' : '', o.curso_cod),
         tutor_origem: o.responsavel_origem || '', tutor_key: norm(o.responsavel_origem) || 'sem',
         responsavel_key: respKey || 'sem', responsavel: o.resp_tutor_nome || o.resp_usuario_nome || '',
         status_origem: o.status_origem || '', status_key: norm(o.status_origem) || 'sem',
@@ -262,7 +271,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     for (const k of ['insc_de', 'insc_ate', 'atend_de', 'atend_ate']) { const v = String(q[k] || ''); if (v) { if (!isoValido(v)) falha(400, 'Data inválida no filtro.'); f[k] = v; } }
     if (f.insc_de && f.insc_ate && f.insc_de > f.insc_ate) falha(400, 'O período de inscrição está invertido.');
     if (f.atend_de && f.atend_ate && f.atend_de > f.atend_ate) falha(400, 'O período de atendimento está invertido.');
-    for (const k of ['polo', 'tutor', 'resp', 'curso', 'produto', 'status', 'etapa', 'ra', 'retorno', 'contato', 'mes', 'autor']) { const v = String(q[k] || '').trim(); if (v) f[k] = v.slice(0, 200); }
+    for (const k of ['polo', 'tutor', 'resp', 'curso', 'produto', 'tipo_produto', 'status', 'etapa', 'ra', 'retorno', 'contato', 'mes', 'autor']) { const v = String(q[k] || '').trim(); if (v) f[k] = v.slice(0, 200); }
     const busca = String(q.q || '').trim(); if (busca) f.q = busca.slice(0, 100);
     return f;
   }
@@ -286,6 +295,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       if (f.resp && r.responsavel_key !== f.resp) return false;
       if (f.curso && r.curso_key !== f.curso) return false;
       if (f.produto && r.produto_key !== f.produto) return false;
+      if (f.tipo_produto && r.produto_tipo !== f.tipo_produto) return false;
       if (f.status && r.status_key !== f.status) return false;
       if (f.etapa && r.etapa !== f.etapa) return false;
       if (f.ra && r.ra_situacao !== f.ra) return false;
@@ -452,6 +462,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
         for (const r of base) r.autores.forEach((nome, i) => { const value = r.autores_keys[i] || 'sem'; if (!m.has(value)) m.set(value, nome || 'Sem autor'); });
         return [...m].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
       })(),
+      tipos_produto: [{ value: 'graduacao', label: 'Graduação' }, { value: 'pos', label: 'Pós' }, { value: 'tecnico', label: 'Técnico' }],
       cursos: uniq('curso_key', r => r.curso || 'Curso não informado'), produtos: uniq('produto_key', r => r.produto || 'Produto não identificado'),
       status: uniq('status_key', r => r.status_origem || 'Sem status na origem'),
       etapas: ETAPAS.map(([value, label]) => ({ value, label })), canais: Object.entries(CANAIS).map(([value, label]) => ({ value, label })),
