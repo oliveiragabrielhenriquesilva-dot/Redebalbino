@@ -86,7 +86,7 @@
   function loadUrl() {
     const p = new URLSearchParams(location.search);
     state.ciclo = p.get('ciclo') || '';
-    for (const [k, v] of p) if (!['ciclo', 'aba'].includes(k)) state.f[k] = v;
+    for (const [k, v] of p) if (!['ciclo', 'aba', 'produto'].includes(k)) state.f[k] = v;
     if (['candidatos', 'importacoes', 'definicoes'].includes(p.get('aba'))) state.tab = p.get('aba');
   }
   const labelOf = (opt, value) => (state.opts?.[opt] || []).find(x => String(x.value) === String(value))?.label || value;
