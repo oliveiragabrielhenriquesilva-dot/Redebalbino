@@ -1,6 +1,6 @@
 # Página inicial e acesso central
 
-A proposta substitui o painel inicial por uma grade de cards, sem banner, busca, indicadores ou rodapé. Mantém a marca, o tema e os controles de conta. Os sete acessos do Canva usam ícones incorporados no catálogo, sem dependência de imagens remotas.
+A proposta substitui o painel inicial por uma grade de cards, sem banner, busca, indicadores ou rodapé. Mantém a marca, o tema e os controles de conta. Todos os cards e a marca do cabeçalho usam ícones vetoriais SVG incorporados, sem fotos ou imagens remotas.
 
 | Card | Destino | Acesso |
 | --- | --- | --- |

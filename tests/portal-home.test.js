@@ -5,7 +5,7 @@ const { entries, access, destination } = require('../public/catalogo');
 test('home preserva os sete destinos externos e não inclui o Chat', () => {
   assert.equal(entries.filter(e => e.external).length, 7);
   assert.equal(entries.some(e => /chat/i.test(e.key + e.title)), false);
-  for (const e of entries.filter(e => e.external)) { assert.match(e.image, /^data:image\/webp;base64,/); assert.ok(new URL(e.href)); }
+  for (const e of entries.filter(e => e.external)) { assert.match(e.icon, /^<svg /); assert.equal(e.image, undefined); assert.ok(new URL(e.href)); }
   assert.equal(entries.find(e => e.key === 'artes').disabled, true);
   assert.equal(entries.find(e => e.key === 'manuais').href, null);
 });

@@ -49,8 +49,7 @@
       const card = document.createElement(state === 'disabled' || state === 'forbidden' ? 'article' : 'a');
       card.className = `home-card home-${app.key}`;
       const icon = document.createElement('span'); icon.className = 'home-icon'; icon.setAttribute('aria-hidden', 'true');
-      if (app.image) { const img = document.createElement('img'); img.src = app.image; img.alt = ''; img.width = 80; img.height = 80; icon.append(img); }
-      else icon.innerHTML = app.icon;
+      icon.innerHTML = app.icon;
       const title = document.createElement('h2'); title.textContent = app.title;
       const status = document.createElement('span'); status.className = 'home-status';
       status.textContent = state === 'disabled' ? app.status : state === 'forbidden' ? 'Acesso não liberado' : app.external ? 'Acesso externo ↗' : state === 'allowed' ? 'Acessar sistema →' : 'Entrar para acessar →';
