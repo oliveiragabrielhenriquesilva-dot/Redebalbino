@@ -1,0 +1,18 @@
+{
+  "encoding": "gzip+base64",
+  "parts": [
+    "dados-001.b64",
+    "dados-002.b64",
+    "dados-003.b64",
+    "dados-004.b64",
+    "dados-005.b64",
+    "dados-006.b64",
+    "dados-007.b64",
+    "dados-008.b64",
+    "dados-009.b64",
+    "dados-010.b64"
+  ],
+  "courses": 119,
+  "argumentarios": 115,
+  "sha256": "68b8aef31de4bc185dd48c3e7d40ca876ec0ca166a05f373e881fba1ffb25725"
+}

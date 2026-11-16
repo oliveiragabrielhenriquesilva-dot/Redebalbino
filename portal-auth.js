@@ -78,6 +78,10 @@ function createPortalAuth(runtimeDir, env = process.env) {
       expires_at INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions(expires_at);
+    CREATE TABLE IF NOT EXISTS user_preferences (
+      user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      home_order_json TEXT NOT NULL DEFAULT '[]'
+    );
   `);
 
   const userColumns = new Set(db.prepare('PRAGMA table_info(users)').all().map(column => column.name));
@@ -261,7 +265,16 @@ function createPortalAuth(runtimeDir, env = process.env) {
     return sanitizeUser(getUserById.get(id));
   }
 
-  return { db, bootstrap, login, logout, current, forApp, publicUser, listUsers, createUser, createTutorUsers, updateUser, changePassword, changeOwnPassword, setActive, sessionCookie };
+  function getPreferences(userId) {
+    const row = db.prepare('SELECT home_order_json FROM user_preferences WHERE user_id=?').get(userId);
+    return { homeOrder: parseJSON(row?.home_order_json || '[]', []) };
+  }
+  function setHomeOrder(userId, order) {
+    db.prepare('INSERT INTO user_preferences(user_id,home_order_json) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET home_order_json=excluded.home_order_json').run(userId, JSON.stringify(order));
+    return getPreferences(userId);
+  }
+
+  return { db, bootstrap, getPreferences, setHomeOrder, login, logout, current, forApp, publicUser, listUsers, createUser, createTutorUsers, updateUser, changePassword, changeOwnPassword, setActive, sessionCookie };
 }
 
 module.exports = { createPortalAuth };

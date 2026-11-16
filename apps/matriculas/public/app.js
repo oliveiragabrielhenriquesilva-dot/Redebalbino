@@ -58,12 +58,11 @@ function miniBarra(valor, total, marco = null) {
   return `<div class="mini-barra">${barra(valor, total, marco)}<span>${pctTxt(pct(valor, total))}</span></div>`;
 }
 
-// Logo padrão (marca original: balão de conversa + capelo de formatura)
+// Identidade oficial Rede Balbino — símbolo modular de conexão.
 function marcaSVG(tam = 40, escuro = true) {
-  const imagem = escuro ? 'monograma-rede-balbino-branco.webp' : 'monograma-rede-balbino.webp';
+  const imagem = 'rede-balbino-simbolo.svg';
   return `<img class="marca-oficial" width="${tam}" height="${tam}" src="/brand/${imagem}" alt="Rede Balbino">`;
 } function logoHTML(cfgs, escuro = true) {
-  if (cfgs.logo) return `<img class="logo-img" src="${cfgs.logo}" alt="${esc(cfgs.nome_rede || 'Logo')}">`;
   const nome = String(cfgs.nome_rede || 'Rede Balbino').trim();
   const [p1, ...resto] = nome.split(/\s+/);
   return `<div class="logo ${escuro ? '' : 'claro'}">${marcaSVG(40, escuro)}<div class="logo-txt">${resto.length ? `<small>${esc(p1)}</small><b>${esc(resto.join(' '))}</b>` : `<b>${esc(nome)}</b>`}</div></div>`;
@@ -216,7 +215,7 @@ function montarShell() {
       <section class="conteudo" id="conteudo"></section>
     </div>
   </div>`;
-  const atualizarTema = () => { const escuro = document.documentElement.dataset.tema === 'escuro'; $('#b-tema').textContent = escuro ? '☀️ Tema claro' : '🌙 Tema escuro'; const logo = $('.side .marca .marca-oficial'); if (logo) logo.src = '/brand/' + (escuro ? 'monograma-rede-balbino-branco.webp' : 'monograma-rede-balbino.webp'); };
+  const atualizarTema = () => { const escuro = document.documentElement.dataset.tema === 'escuro'; $('#b-tema').textContent = escuro ? '☀️ Tema claro' : '🌙 Tema escuro'; const logo = $('.side .marca .marca-oficial'); if (logo) logo.src = '/brand/rede-balbino-simbolo.svg'; };
   atualizarTema();
   $('#b-tema').onclick = () => { const tema = document.documentElement.dataset.tema === 'escuro' ? 'claro' : 'escuro'; document.documentElement.dataset.tema = tema; ls.set('tema', tema); atualizarTema(); };
   $('#sel-ciclo').value = estado.ciclo || '';
@@ -3038,9 +3037,7 @@ function cadConfig(box, depois) {
     </form></div></div>
     <div class="card"><h2>Logo do menu</h2><div class="corpo">
       <div class="logo-preview">${logoHTML(c)}</div>
-      <p class="muted" style="font-size:12.5px">Sem imagem enviada, o sistema usa o logo padrão com o nome da rede. Para usar o arquivo oficial, envie um PNG/SVG (fundo transparente, de preferência claro para o menu escuro).</p>
-      <div class="linha-acoes"><label class="btn">Enviar imagem<input type="file" id="logo-arq" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden></label>
-        ${c.logo ? '<button class="btn perigo" id="logo-rem">Voltar ao logo padrão</button>' : ''}</div>
+      <p class="muted" style="font-size:12.5px">A identidade oficial da Rede Balbino é aplicada ao menu, ao login e aos relatórios. Arquivos enviados anteriormente são preservados no cadastro.</p>
     </div></div>
     <div class="card"><h2>Backup</h2><div class="corpo">
       ${(() => { let st = null; try { st = JSON.parse(c.backup_extra_status || 'null'); } catch { /* sem status */ }
@@ -3067,14 +3064,7 @@ function cadConfig(box, depois) {
   $('#bk-testar').onclick = async () => { try { await api('/api/backup-testar', { method: 'POST', body: { pasta: $('#bk-pasta').value } }); toast('Pasta OK — o sistema consegue gravar nela'); } catch (e) { toast(e.message, true); } };
   $('#bk-salvar').onclick = async () => { try { await api('/api/config', { method: 'PUT', body: { pasta_backup_extra: $('#bk-pasta').value.trim() } }); depois('Pasta de backup salva'); } catch (e) { toast(e.message, true); } };
   $('#bk-agora').onclick = async () => { try { const r = await api('/api/backup-agora', { method: 'POST' }); depois(r.msg); } catch (e) { toast(e.message, true); } };
-  $('#logo-arq').onchange = (ev) => {
-    const arq = ev.target.files[0]; if (!arq) return;
-    if (arq.size > 1000000) { toast('Imagem muito grande (máx. 1 MB)', true); return; }
-    const rd = new FileReader();
-    rd.onload = async () => { try { await api('/api/config', { method: 'PUT', body: { logo: rd.result } }); depois('Logo atualizado'); } catch (e) { toast(e.message, true); } };
-    rd.readAsDataURL(arq);
-  };
-  if ($('#logo-rem')) $('#logo-rem').onclick = async () => { try { await api('/api/config', { method: 'PUT', body: { logo: '' } }); depois('Logo padrão restaurado'); } catch (e) { toast(e.message, true); } };
+
   f.onsubmit = async (ev) => {
     ev.preventDefault();
     const corpo = { nome_rede: f.nome_rede.value, nome_sistema: f.nome_sistema.value, subtitulo: f.subtitulo.value, contagem_dias: f.contagem_dias.value, lancamento: f.lancamento.value, inicio_semana: f.inicio_semana.value, dias_meta_semana: $$('[name=dias_meta]:checked', f).map(i => i.value).join(',') || '1,2,3,4,5,6', exigir_cpf: f.exigir_cpf.checked ? '1' : '0', exigir_aluno: f.exigir_aluno.checked ? '1' : '0', ritmo_minimo_semanal: String(Math.max(0, Math.round(Number(f.ritmo_minimo_semanal.value) || 0))), tolerancia_ra_dias: String(Math.max(0, Math.round(Number(f.tolerancia_ra_dias.value) || 0))) };

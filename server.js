@@ -6,6 +6,7 @@ const os = require('node:os');
 const { pathToFileURL } = require('node:url');
 const { DatabaseSync } = require('node:sqlite');
 const { createPortalAuth } = require('./portal-auth');
+const homeCatalog = require('./public/catalogo');
 
 try { process.loadEnvFile?.(path.join(__dirname, '.env')); } catch {}
 // Chat suspenso nesta hospedagem: não importar módulos nem iniciar conexões/rotinas.
@@ -344,7 +345,7 @@ async function portalApi(req, res, url) {
       let target = '/';
       try {
         const parsed = new URL(targetValue, 'http://gateway.local');
-        if (parsed.origin === 'http://gateway.local' && /^\/(?:matriculas|oportunidades|informa)(?:\/|$)/.test(parsed.pathname)) {
+        if (parsed.origin === 'http://gateway.local' && /^\/(?:matriculas|oportunidades|informa|conecta)(?:\/|$)/.test(parsed.pathname)) {
           target = parsed.pathname + parsed.search + parsed.hash;
         }
       } catch {}
@@ -361,6 +362,13 @@ async function portalApi(req, res, url) {
     catch (error) { return jsonReply(res, 400, { error: error.message }); }
   }
   if (actor.must_change_password) return jsonReply(res, 403, { error: 'Defina sua nova senha para continuar.' });
+  if (method === 'GET' && p === '/api/portal/preferences') return jsonReply(res, 200, portal.getPreferences(actor.id));
+  if (method === 'PUT' && p === '/api/portal/preferences') {
+    const body = await readJson(req), order = body.homeOrder;
+    const valid = new Set(homeCatalog.entries.map(entry => entry.key));
+    if (!Array.isArray(order) || order.length > valid.size || order.some(key => typeof key !== 'string' || !valid.has(key)) || new Set(order).size !== order.length) return jsonReply(res, 400, { error: 'Ordem de atalhos inválida.' });
+    return jsonReply(res, 200, portal.setHomeOrder(actor.id, homeCatalog.normalizeOrder(order)));
+  }
   if (!actor.is_admin) return jsonReply(res, 403, { error: 'Acesso restrito ao administrador.' });
   if (method === 'GET' && p === '/api/portal/users') return jsonReply(res, 200, { users: portal.listUsers() });
   if (method === 'GET' && p === '/api/portal/tutor-users/preview') {
@@ -435,6 +443,38 @@ function serveInforma(req, res, url) {
   return req.method === 'HEAD' ? res.end() : res.end(content);
 }
 
+const CONECTA_FILES = new Map([
+  ['/', ['index.html', 'text/html; charset=utf-8']],
+  ['/index.html', ['index.html', 'text/html; charset=utf-8']],
+  ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
+  ['/style.css', ['style.css', 'text/css; charset=utf-8']],
+  ['/dados.json', ['dados.json', 'application/json; charset=utf-8']]
+]);
+let conectaDataBuffer;
+function readConectaData() {
+  if (!conectaDataBuffer) {
+    const dir = path.join(ROOT, 'apps/conecta/data');
+    const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8'));
+    const payload = manifest.parts.map(file => fs.readFileSync(path.join(dir, file), 'utf8')).join('');
+    conectaDataBuffer = require('node:zlib').gunzipSync(Buffer.from(payload, 'base64'));
+  }
+  return conectaDataBuffer;
+}
+function serveConecta(req, res, url) {
+  const user = portal.current(req);
+  if (!user || user.must_change_password) {
+    if (url.pathname.endsWith('.json') || url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) return jsonReply(res, user ? 403 : 401, { error: user ? 'Defina sua nova senha no Portal.' : 'Entre no Portal para consultar o Conecta.' });
+    res.writeHead(302, { Location: '/?next=' + encodeURIComponent(url.pathname + url.search), 'Cache-Control': 'no-store' }); return res.end();
+  }
+  if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405, { Allow: 'GET, HEAD' }); return res.end(); }
+  if (url.pathname === '/conecta') { res.writeHead(308, { Location: '/conecta/' + url.search }); return res.end(); }
+  const file = CONECTA_FILES.get(url.pathname.slice('/conecta'.length));
+  if (!file) return jsonReply(res, 404, { error: 'Arquivo não encontrado.' });
+  const content = file[0] === 'dados.json' ? readConectaData() : fs.readFileSync(path.join(ROOT, 'apps/conecta/public', file[0]));
+  res.writeHead(200, { 'Content-Type': file[1], 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" });
+  return req.method === 'HEAD' ? res.end() : res.end(content);
+}
+
 const server = http.createServer((req, res) => {
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -480,6 +520,7 @@ const server = http.createServer((req, res) => {
     return res.end(JSON.stringify({ ok: appHealth.every(app => app.status === 'disabled' || (app.status === 'ready' && app.loaded)), apps: appHealth }));
   }
   if (url.pathname === '/chat' || url.pathname.startsWith('/chat/')) return res.writeHead(410, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }).end('Balbino Chat desativado nesta hospedagem.');
+  if (url.pathname === '/conecta' || url.pathname.startsWith('/conecta/')) return serveConecta(req, res, url);
   if (url.pathname === '/informa' || url.pathname.startsWith('/informa/')) return serveInforma(req, res, url);
   if (url.pathname === '/artes' || url.pathname.startsWith('/artes/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Gerador de Artes está temporariamente desativado.');
   if (url.pathname === '/oportunidades' || url.pathname.startsWith('/oportunidades/')) {
@@ -503,6 +544,9 @@ const server = http.createServer((req, res) => {
     return res.end(content);
   }
   const brandAssets = {
+    '/brand/rede-balbino-simbolo.svg': 'rede-balbino-simbolo.svg',
+    '/brand/rede-balbino-claro.svg': 'rede-balbino-claro.svg',
+    '/brand/rede-balbino-branco.svg': 'rede-balbino-branco.svg',
     '/brand/rede-balbino-branco.webp': 'rede-balbino-branco.webp',
     '/brand/monograma-rede-balbino.webp': 'monograma-rede-balbino.webp',
     '/brand/monograma-rede-balbino-branco.webp': 'monograma-rede-balbino-branco.webp'
@@ -514,7 +558,7 @@ const server = http.createServer((req, res) => {
   }
   if (brandAssets[url.pathname]) {
     const content = fs.readFileSync(path.join(ROOT, 'brand', brandAssets[url.pathname]));
-    res.writeHead(200, { 'Content-Type': 'image/webp', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+    res.writeHead(200, { 'Content-Type': brandAssets[url.pathname].endsWith('.svg') ? 'image/svg+xml' : 'image/webp', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
     return res.end(content);
   }
   const app = apps.find(a => url.pathname === a.prefix || url.pathname.startsWith(a.prefix + '/'));
