@@ -96,3 +96,15 @@ main:has(.dashboard:not(.hidden)){justify-content:flex-start}
 
 :root[data-theme="dark"] .login-card,:root[data-theme="dark"] .app-card{background:linear-gradient(150deg,rgba(24,42,73,.92),rgba(15,29,53,.94))}
 :root[data-theme="light"] .login-card,:root[data-theme="light"] .app-card{background:linear-gradient(150deg,#fff,#f6f9ff);border-color:rgba(25,55,95,.16);box-shadow:0 16px 40px rgba(30,64,120,.08)}
+
+/* Home: apenas marca, controles de conta e cards. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+main{justify-content:flex-start}.shell{width:min(1180px,calc(100% - 48px))}.topbar{height:92px}.dashboard{padding:38px 0 48px}.app-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.home-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:218px;padding:27px 16px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(150deg,rgba(24,42,73,.9),rgba(15,29,53,.95));box-shadow:0 12px 32px #00000012;text-decoration:none;text-align:center;transition:transform .18s,border-color .18s,box-shadow .18s}
+a.home-card:hover{transform:translateY(-4px);border-color:#6098ed;box-shadow:0 18px 36px #00000030}a.home-card:focus-visible{outline:3px solid #83b8ff;outline-offset:4px}.home-icon{display:grid;place-items:center;width:80px;height:80px;border-radius:18px;overflow:hidden;background:#ffffff09;color:#86b6ff}.home-icon img{display:block;width:80px;height:80px;object-fit:contain;background:#fff}.home-vitru .home-icon img,.home-sydle .home-icon img{background:#000}.home-icon svg{width:39px;height:39px;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.home-card h2{font-size:15px;font-weight:700;line-height:1.35;letter-spacing:-.2px;margin:0}.home-status{font-size:11px;color:#9badc9}.home-card.unavailable{opacity:.55}.back-home{width:100%;margin-top:12px}
+:root[data-theme="light"] .home-card{background:linear-gradient(150deg,#fff,#f8fafd);border-color:#d4dfed;box-shadow:0 10px 28px #142b4b08}:root[data-theme="light"] .home-icon{background:#eaf1ff;color:#286be8}:root[data-theme="light"] .home-status{color:#60748d}
+@media(max-width:900px){.app-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.top-actions{gap:8px}.top-actions .secondary-btn{padding:0 10px}}
+@media(max-width:650px){.shell{width:calc(100% - 28px)}.topbar{height:78px}.app-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dashboard{padding-top:22px}.home-card{min-height:185px;padding:20px 10px;gap:12px;border-radius:16px}.home-card h2{font-size:13px}.home-icon,.home-icon img{width:65px;height:65px}.brand-name{font-size:15px}.theme-toggle{min-width:35px;padding:0 9px}.theme-toggle span{display:none}.top-actions #manageUsersBtn{max-width:84px;font-size:10px}.top-actions{gap:5px}}
+@media(prefers-reduced-motion:reduce){.home-card{transition:none}}
+
+#chatMapping{display:none!important}

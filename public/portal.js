@@ -16,19 +16,10 @@
   }
   try { setTheme(localStorage.getItem(THEME_KEY) || 'dark'); } catch (_) { setTheme('dark'); }
   $('themeToggle').addEventListener('click', () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark', true));
-  const apps = {
-    matriculas: { title: 'Acompanhamento de Matrículas', desc: 'Acompanhe matrículas, metas, polos, tutores e relatórios.', href: '/matriculas/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M5.5 7.5h8a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4h-8v-14Z"/><path d="M26.5 7.5h-8a4 4 0 0 0-1 0v18a4 4 0 0 1 4-4h5v-14Z"/><path d="m10 13 2.2 2.2L15 12"/></svg>', color: 'blue' },
-    oportunidades: { title: 'Balbino Oportunidades', desc: 'Leads de inscrição, atendimentos, retornos e conversão por RA.', href: '/oportunidades/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="13" cy="11" r="5"/><path d="M4 27v-2a8 8 0 0 1 8-8h2M21 8v8M17 12h8M20 25h8M24 21v8"/></svg>', color: 'violet' },
-    artes: { title: 'Gerador de Artes', desc: 'Crie peças de divulgação usando os modelos da equipe.', href: '/artes/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="5" y="5" width="22" height="22" rx="4"/><circle cx="12" cy="12" r="2.2"/><path d="m7 24 7-7 4 4 3-3 4 4M22.5 5.5l4 4M20 8l-9 9-1 4 4-1 9-9"/></svg>', color: 'violet' },
-    chat: { title: 'Balbino Chat', desc: 'Centralize os atendimentos acadêmicos pelo WhatsApp.', href: '/chat/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M26.5 15.3a10.5 10.5 0 0 1-15.7 9.1L5 26l1.7-5.3a10.5 10.5 0 1 1 19.8-5.4Z"/><path d="M11 12.5c.5 3.5 3 6 6.5 6.5M12 11l2 2-1.2 1.6M20.7 19l-2-2 1.6-1.2"/></svg>', color: 'teal' },
-    informa: { title: 'Balbino Informa', desc: 'Calendário acadêmico Unicesumar: provas, atividades e prazos por curso e módulo.', href: '/informa/', icon: '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M6 7.5h20v17H6z"/><path d="M10 4.5v6M22 4.5v6M6 12.5h20M10 17h4M18 17h4M10 21h4"/></svg>', color: 'cyan' }
-  };
-  const shortcuts = {
-    matriculas: [['Painel do processo', '/matriculas/']],
-    oportunidades: [['Retornos vencidos', '/oportunidades/?retorno=vencido&aba=candidatos'], ['Sem contato', '/oportunidades/?contato=sem&aba=candidatos'], ['Painel gerencial', '/oportunidades/']],
-    informa: [['O que acontece esta semana', '/informa/'], ['Buscar no calendário', '/informa/#busca']]
-  };
-  const labels = { matriculas: 'CAPTAÇÃO', oportunidades: 'LEADS E INSCRIÇÕES', informa: 'CONSULTA', artes: 'CRIAÇÃO', chat: 'ATENDIMENTO' };
+  const catalog = window.BalbinoCatalog;
+  const apps = Object.fromEntries(catalog.entries.map(entry => [entry.key, entry]));
+  let pendingDestination = catalog.destination(new URL(location.href).searchParams.get('next') || '', location.origin);
+  let loginRequested = Boolean(pendingDestination);
   let me = null, users = [], tutorCandidates = [];
   const request = async (url, options = {}) => {
     const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options,
@@ -45,74 +36,49 @@
   function render() {
     const logged = Boolean(me);
     const mustChangePassword = logged && Boolean(me.mustChangePassword);
-    show($('loginView'), !logged && $('setupWarning').dataset.configured !== 'false');
+    const showLogin = !logged && loginRequested && $('setupWarning').dataset.configured !== 'false';
+    show($('loginView'), showLogin);
     show($('changePasswordView'), mustChangePassword);
-    show($('dashboardView'), logged && !mustChangePassword);
+    show($('dashboardView'), !showLogin && !mustChangePassword);
     show($('logoutBtn'), logged);
-    if (!logged || mustChangePassword) return;
-    $('userName').textContent = me.name;
-    show($('manageUsersBtn'), me.isAdmin);
+    show($('openLoginBtn'), !logged);
+    show($('manageUsersBtn'), logged && !mustChangePassword && me.isAdmin);
     const grid = $('appGrid'); grid.replaceChildren();
-    const allowed = new Set(me.apps || []);
-    const hasMatriculas = me.isAdmin || allowed.has('matriculas');
-    const availableApps = [...(hasMatriculas ? ['matriculas', 'oportunidades'] : []), 'informa'];
-    const hour = new Date().getHours();
-    $('greeting').textContent = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-    const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-    $('todayLabel').textContent = today.charAt(0).toUpperCase() + today.slice(1);
-    for (const key of availableApps) {
-      const app = apps[key]; if (!app) continue;
-      const card = document.createElement('article'); card.className = `app-card app-${key}`;
-      const top = document.createElement('div'); top.className = 'app-card-top';
-      const icon = document.createElement('div'); icon.className = 'app-icon'; icon.setAttribute('aria-hidden', 'true'); icon.innerHTML = app.icon;
-      const label = document.createElement('span'); label.className = 'app-number'; label.textContent = labels[key] || '';
+    for (const app of catalog.entries) {
+      const state = catalog.access(app, me);
+      const card = document.createElement(state === 'disabled' || state === 'forbidden' ? 'article' : 'a');
+      card.className = `home-card home-${app.key}`;
+      const icon = document.createElement('span'); icon.className = 'home-icon'; icon.setAttribute('aria-hidden', 'true');
+      if (app.image) { const img = document.createElement('img'); img.src = app.image; img.alt = ''; img.width = 80; img.height = 80; icon.append(img); }
+      else icon.innerHTML = app.icon;
       const title = document.createElement('h2'); title.textContent = app.title;
-      const desc = document.createElement('p'); desc.textContent = app.desc;
-      const quick = document.createElement('div'); quick.className = 'app-shortcuts';
-      for (const [text, href] of (shortcuts[key] || []).slice(key === 'matriculas' ? 1 : 0)) { const a = document.createElement('a'); a.href = href; a.textContent = text; quick.append(a); }
-      const link = document.createElement('a'); link.className = 'app-link'; link.href = app.href; link.textContent = 'Acessar sistema';
-      const arrow = document.createElement('span'); arrow.textContent = '↗'; link.append(arrow);
-      top.append(icon, label); card.append(top, title, desc); if (quick.childElementCount) card.append(quick); card.append(link); grid.append(card);
-    }
-    loadToday(hasMatriculas);
-    show($('emptyState'), availableApps.length === 0);
-  }
-  // Resumo do processo com os números do Acompanhamento de Matrículas (mesmo cálculo do painel do Matrículas).
-  async function loadToday(enabled) {
-    const panel = $('todayPanel');
-    if (!enabled) { show(panel, false); return; }
-    try {
-      const d = await request('/matriculas/api/resumo-portal');
-      if (!d.ciclo) { show(panel, false); return; }
-      const n = v => v == null ? '—' : Math.round(v).toLocaleString('pt-BR');
-      const sig = v => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('pt-BR');
-      const br = iso => iso ? iso.split('-').reverse().slice(0, 2).join('/') : '';
-      const pct = d.percentual_meta == null ? '' : ` (${d.percentual_meta.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% da meta)`;
-      const sp = d.proximo_space;
-      const tiles = [
-        ['Matrículas no processo', n(d.matriculas), d.meta ? `de ${n(d.meta)}${pct}` : 'meta não cadastrada', ''],
-        ['Saldo de hoje (gap)', d.hoje.saldo == null ? '—' : sig(d.hoje.saldo), d.hoje.esperado == null ? (d.aguardando_spaces ? 'cadastre os Spaces para calcular o esperado' : 'sem esperado para hoje') : `${n(d.hoje.realizado)} realizadas × ${n(d.hoje.esperado)} esperadas`, d.hoje.saldo == null ? '' : d.hoje.saldo < 0 ? 'alert' : 'good'],
-        [sp ? (sp.final ? 'Meta final' : `Próximo Space · ${sp.nome}`) : 'Próximo Space', sp && sp.falta != null ? n(sp.falta) : '—', sp ? `faltam até ${br(sp.data)}${sp.por_dia != null ? ` · ${sp.por_dia.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} por dia` : ''}` : 'nenhum Space cadastrado', sp && sp.falta === 0 ? 'good' : ''],
-        ['Matrículas hoje', n(d.vendas_dia), `${n(d.vendas_semana)} na semana de meta`, '']
-      ];
-      const grid = $('todayGrid'); grid.replaceChildren();
-      for (const [label, value, sub, cls] of tiles) {
-        const a = document.createElement('a'); a.className = 'today-tile ' + cls; a.href = '/matriculas/';
-        const l = document.createElement('span'); l.textContent = label;
-        const v = document.createElement('strong'); v.textContent = value;
-        const s2 = document.createElement('small'); s2.textContent = sub;
-        a.append(l, v, s2); grid.append(a);
+      const status = document.createElement('span'); status.className = 'home-status';
+      status.textContent = state === 'disabled' ? app.status : state === 'forbidden' ? 'Acesso não liberado' : app.external ? 'Acesso externo ↗' : state === 'allowed' ? 'Acessar sistema →' : 'Entrar para acessar →';
+      if (state === 'disabled' || state === 'forbidden') { card.classList.add('unavailable'); card.setAttribute('aria-disabled', 'true'); }
+      else {
+        card.href = app.href;
+        if (app.external) { card.target = '_blank'; card.rel = 'noopener noreferrer'; }
+        else card.addEventListener('click', event => {
+          if (catalog.access(app, me) === 'allowed') return;
+          event.preventDefault(); pendingDestination = app.href; loginRequested = true; render();
+          if (!me) $('loginUsername').focus();
+        });
       }
-      const processoNome = String(d.ciclo.nome || '').replace(/^\s*ciclo\s+/i, '').trim();
-      $('todayTitle').textContent = `Processo ${processoNome || '51/2027'}${d.polo_restrito ? ' · ' + d.polo_restrito : ''}`;
-      $('todayMeta').textContent = `Matrículas com RA confirmado, como no painel do Matrículas${d.pendentes_ra ? ` · ${n(d.pendentes_ra)} lançada(s) aguardando RA` : ''}`;
-      show(panel, true);
-    } catch { show(panel, false); }
+      card.append(icon, title, status); grid.append(card);
+    }
+    show($('emptyState'), false);
   }
+  function continueToSystem() {
+    if (!me || me.mustChangePassword || !pendingDestination) return;
+    const target = catalog.destination(pendingDestination, location.origin);
+    if (target) location.assign(target);
+  }
+  $('openLoginBtn').addEventListener('click', () => { loginRequested = true; render(); $('loginUsername').focus(); });
+  $('backHomeBtn').addEventListener('click', () => { loginRequested = false; pendingDestination = null; history.replaceState(null, '', '/'); render(); });
   async function refresh() {
     const data = await request('/api/portal/me');
     if (data.configured === false) {
-      $('setupWarning').dataset.configured = 'false'; show($('setupWarning'), true); show($('loginView'), false); show($('dashboardView'), false); return;
+      $('setupWarning').dataset.configured = 'false'; show($('setupWarning'), true); me = null; render(); return;
     }
     $('setupWarning').dataset.configured = 'true'; show($('setupWarning'), false); me = data.user; render();
   }
@@ -122,8 +88,7 @@
     try {
       const data = await request('/api/portal/login', { method: 'POST', body: JSON.stringify({ username: $('loginUsername').value, password: $('loginPassword').value }) });
       me = data.user; $('loginPassword').value = ''; render();
-      const next = new URL(location.href).searchParams.get('next');
-      if (next) { try { const target = new URL(next, location.origin); if (target.origin === location.origin && /^\/(matriculas|oportunidades|informa)(?:\/|$)/.test(target.pathname)) location.assign(target.href); } catch {} }
+      continueToSystem();
     } catch (err) { error.textContent = err.message; show(error, true); }
     finally { button.disabled = false; }
   });
@@ -140,11 +105,11 @@
     if (button) button.disabled = true;
     try {
       await request('/api/portal/password', { method: 'POST', body: JSON.stringify({ currentPassword: $('currentPassword').value, password: $('newOwnPassword').value }) });
-      $('changePasswordForm').reset(); await refresh(); toast('Senha atualizada. As outras sessões foram encerradas.');
+      $('changePasswordForm').reset(); await refresh(); toast('Senha atualizada. As outras sessões foram encerradas.'); continueToSystem();
     } catch (err) { error.textContent = err.message; show(error, true); }
     finally { if (button) button.disabled = false; }
   });
-  $('logoutBtn').addEventListener('click', async () => { try { await request('/api/portal/logout', { method: 'POST', body: '{}' }); } catch {} me = null; render(); });
+  $('logoutBtn').addEventListener('click', async () => { try { await request('/api/portal/logout', { method: 'POST', body: '{}' }); } catch {} me = null; loginRequested = false; pendingDestination = null; history.replaceState(null, '', '/'); render(); });
   $('manageUsersBtn').addEventListener('click', async () => { $('usersDialog').showModal(); await loadUsers(); });
   $('closeUsersBtn').addEventListener('click', () => $('usersDialog').close());
   $('newUserBtn').addEventListener('click', () => openForm(null));
@@ -251,5 +216,6 @@
     try { await request(`/api/portal/users/${encodeURIComponent(user.id)}/active`, { method: 'POST', body: JSON.stringify({ active }) }); await loadUsers(); toast(active ? 'Usuário ativado.' : 'Usuário desativado.'); }
     catch (err) { toast(err.message, true); }
   }
+  render();
   refresh().catch(err => { $('loginError').textContent = err.message; show($('loginError'), true); });
 })();
