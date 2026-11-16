@@ -8,12 +8,14 @@ const { DatabaseSync } = require('node:sqlite');
 const { createPortalAuth } = require('./portal-auth');
 
 try { process.loadEnvFile?.(path.join(__dirname, '.env')); } catch {}
+// Chat suspenso nesta hospedagem: não importar módulos nem iniciar conexões/rotinas.
+process.env.BALBINO_CHAT_DISABLED = '1';
 const ROOT = __dirname;
 const RUNTIME = path.resolve(process.env.BALBINO_RUNTIME_DIR || path.join(os.homedir(), 'central-balbino-runtime'));
 const portal = createPortalAuth(RUNTIME);
 const PORT = Number(process.env.PORT || 3000);
 const apps = [
-  { key: 'chat', prefix: '/chat', server: null, status: 'starting', error: null },
+  { key: 'chat', prefix: '/chat', server: null, status: 'disabled', error: null },
   { key: 'matriculas', prefix: '/matriculas', server: null, status: 'starting', error: null }
 ];
 
@@ -98,16 +100,7 @@ async function startApps() {
       try { await action(app); app.status = 'ready'; }
       catch (error) { app.status = 'error'; app.error = error; console.error(`[${key}] falha ao iniciar:`, error.stack || error.message); }
     };
-    await boot('chat', async app => {
-      process.env.PORT = '3113';
-      process.env.BALBINO_RUNTIME_DIR = path.join(RUNTIME, 'chat');
-      const mod = await import(pathToFileURL(path.join(ROOT, 'apps', 'chat', 'server.js')).href);
-      app.server = mod.server;
-      app.health = mod.healthStatus;
-      app.shutdown = mod.gracefulShutdown;
-      globalThis.__BALBINO_CHAT_WELCOME_BRIDGE__ = mod.matriculasWelcomeBridge;
-      console.log('[chat] Balbino Chat ativo no roteador central.');
-    });
+    console.log('[chat] Balbino Chat desativado; sem conexões ou rotinas nesta hospedagem.');
     await boot('matriculas', async app => {
       process.env.PORT = '3111';
       const mod = require(path.join(ROOT, 'apps', 'matriculas', 'server.js'));
@@ -484,8 +477,9 @@ const server = http.createServer((req, res) => {
       }
       return result;
     });
-    return res.end(JSON.stringify({ ok: appHealth.every(app => app.status === 'ready' && app.loaded), apps: appHealth }));
+    return res.end(JSON.stringify({ ok: appHealth.every(app => app.status === 'disabled' || (app.status === 'ready' && app.loaded)), apps: appHealth }));
   }
+  if (url.pathname === '/chat' || url.pathname.startsWith('/chat/')) return res.writeHead(410, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }).end('Balbino Chat desativado nesta hospedagem.');
   if (url.pathname === '/informa' || url.pathname.startsWith('/informa/')) return serveInforma(req, res, url);
   if (url.pathname === '/artes' || url.pathname.startsWith('/artes/')) return res.writeHead(410, { 'Content-Type':'text/plain; charset=utf-8', 'Cache-Control':'no-store' }).end('Gerador de Artes está temporariamente desativado.');
   if (url.pathname === '/oportunidades' || url.pathname.startsWith('/oportunidades/')) {
@@ -558,7 +552,7 @@ const server = http.createServer((req, res) => {
 server.on('upgrade', (req, socket, head) => {
   const url = new URL(req.url || '/', 'http://gateway.local');
   const app = apps.find(a => url.pathname.startsWith(a.prefix + '/'));
-  if (!app) { socket.destroy(); return; }
+  if (!app || app.status === 'disabled') { socket.destroy(); return; }
   const access = portal.forApp(req, app.key);
   if (access.status !== 'allowed') { socket.write(`HTTP/1.1 ${access.status === 'unauthenticated' ? '401 Unauthorized' : '403 Forbidden'}\r\nConnection: close\r\n\r\n`); socket.destroy(); return; }
   if (!app.server?.listenerCount('upgrade')) { socket.destroy(); return; }
@@ -567,7 +561,7 @@ server.on('upgrade', (req, socket, head) => {
   app.server.emit('upgrade', req, socket, head);
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /chat, /matriculas, /oportunidades, /informa`));
+server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta ${PORT}; caminhos: /matriculas, /oportunidades, /informa`));
 startApps().catch(error => {
   console.error('Não foi possível preparar os sistemas:', error);
 });

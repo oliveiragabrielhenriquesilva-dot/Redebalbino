@@ -37,3 +37,7 @@ Cada banco fica em seu diretório próprio sob `runtime/`.
 O Balbino Informa usa a sessão central do portal e não exige login separado. Os dados vêm somente do Calendário Administrativo Unicesumar (https://secretaria-unicesumar.github.io/calendariounicesumar/): o servidor lê a planilha Google publicada por aquele site no máximo a cada 30 minutos e guarda uma cópia em `informa/calendario-unicesumar-cache.json`. Se a planilha não responder, usa a última cópia; sem cópia, mostra os dados base do código do site, com aviso na tela. O servidor precisa de acesso de saída a `docs.google.com`.
 
 A área **Marco Regulatório – 51/2027** do Informa lê `apps/informa/marco-regulatorio-51-2027.json` (resumo dos slides da Conexão Especial de Início de Processo 51/2027 – Pedagógico). Para corrigir ou acrescentar conteúdo, edite esse arquivo: destaques, seções, quadro de atividades por curso, portfólio e perguntas que alimentam a busca.
+
+## Chat suspenso na hospedagem — 16/11/2026
+
+O gateway não carrega o Balbino Chat, suas conexões WhatsApp ou suas rotinas. `/chat` e seus subcaminhos retornam HTTP 410, o atalho deixa de aparecer no portal e `/healthz` informa `chat: disabled`. As tentativas automáticas de envio e consulta de boas-vindas ao Chat também ficam suspensas, sem criar o temporizador de consulta. Os dados, sessões e pendências são preservados. Matrículas, Oportunidades e Informa continuam com a inicialização existente. Esta suspensão é definida no código do gateway (`BALBINO_CHAT_DISABLED=1`).

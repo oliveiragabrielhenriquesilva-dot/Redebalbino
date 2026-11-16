@@ -654,6 +654,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
   function autoWelcomeEnabled(){return welcomeConfig().automatica===true}
   let welcomeChatFilaAtivada=false, welcomeChatFilaErro=null;
   async function garantirFilaBoasVindasAtiva(){
+    if(process.env.BALBINO_CHAT_DISABLED==='1')return false;
     if(welcomeChatFilaAtivada)return true;
     const token=welcomeChatToken();
     if(!token||!autoWelcomeEnabled()||String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim())return false;
@@ -677,6 +678,7 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     return String(model).replace(/\{\{?(\w+)\}?\}/g,(m,k)=>Object.hasOwn(vars,k.toLowerCase())?vars[k.toLowerCase()]:m);
   }
   async function enviarBoasVindasPendentes(){
+    if(process.env.BALBINO_CHAT_DISABLED==='1')return{enviados:0,erro:'Balbino Chat desativado nesta hospedagem.'};
     if(String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim())return{enviados:0,erro:null};
     const token=welcomeChatToken();if(!token||!autoWelcomeEnabled())return{enviados:0,erro:null};
     if(!await garantirFilaBoasVindasAtiva())return{enviados:0,erro:welcomeChatFilaErro};
@@ -692,11 +694,14 @@ module.exports = function criarConciliacao({ db, DATA_DIR, all, get, run, tx, fa
     }catch(e){const msg=String(e.message||e).slice(0,300);for(const x of itens)run('UPDATE ma_lista_alunos SET boas_vindas_chat_erro=? WHERE boas_vindas_chat_id=?',msg,x.id_externo);return{enviados:0,erro:msg}}
   }
   async function sincronizarStatusBoasVindas(rows){
+    if(process.env.BALBINO_CHAT_DISABLED==='1')return;
     if(String(process.env.BALBINO_WELCOME_WORKER_TOKEN||'').trim())return;
     const token=welcomeChatToken(),ids=rows.map(r=>r.boas_vindas_chat_id).filter(Boolean);if(!token||!ids.length)return;
     try{const resp=await fetch(`${welcomeChatBase()}/api/integracao/boas-vindas/status?ids=${encodeURIComponent(ids.slice(0,100).join(','))}`,{headers:{'X-Token':token},signal:AbortSignal.timeout(8000)});if(!resp.ok)return;const data=await resp.json();for(const s of data.statuses||[]){const status=String(s.status||'').toLowerCase();if(status==='enviada')run("UPDATE ma_lista_alunos SET boas_vindas_chat_status='ENVIADA',boas_vindas_chat_erro=NULL,boas_vindas_em=COALESCE(boas_vindas_em,datetime('now','localtime')),boas_vindas_por=COALESCE(boas_vindas_por,'Balbino Chat') WHERE boas_vindas_chat_id=?",s.id_externo);else if(status==='erro')run("UPDATE ma_lista_alunos SET boas_vindas_chat_status='ERRO',boas_vindas_chat_erro=? WHERE boas_vindas_chat_id=?",String(s.erro||'Falha no envio').slice(0,300),s.id_externo);else run('UPDATE ma_lista_alunos SET boas_vindas_chat_status=?,boas_vindas_chat_erro=NULL WHERE boas_vindas_chat_id=?',status==='enviando'?'ENVIANDO':'NA_FILA',s.id_externo)}}catch{}
   }
+  if(process.env.BALBINO_CHAT_DISABLED!=='1'){
   const welcomeChatTimer=setInterval(async()=>{try{await enviarBoasVindasPendentes();const rows=all("SELECT boas_vindas_chat_id FROM ma_lista_alunos WHERE boas_vindas_chat_status IN ('NA_FILA','ENVIANDO') AND boas_vindas_chat_id IS NOT NULL ORDER BY id DESC LIMIT 100");await sincronizarStatusBoasVindas(rows)}catch{}},45000);welcomeChatTimer.unref?.();
+  }
   // "RIBEIRÃO PRETO - IPIRANGA - SP" → Ribeirão Preto (só como sugestão; vale depois de confirmado na importação)
   const poloPorPrefixo = (nome) => { const n = norm(nome).replace(/\s(sp|mg|pr|rj|go|ms|mt|ba|sc|rs)$/, ''); const xs = all('SELECT id, nome FROM polos WHERE ativo = 1').filter(p => (n + ' ').startsWith(norm(p.nome) + ' ')); return xs.length === 1 ? xs[0].id : null; };
   function previaLista(c, usuario) {

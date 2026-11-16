@@ -55,7 +55,7 @@
     const grid = $('appGrid'); grid.replaceChildren();
     const allowed = new Set(me.apps || []);
     const hasMatriculas = me.isAdmin || allowed.has('matriculas');
-    const availableApps = [...(hasMatriculas ? ['matriculas', 'oportunidades'] : []), ...((me.isAdmin || allowed.has('chat')) ? ['chat'] : []), 'informa'];
+    const availableApps = [...(hasMatriculas ? ['matriculas', 'oportunidades'] : []), 'informa'];
     const hour = new Date().getHours();
     $('greeting').textContent = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
     const today = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -123,7 +123,7 @@
       const data = await request('/api/portal/login', { method: 'POST', body: JSON.stringify({ username: $('loginUsername').value, password: $('loginPassword').value }) });
       me = data.user; $('loginPassword').value = ''; render();
       const next = new URL(location.href).searchParams.get('next');
-      if (next) { try { const target = new URL(next, location.origin); if (target.origin === location.origin && /^\/(matriculas|oportunidades|informa|chat)(?:\/|$)/.test(target.pathname)) location.assign(target.href); } catch {} }
+      if (next) { try { const target = new URL(next, location.origin); if (target.origin === location.origin && /^\/(matriculas|oportunidades|informa)(?:\/|$)/.test(target.pathname)) location.assign(target.href); } catch {} }
     } catch (err) { error.textContent = err.message; show(error, true); }
     finally { button.disabled = false; }
   });
