@@ -21,6 +21,17 @@
   let pendingDestination = catalog.destination(new URL(location.href).searchParams.get('next') || '', location.origin);
   let loginRequested = Boolean(pendingDestination);
   let me = null, users = [], tutorCandidates = [];
+  let organizing = false, draggedKey = null;
+  function localOrder() { try { return JSON.parse(localStorage.getItem('balbino-home-order:' + (me?.id || 'guest')) || '[]'); } catch { return []; } }
+  let homeOrder = catalog.normalizeOrder(localOrder());
+  function rememberOrder() { try { localStorage.setItem('balbino-home-order:' + (me?.id || 'guest'), JSON.stringify(homeOrder)); } catch {} }
+  function moveCard(key, targetKey, focus = true) {
+    const from = homeOrder.indexOf(key), to = homeOrder.indexOf(targetKey);
+    if (from < 0 || to < 0 || from === to) return;
+    homeOrder.splice(from, 1); homeOrder.splice(to, 0, key); render();
+    $('orderStatus').textContent = `${apps[key].title} movido para a posição ${to + 1}.`;
+    if (focus) document.querySelector(`[data-home-key="${key}"] .order-move`)?.focus();
+  }
   const request = async (url, options = {}) => {
     const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options,
       headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) } });
@@ -44,16 +55,23 @@
     show($('openLoginBtn'), !logged);
     show($('manageUsersBtn'), logged && !mustChangePassword && me.isAdmin);
     const grid = $('appGrid'); grid.replaceChildren();
-    for (const app of catalog.entries) {
+    for (const key of homeOrder) {
+      const app = apps[key];
       const state = catalog.access(app, me);
-      const card = document.createElement(state === 'disabled' || state === 'forbidden' ? 'article' : 'a');
-      card.className = `home-card home-${app.key}`;
+      const card = document.createElement(organizing || state === 'disabled' || state === 'forbidden' ? 'article' : 'a');
+      card.className = `home-card home-${app.key}`; card.dataset.homeKey = app.key;
       const icon = document.createElement('span'); icon.className = 'home-icon'; icon.setAttribute('aria-hidden', 'true');
       icon.innerHTML = app.icon;
       const title = document.createElement('h2'); title.textContent = app.title;
       const status = document.createElement('span'); status.className = 'home-status';
       status.textContent = state === 'disabled' ? app.status : state === 'forbidden' ? 'Acesso não liberado' : app.external ? 'Acesso externo ↗' : state === 'allowed' ? 'Acessar sistema →' : 'Entrar para acessar →';
-      if (state === 'disabled' || state === 'forbidden') { card.classList.add('unavailable'); card.setAttribute('aria-disabled', 'true'); }
+      if (organizing) {
+        card.draggable = true; card.classList.add('organizing');
+        card.addEventListener('dragstart', event => { draggedKey = app.key; event.dataTransfer.setData('text/plain', app.key); event.dataTransfer.effectAllowed = 'move'; card.classList.add('dragging'); });
+        card.addEventListener('dragover', event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; });
+        card.addEventListener('drop', event => { event.preventDefault(); if (draggedKey) moveCard(draggedKey, app.key, false); draggedKey = null; });
+        card.addEventListener('dragend', () => { draggedKey = null; card.classList.remove('dragging'); });
+      } else if (state === 'disabled' || state === 'forbidden') { card.classList.add('unavailable'); card.setAttribute('aria-disabled', 'true'); }
       else {
         card.href = app.href;
         if (app.external) { card.target = '_blank'; card.rel = 'noopener noreferrer'; }
@@ -63,9 +81,23 @@
           if (!me) $('loginUsername').focus();
         });
       }
-      card.append(icon, title, status); grid.append(card);
+      card.append(icon, title, status);
+      if (organizing) {
+        const controls = document.createElement('div'); controls.className = 'order-controls';
+        for (const [delta, label] of [[-1, 'Mover antes'], [1, 'Mover depois']]) {
+          const button = document.createElement('button'); button.type = 'button'; button.className = 'order-move';
+          button.textContent = delta < 0 ? '←' : '→'; button.setAttribute('aria-label', label + ': ' + app.title);
+          const index = homeOrder.indexOf(app.key); button.disabled = index + delta < 0 || index + delta >= homeOrder.length;
+          button.addEventListener('click', () => moveCard(app.key, homeOrder[homeOrder.indexOf(app.key) + delta])); controls.append(button);
+        }
+        card.append(controls);
+      }
+      grid.append(card);
     }
     show($('emptyState'), false);
+    $('organizeBtn').setAttribute('aria-pressed', String(organizing));
+    $('organizeBtn').textContent = organizing ? 'Cancelar' : 'Organizar atalhos';
+    show($('saveOrderBtn'), organizing); show($('resetOrderBtn'), organizing); show($('orderHint'), organizing);
   }
   function continueToSystem() {
     if (!me || me.mustChangePassword || !pendingDestination) return;
@@ -74,19 +106,40 @@
   }
   $('openLoginBtn').addEventListener('click', () => { loginRequested = true; render(); $('loginUsername').focus(); });
   $('backHomeBtn').addEventListener('click', () => { loginRequested = false; pendingDestination = null; history.replaceState(null, '', '/'); render(); });
+  $('organizeBtn').addEventListener('click', async () => {
+    if (organizing) { homeOrder = catalog.normalizeOrder(localOrder()); }
+    organizing = !organizing; render();
+  });
+  $('resetOrderBtn').addEventListener('click', () => { homeOrder = catalog.normalizeOrder([]); render(); });
+  $('saveOrderBtn').addEventListener('click', async () => {
+    const button = $('saveOrderBtn'); button.disabled = true;
+    try {
+      if (me) { const result = await request('/api/portal/preferences', { method: 'PUT', body: JSON.stringify({ homeOrder }) }); homeOrder = catalog.normalizeOrder(result.homeOrder); }
+      rememberOrder(); organizing = false; render(); toast(me ? 'Ordem salva na sua conta.' : 'Ordem salva neste navegador.');
+    } catch (error) { toast(error.message, true); }
+    finally { button.disabled = false; }
+  });
+  async function loadOrder() {
+    homeOrder = catalog.normalizeOrder(localOrder());
+    if (me && !me.mustChangePassword) {
+      try { const prefs = await request('/api/portal/preferences'); homeOrder = catalog.normalizeOrder(prefs.homeOrder); rememberOrder(); }
+      catch { /* A cópia local continua disponível se a rede falhar. */ }
+    }
+    organizing = false; render();
+  }
   async function refresh() {
     const data = await request('/api/portal/me');
     if (data.configured === false) {
       $('setupWarning').dataset.configured = 'false'; show($('setupWarning'), true); me = null; render(); return;
     }
-    $('setupWarning').dataset.configured = 'true'; show($('setupWarning'), false); me = data.user; render();
+    $('setupWarning').dataset.configured = 'true'; show($('setupWarning'), false); me = data.user; await loadOrder();
   }
   $('loginForm').addEventListener('submit', async event => {
     event.preventDefault(); const button = $('loginSubmit'), error = $('loginError');
     show(error, false); button.disabled = true;
     try {
       const data = await request('/api/portal/login', { method: 'POST', body: JSON.stringify({ username: $('loginUsername').value, password: $('loginPassword').value }) });
-      me = data.user; $('loginPassword').value = ''; render();
+      me = data.user; $('loginPassword').value = ''; await loadOrder();
       continueToSystem();
     } catch (err) { error.textContent = err.message; show(error, true); }
     finally { button.disabled = false; }
@@ -108,7 +161,7 @@
     } catch (err) { error.textContent = err.message; show(error, true); }
     finally { if (button) button.disabled = false; }
   });
-  $('logoutBtn').addEventListener('click', async () => { try { await request('/api/portal/logout', { method: 'POST', body: '{}' }); } catch {} me = null; loginRequested = false; pendingDestination = null; history.replaceState(null, '', '/'); render(); });
+  $('logoutBtn').addEventListener('click', async () => { try { await request('/api/portal/logout', { method: 'POST', body: '{}' }); } catch {} me = null; organizing = false; homeOrder = catalog.normalizeOrder(localOrder()); loginRequested = false; pendingDestination = null; history.replaceState(null, '', '/'); render(); });
   $('manageUsersBtn').addEventListener('click', async () => { $('usersDialog').showModal(); await loadUsers(); });
   $('closeUsersBtn').addEventListener('click', () => $('usersDialog').close());
   $('newUserBtn').addEventListener('click', () => openForm(null));
