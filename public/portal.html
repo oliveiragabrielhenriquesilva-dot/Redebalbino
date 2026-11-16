@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0b1730">
-  <meta name="description" content="Portal seguro dos sistemas da Rede Balbino.">
-  <title>Rede Balbino — Portal de Acesso</title>
-  <link rel="stylesheet" href="/portal.css?v=20261103-palette-contrast">
+  <meta name="description" content="Central de acessos e sistemas da Rede Balbino.">
+  <title>Rede Balbino — Central de Acessos</title>
+  <link rel="stylesheet" href="/portal.css?v=20261116-home">
   <link rel="stylesheet" href="/brand/balbino.css?v=20261103-palette-contrast">
-  <script src="/portal.js?v=20261103b" defer></script>
+  <script src="/catalogo.js?v=20261116-home" defer></script>
+  <script src="/portal.js?v=20261116-home" defer></script>
 </head>
 <body>
   <svg class="svg-defs" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><symbol id="rede-balbino-mark" viewBox="0 0 48 48"><defs><linearGradient id="mark-gradient" x1="5" y1="4" x2="43" y2="44" gradientUnits="userSpaceOnUse"><stop stop-color="#36a3ff"/><stop offset="1" stop-color="#14c6b3"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="14" fill="url(#mark-gradient)"/><path d="m11 18 13-6 13 6-13 6-13-6Z" fill="white"/><path d="M16 21v6c0 2.3 3.6 4 8 4s8-1.7 8-4v-6l-8 3.7-8-3.7Z" fill="white" opacity=".92"/><path d="M37 19v8" stroke="white" stroke-width="1.7" stroke-linecap="round"/><circle cx="37" cy="29.4" r="1.6" fill="white"/><circle cx="12" cy="34" r="2" fill="white" opacity=".8"/><path d="M16 33.5c2.1 1.2 4.7 1.8 8 1.8" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity=".8"/></symbol></svg>
@@ -16,14 +17,14 @@
   <div class="shell">
     <header class="topbar">
       <a class="brand" href="/" aria-label="Rede Balbino — início">
-        <span class="brand-mark" aria-hidden="true"><img class="brand-mark-dark" src="/brand/monograma-rede-balbino-branco.webp" alt=""><img class="brand-mark-light" src="/brand/monograma-rede-balbino.webp" alt=""></span>
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><use href="#rede-balbino-mark"/></svg></span>
         <span class="brand-name"><small>REDE</small>Balbino</span>
       </a>
-      <div class="top-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-pressed="true" aria-label="Tema escuro ativo. Alternar para tema claro">☾ <span>Escuro</span></button><span class="secure-label"><i aria-hidden="true"></i> Área da equipe</span><button class="user-chip hidden" id="logoutBtn" type="button">Sair</button></div>
+      <div class="top-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-pressed="true" aria-label="Tema escuro ativo. Alternar para tema claro">☾ <span>Escuro</span></button><button class="secondary-btn" id="openLoginBtn" type="button">Entrar</button><button class="secondary-btn hidden" id="manageUsersBtn" type="button">Usuários e acessos</button><button class="user-chip hidden" id="logoutBtn" type="button">Sair</button></div>
     </header>
 
     <main id="main">
-      <section class="login-view" id="loginView" aria-labelledby="loginTitle">
+      <section class="login-view hidden" id="loginView" aria-labelledby="loginTitle">
         <div class="login-copy">
           <div class="eyebrow">Acesso da equipe</div>
           <h1>Acesse os sistemas<br><span>da Rede Balbino.</span></h1>
@@ -39,7 +40,7 @@
           <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
           <button class="primary-btn" id="loginSubmit" type="submit">Entrar <span aria-hidden="true">→</span></button>
           <p class="form-error hidden" id="loginError" role="alert"></p>
-          <p class="login-help">Use os dados de acesso que recebeu do administrador.</p>
+          <p class="login-help">Use os dados de acesso que recebeu do administrador.</p><button class="secondary-btn back-home" id="backHomeBtn" type="button">Voltar aos acessos</button>
         </form>
       </section>
 
@@ -55,16 +56,8 @@
         </form>
       </section>
 
-      <section class="dashboard hidden" id="dashboardView" aria-labelledby="dashboardTitle">
-        <div class="dashboard-heading">
-          <div><div class="eyebrow" id="todayLabel">Sistemas da equipe</div><h1 id="dashboardTitle"><span class="greet" id="greeting">Olá</span>, <span id="userName"></span></h1><p id="dashboardLead">Escolha um sistema ou comece pelo que precisa de atenção hoje.</p></div>
-          <button class="secondary-btn hidden" id="manageUsersBtn" type="button"><span aria-hidden="true">♙</span> Usuários e acessos</button>
-        </div>
-        <section class="today hidden" id="todayPanel" aria-labelledby="todayTitle">
-          <div class="today-head"><h2 id="todayTitle">Captação</h2><span id="todayMeta"></span></div>
-          <div class="today-grid" id="todayGrid"></div>
-        </section>
-        <div class="section-label">Seus sistemas</div>
+      <section class="dashboard" id="dashboardView" aria-labelledby="dashboardTitle">
+        <h1 class="sr-only" id="dashboardTitle">Central de acessos da Rede Balbino</h1>
         <div class="app-grid" id="appGrid"></div>
         <div class="empty-state hidden" id="emptyState">Sua conta ainda não tem acesso a nenhum sistema. Peça ao administrador para liberar o acesso.</div>
       </section>
@@ -74,7 +67,6 @@
         <span>O administrador precisa definir uma senha para o portal nas variáveis de ambiente da Hostinger.</span>
       </section>
     </main>
-    <footer><span><strong>Rede Balbino</strong> · Portal de acesso</span><span>Precisa de ajuda? Fale com o administrador.</span></footer>
   </div>
 
   <dialog class="users-dialog" id="usersDialog" aria-labelledby="usersTitle">
@@ -104,8 +96,8 @@
       <fieldset><legend>Sistemas liberados</legend>
         <label class="check-row"><input type="checkbox" name="app" value="matriculas"> Acompanhamento de Matrículas</label>
         <div class="mapping hidden" id="matriculasMapping"><label for="matriculasLogin">Login já cadastrado no Matrículas</label><input id="matriculasLogin" autocomplete="off"></div>
-        <label class="check-row"><input type="checkbox" name="app" value="artes"> Gerador de Artes</label>
-        <label class="check-row"><input type="checkbox" name="app" value="chat"> Balbino Chat</label>
+        <label class="check-row hidden"><input type="checkbox" name="app" value="artes"> Gerador de Artes</label>
+        <label class="check-row hidden"><input type="checkbox" name="app" value="chat"> Balbino Chat</label>
         <div class="mapping hidden" id="chatMapping"><label for="chatUsername">Usuário no Balbino Chat (opcional, se diferente do login)</label><input id="chatUsername" autocomplete="off" placeholder="Em branco: usar o login da Central"><small>Se não existir, o usuário será criado no Chat no primeiro acesso.</small></div>
       </fieldset>
       <div class="form-actions"><button class="secondary-btn" id="cancelUserBtn" type="button">Cancelar</button><button class="primary-btn" type="submit">Salvar usuário</button></div>

@@ -519,7 +519,7 @@ const server = http.createServer((req, res) => {
   }
   const app = apps.find(a => url.pathname === a.prefix || url.pathname.startsWith(a.prefix + '/'));
   if (!app) {
-    const portalAssets = { '/': ['portal.html', 'text/html; charset=utf-8'], '/index.html': ['portal.html', 'text/html; charset=utf-8'], '/portal.css': ['portal.css', 'text/css; charset=utf-8'], '/portal.js': ['portal.js', 'text/javascript; charset=utf-8'] };
+    const portalAssets = { '/': ['portal.html', 'text/html; charset=utf-8'], '/index.html': ['portal.html', 'text/html; charset=utf-8'], '/portal.css': ['portal.css', 'text/css; charset=utf-8'], '/portal.js': ['portal.js', 'text/javascript; charset=utf-8'], '/catalogo.js': ['catalogo.js', 'text/javascript; charset=utf-8'] };
     if (portalAssets[url.pathname]) {
       const [file, type] = portalAssets[url.pathname], content = fs.readFileSync(path.join(ROOT, 'public', file));
       res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" }); return res.end(content);
