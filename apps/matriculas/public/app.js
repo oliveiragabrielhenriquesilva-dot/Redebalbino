@@ -2261,7 +2261,7 @@ async function telaRelatorioMetas(alvo) {
   const comReal = ls.get('rel-metas-real', true);
   app.innerHTML = `<div class="rel-barra"><a class="btn" href="#/relatorios">‹ Relatórios</a><b>Relatório de metas</b><a class="btn" href="#/relatorio-produto-space">Produto × Space / Polo</a>
     <select id="rm-alvo" ${travado ? 'disabled' : ''}>${travado ? '' : '<option value="geral">Quadro geral — todos os polos</option><option value="todos">Quadro geral + um polo por página</option>'}${B.polos.filter(p => p.ativo).map(p => `<option value="${p.id}">Polo ${esc(p.nome)}</option>`).join('')}</select>
-    <label class="check" style="color:#fff"><input type="checkbox" id="rm-real" ${comReal ? 'checked' : ''}> Incluir realizado e SAVE/GAP</label>
+    <label class="check"><input type="checkbox" id="rm-real" ${comReal ? 'checked' : ''}> Incluir realizado e SAVE/GAP</label>
     <button class="btn prim" onclick="window.print()">Imprimir / Salvar PDF</button><span class="muted">Na impressão, escolha "Salvar como PDF" (de preferência em paisagem).</span></div>
     <div id="rel-conteudo" class="rel"><div class="carregando">Montando relatório…</div></div>`;
   $('#rm-alvo').value = alvo;
