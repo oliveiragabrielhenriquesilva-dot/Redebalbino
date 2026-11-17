@@ -843,3 +843,15 @@ html[data-tema="escuro"] .sede-tag { color:#e9d5ff; background:#4c1d95; }
 .rb-daily-chart circle:focus{outline:2px solid var(--accent)}
 .rb-chart details summary{cursor:pointer;color:var(--accent);padding:12px 0}
 @media(max-width:850px){.rb-chart-grid{grid-template-columns:1fr}}
+/* Comparação legível: cada meta equivale a 100%, com detalhes adicionais recolhidos. */
+.rb-chart-grid{align-items:start}
+.rb-chart-row{margin:16px 0}
+.rb-chart-label{font-size:12.5px;align-items:baseline;margin-bottom:6px}
+.rb-chart-label>b{font-weight:600;min-width:0;overflow-wrap:anywhere}
+.rb-chart-label>strong{color:var(--accent);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rb-chart-track{height:8px;border-radius:5px;background:var(--neutral-soft,var(--surface-2))}
+.rb-chart-fill{inset:0 auto 0 0;border-radius:5px}
+.rb-chart-fill.rb-chart-achieved{background:var(--ok)}
+.rb-chart-caption{font-size:11px;color:var(--text-3);margin-top:6px;line-height:1.5}
+.rb-chart-description{font-size:12px;line-height:1.6;margin:0 0 16px}
+.rb-chart-more{border-top:1px solid var(--line);padding-top:4px}

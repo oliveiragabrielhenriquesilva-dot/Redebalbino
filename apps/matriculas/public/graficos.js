@@ -6,11 +6,16 @@
   const fmt = value => n(value).toLocaleString('pt-BR');
   const date = value => /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.split('-').reverse().join('/') : String(value || '');
   function barras(title, rows, useMeta) {
-    const max = Math.max(1, ...rows.flatMap(x => [n(x.qtd), useMeta ? n(x.meta) : 0]));
-    return `<article class="card rb-chart"><div class="card-cab"><h2>${esc(title)}</h2></div><div class="corpo"><p class="muted">Azul: realizado${useMeta ? ' · tracejado: meta' : ' · comparação de quantidade'}</p>${rows.length ? rows.map(x => {
+    const sorted = [...rows].sort((a,b)=>n(b.qtd)-n(a.qtd)||String(a.nome).localeCompare(String(b.nome),'pt-BR'));
+    const maxActual = Math.max(1, ...rows.map(x => n(x.qtd)));
+    const row = x => {
       const hasMeta = useMeta && x.meta != null && n(x.meta) > 0;
-      return `<div class="rb-chart-row"><div class="rb-chart-label"><b>${esc(x.nome)}</b><span>${fmt(x.qtd)} realizada(s)${hasMeta ? ` / ${fmt(x.meta)} da meta` : useMeta ? ' · sem meta cadastrada' : ''}</span></div><div class="rb-chart-track" role="img" aria-label="${esc(x.nome)}: ${fmt(x.qtd)} realizada(s)${hasMeta ? `; meta ${fmt(x.meta)}` : ''}"><span class="rb-chart-fill" style="width:${n(x.qtd)/max*100}%"></span>${hasMeta ? `<span class="rb-chart-target" style="width:${n(x.meta)/max*100}%"></span>` : ''}</div></div>`;
-    }).join('') : '<p class="muted">Sem dados neste recorte.</p>'}</div></article>`;
+      const percent = hasMeta ? n(x.qtd)/n(x.meta)*100 : null;
+      const width = Math.min(100, hasMeta ? percent : n(x.qtd)/maxActual*100);
+      const value = percent == null ? '' : percent.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
+      return `<div class="rb-chart-row"><div class="rb-chart-label"><b>${esc(x.nome)}</b><strong>${value || fmt(x.qtd)}</strong></div><div class="rb-chart-track" role="img" aria-label="${esc(x.nome)}: ${fmt(x.qtd)} realizada(s)${hasMeta ? ` de ${fmt(x.meta)} da meta; ${value}` : ''}"><span class="rb-chart-fill ${percent>=100?'rb-chart-achieved':''}" style="width:${width}%"></span></div><div class="rb-chart-caption">${fmt(x.qtd)} realizada(s)${hasMeta ? ` de ${fmt(x.meta)} da meta${percent>100?' · meta superada':''}` : useMeta ? ' · sem meta cadastrada' : ''}</div></div>`;
+    };
+    return `<article class="card rb-chart"><div class="card-cab"><h2>${esc(title)}</h2></div><div class="corpo"><p class="muted rb-chart-description">${useMeta ? 'A barra mostra o percentual da meta de cada item.' : 'Quantidades no recorte selecionado.'}</p>${rows.length ? sorted.slice(0,6).map(row).join('')+(rows.length>6?`<details class="rb-chart-more"><summary>Ver mais ${rows.length-6} itens</summary>${sorted.slice(6).map(row).join('')}</details>`:'') : '<p class="muted">Sem dados neste recorte.</p>'}</div></article>`;
   }
   function diario(rows) {
     const series = rows.filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x.data)).sort((a,b) => a.data.localeCompare(b.data));

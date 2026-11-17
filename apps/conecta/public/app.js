@@ -28,13 +28,15 @@ document.addEventListener('click',e=>{
 function showMode(m){
  if(m==='commercial'||m==='prices')m='all';
  if(mode!==m)catalogModality='';
- mode=m;$('home').hidden=m!=='home';
+ mode=m;$('home').hidden=m!=='home';$('academicCalendar').hidden=m!=='calendar';
+ if(m==='calendar')window.BalbinoCalendar.mount($('academicCalendar'));
+ if($('sourceLink'))$('sourceLink').hidden=m==='calendar';
  if($('sourceLink'))$('sourceLink').href=m==='overview'?'https://bussola.unicesumar.edu.br/categoria/novo-marco-regulatorio':'https://bussola.unicesumar.edu.br/argumentario';
- selected=null;$('overview').hidden=m!=='overview';$('catalogView').hidden=m==='overview'||m==='home';$('detail').hidden=true;
- $('pageTitle').textContent=({home:'O que você precisa consultar?',overview:'Marco Regulatório 2027',all:'Cursos e Argumentário Comercial',ead:'Cursos EAD',semipresencial:'Cursos semipresenciais'})[m];
- $('pageSub').textContent=m==='home'?'Escolha entre consultar um curso ou as orientações acadêmicas de 2027.':m==='overview'?'Orientações de 2027 e particularidades de cada curso.':'Busque o curso e abra sua ficha para consultar argumentos, dados acadêmicos e simular a mensalidade.';
+ selected=null;$('overview').hidden=m!=='overview';$('catalogView').hidden=m==='overview'||m==='home'||m==='calendar';$('detail').hidden=true;
+ $('pageTitle').textContent=({calendar:'Calendário Acadêmico',home:'Balbino Conecta',overview:'Marco Regulatório 2027',all:'Cursos e Argumentário Comercial',ead:'Cursos EAD',semipresencial:'Cursos semipresenciais'})[m];
+ $('pageSub').textContent=m==='calendar'?'Escolha o módulo para consultar as datas acadêmicas.':m==='home'?'Cursos, orientações e calendário acadêmico em um só lugar.':m==='overview'?'Orientações de 2027 e particularidades de cada curso.':'Busque o curso e abra sua ficha para consultar argumentos, dados acadêmicos e simular a mensalidade.';
  document.querySelectorAll('nav [data-mode]').forEach(b=>{b.classList.toggle('active',b.dataset.mode===m);b.setAttribute('aria-current',b.dataset.mode===m?'page':'false')});
- if(m!=='overview'&&m!=='home'){fillFilters();renderCatalog()}
+ if(m!=='overview'&&m!=='home'&&m!=='calendar'){fillFilters();renderCatalog()}
 }
 const commercialLabels={body:'Conteúdo',description:'Descrição',intro:'Introdução',gancho:'Gancho comercial',fraseApoio:'Frase de apoio',diferenciaisFrase:'Frase de apoio',mercadoRecemFormado:'Mercado para o recém-formado',salarioTexto:'Faixa salarial — informação da fonte',camposTexto:'Campos de atuação',camposGancho:'Gancho de atuação',salarioGancho:'Gancho comercial',publicoTexto:'Público-alvo',abordagem:'Abordagem',quebraGelo:'Quebra-gelo',scripts:'Scripts de atendimento',objecoes:'Objeções e respostas',tecnicas:'Técnicas',items:'',modules:'',etapas:'Etapas',exemplo:'Exemplo',exemplos:'Exemplos',explicacao:'Explicação',fala:'Fala',falas:'Diálogo',situacoes:'Situações',situacao:'Situação',notas:'Notas',notes:'Observações',notaFinal:'Orientação final',orientacao:'Orientação',perguntas:'Perguntas',resposta:'Resposta',script:'Script',text:'Texto',role:'Papel',q:'Pergunta',a:'Resposta'};
 function commercialHas(v){return v!==null&&v!==undefined&&(typeof v==='string'?v.trim().length>0:Array.isArray(v)?v.some(commercialHas):typeof v==='object'?Object.entries(v).some(([k,x])=>k!=='id'&&commercialHas(x)):true)}
@@ -72,7 +74,7 @@ function renderCourseBase(id,updateHash=true){
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.courseTab){const key=b.dataset.courseTab;document.querySelectorAll('.course-tabs button').forEach(t=>{const active=t.dataset.courseTab===key;t.classList.toggle('active',active);t.setAttribute('aria-selected',String(active))});document.querySelectorAll('.course-tab-panel').forEach(p=>p.hidden=p.id!=='panel-'+key)}if(b.id==='coursePrint'){$('detail').querySelectorAll('.course-tab-panel').forEach(p=>p.hidden=false);window.print();const active=document.querySelector('.course-tabs button.active');$('detail').querySelectorAll('.course-tab-panel').forEach(p=>p.hidden=p.id!=='panel-'+active.dataset.courseTab)}});
 
 function reset(){catalogModality='';catalogLimit=12;['search','area','degree'].forEach(id=>$(id).value='');renderCatalog()}
-document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.mode){showMode(b.dataset.mode);history.replaceState(null,'',location.pathname);window.scrollTo(0,0)}if(b.dataset.course)openCourse(b.dataset.course);if(b.id==='back'){showMode(mode==='overview'?'all':mode);history.replaceState(null,'',location.pathname);window.scrollTo(0,0)}if(b.id==='emptyClear')reset();if(b.id==='previous'||b.id==='nextCourse'){const i=visible.findIndex(c=>c.id===selected.id),c=visible[i+(b.id==='previous'?-1:1)];if(c)openCourse(c.id)}});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.mode){history.replaceState(null,'',location.pathname+(b.dataset.mode==='calendar'?'#calendario-academico':''));showMode(b.dataset.mode);window.scrollTo(0,0)}if(b.dataset.course)openCourse(b.dataset.course);if(b.id==='back'){showMode(mode==='overview'?'all':mode);history.replaceState(null,'',location.pathname);window.scrollTo(0,0)}if(b.id==='emptyClear')reset();if(b.id==='previous'||b.id==='nextCourse'){const i=visible.findIndex(c=>c.id===selected.id),c=visible[i+(b.id==='previous'?-1:1)];if(c)openCourse(c.id)}});
 $('general').innerHTML=DATA.blocks.map((b,i)=>`<details ${i===2?'open':''}><summary>${esc(b.title)}</summary><div class="general-body"><div class="scope">${esc(b.scope)}</div><div class="source-text">${esc(b.body)}</div></div></details>`).join('');$('search').oninput=()=>renderCatalog();$('area').onchange=()=>renderCatalog();$('degree').onchange=()=>renderCatalog();$('clear').onclick=reset;$('expand').onclick=()=>{const ds=[...$('general').querySelectorAll('details')],open=ds.some(x=>!x.open);ds.forEach(x=>x.open=open);$('expand').textContent=open?'Recolher tudo':'Expandir tudo'};$('print').onclick=()=>{const closed=[...document.querySelectorAll('section:not([hidden]) details:not([open])')];closed.forEach(d=>d.open=true);window.print();closed.forEach(d=>d.open=false)};
 const feeState=new Map();
 const brl=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -104,6 +106,12 @@ function openCourse(id,updateHash=true){renderCourseBase(id,updateHash);if(!sele
 document.addEventListener('input',e=>{if(e.target.id==='feeDiscount'||e.target.id==='feePunctual')updateFee();});
 document.addEventListener('change',e=>{if(e.target.id==='feeCode'&&selected){feeSettings(selected).code=e.target.value;$('feeCalculator').innerHTML=feeMarkup(selected);updateFee();}});
 
-showMode('home');if(location.hash.startsWith('#curso=')){showMode('all');openCourse(decodeURIComponent(location.hash.slice(7)),false)}
+function routeFromHash(){
+ if(location.hash.startsWith('#calendario-academico'))showMode('calendar');
+ else if(location.hash.startsWith('#curso=')){showMode('all');openCourse(decodeURIComponent(location.hash.slice(7)),false);}
+ else showMode('home');
+}
+routeFromHash();window.addEventListener('hashchange',routeFromHash);
 
 })().catch(()=>{const main=document.querySelector('main');const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Não foi possível carregar o Balbino Conecta. Atualize a página ou entre novamente no Portal.';main.replaceChildren(p);});
+

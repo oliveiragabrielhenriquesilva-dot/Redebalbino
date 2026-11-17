@@ -42,7 +42,7 @@
   window.addEventListener('storage', event => { if (event.key === key && normalize(event.newValue) && event.newValue !== theme) set(event.newValue); });
   document.addEventListener('change', event => { if (event.target.matches('[data-rb-theme]')) set(event.target.value); });
   document.addEventListener('DOMContentLoaded', () => {
-    if (/^\/(conecta|matriculas|oportunidades|informa|artes|chat)(?:\/|$)/.test(location.pathname)) {
+    if (/^\/conecta(?:\/|$)/.test(location.pathname)) {
       root.classList.add('rb-shell-page');
       const bar = document.createElement('div'); bar.className = 'rb-system-bar';
       bar.innerHTML = '<a class="rb-home" href="/">Rede Balbino</a><nav aria-label="Navegação entre sistemas"><a href="/">Portal</a><details class="rb-systems"><summary>Meus sistemas</summary><div class="rb-system-links"><a href="/conecta/">Balbino Conecta</a><a href="/">Ver meus acessos no portal</a></div></details></nav><label class="rb-theme-label">Aparência <select data-rb-theme aria-label="Escolher tema"><option value="light">Tema claro</option><option value="dark">Tema escuro</option></select></label>';
@@ -57,6 +57,14 @@
           const link = document.createElement('a'); link.href = href; link.textContent = title; links.append(link);
         }
       }).catch(() => {});
+    }
+    if (root.dataset.rbModule === 'artes' && !document.querySelector('[data-rb-theme]')) {
+      const parent = document.querySelector('.barra nav');
+      if (parent) {
+        const label = document.createElement('label'); label.className = 'rb-theme-label';
+        label.innerHTML = 'Aparência <select data-rb-theme aria-label="Escolher tema"><option value="light">Tema claro</option><option value="dark">Tema escuro</option></select>';
+        parent.append(label);
+      }
     }
     set(theme);
     new MutationObserver(labels).observe(document.body, { childList: true, subtree: true });

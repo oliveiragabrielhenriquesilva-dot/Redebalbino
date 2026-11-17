@@ -444,6 +444,7 @@ function serveInforma(req, res, url) {
 }
 
 const CONECTA_FILES = new Map([
+  ['/calendario.js', ['calendario.js', 'text/javascript; charset=utf-8']],
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/index.html', ['index.html', 'text/html; charset=utf-8']],
   ['/app.js', ['app.js', 'text/javascript; charset=utf-8']],
