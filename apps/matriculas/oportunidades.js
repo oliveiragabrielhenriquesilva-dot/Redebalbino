@@ -13,6 +13,12 @@
 const path = require('node:path');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
+const cursosFonte = require('./cursos-fonte.json');
+const codigoCursoFonte = valor => /^(?:EGRAD|ESPRE|EPOS|HPOS|POS|ETEC)_[A-Z0-9_]+$/i.test(String(valor || '').trim()) ? String(valor).trim().toUpperCase() : '';
+const cursoFonte = (cod, nome) => {
+  const codigo = String(cod || '').trim().toUpperCase() || codigoCursoFonte(nome);
+  return { codigo, nome: (!nome || codigoCursoFonte(nome)) ? cursosFonte[codigo] || nome || codigo : nome };
+};
 
 const ETAPAS = [
   ['novo', 'Novo'], ['contato', 'Em contato'], ['aguardando', 'Aguardando retorno'], ['negociacao', 'Em negociação'],
@@ -196,10 +202,11 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     const produtoNome = nomes => { const ids = nomes.flatMap(n => idsPorNome.get(n)||[]); return ids.length === 1 ? ids[0] : null; };
     const produtoMemo = new Map();
     const resolverProduto = (cod, nome, polo) => {
-      const codigo = String(cod || '').trim(), n = norm(nome);
+      const fonte = cursoFonte(cod, nome);
+      const codigo = fonte.codigo; nome = fonte.nome; const n = norm(nome);
       // Nível explícito na fonte tem prioridade sobre palavras como Saúde/Engenharia no nome.
       if (/^(?:[eh]?pos)(?:_|\b)/i.test(codigo) || /\bpos graduacao\b/.test(n) || /^(?:mba|especializacao)\b/.test(n)) return produtoNome(['pos', 'pos graduacao']);
-      if (cod && porCodigo[cod]) return porCodigo[cod];
+      if (codigo && porCodigo[codigo]) return porCodigo[codigo];
       if (/^etec_/i.test(codigo)) return produtoNome(['tecnico']);
       if (/^egrad_/i.test(codigo)) return produtoNome(['graduacao', 'ead']);
       const mapeados = porNomeCurso.get(n); if (mapeados?.size === 1) return [...mapeados][0];
@@ -303,10 +310,11 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       const aberta = ra.situacao !== 'confirmado' && !ETAPAS_FECHADAS.has(o.etapa);
       const retorno = !aberta ? 'encerrado' : !proximo ? 'sem' : proximo < hoje ? 'vencido' : proximo === hoje ? 'hoje' : proximo <= em7 ? 'proximos7' : 'futuro';
       const produto_id = ctx.produtoId(o.curso_cod, o.curso_nome, polo_id);
-      const produto_tipo = tipoProduto(produto_id ? ctx.produtos[produto_id] || '' : '', o.curso_cod, o.curso_nome);
+      const fonteCurso = cursoFonte(o.curso_cod, o.curso_nome);
+      const produto_tipo = tipoProduto(produto_id ? ctx.produtos[produto_id] || '' : '', fonteCurso.codigo, fonteCurso.nome);
       const produto = produto_id ? ctx.produtos[produto_id] || '' : produto_tipo === 'pos' ? 'Pós-graduação' : '';
       const produto_key = produto_id ? String(produto_id) : produto_tipo === 'pos' ? 'tipo:pos' : 'sem';
-      const curso = o.curso_nome || o.curso_cod || '';
+      const curso = fonteCurso.nome || fonteCurso.codigo || '';
       const respKey = o.responsavel_tutor_id ? 't:' + o.responsavel_tutor_id : o.responsavel_id ? 'u:' + o.responsavel_id : '';
       base.push({
         id: o.id, identificador: o.identificador, nome: o.nome || '', cpf: o.cpf || '', telefone: o.telefone || '',

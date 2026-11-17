@@ -183,3 +183,20 @@ test('Educação Física distingue bacharelado, licenciatura e EAD com nomes rea
  assert.strictEqual(op.lista({ciclo:90,q:'ef-ead'},admin).linhas[0].produto,'Graduação');
  assert.strictEqual(op.lista({ciclo:90,q:'ef-amb'},admin).linhas[0].produto,'');
 });
+
+test('relatório real com código na coluna Curso classifica registros antigos sem reimportação',()=>{
+ db.exec(`INSERT INTO ciclos(id,nome,padrao) VALUES(94,'Códigos do relatório',0);
+ INSERT INTO cursos(nome,produto_id,polos) VALUES('Pedagogia',92,'1');`);
+ const entries=[['codigo-ped','ESPRE_PED'],['codigo-bach','ESPRE_BEDU'],['codigo-pos','EPOS_123'],['codigo-grad','EGRAD_ADM'],['codigo-saude','ESPRE_FAR'],['codigo-incerto','ESPRE_NOVO']];
+ const insert=db.prepare('INSERT INTO ma_oportunidades(ciclo_id,identificador,nome,curso_cod,curso_nome,polo_fonte) VALUES(94,?,?,\'\',?,\'Franca\')');
+ for(const [id,curso] of entries)insert.run(id,'Teste '+id,curso);
+ assert.deepStrictEqual(op.lista({ciclo:94,produto:'92',polo:'1'},admin).linhas.map(r=>r.identificador),['codigo-ped']);
+ assert.strictEqual(op.lista({ciclo:94,produto:'91'},admin).total,1);
+ assert.strictEqual(op.lista({ciclo:94,produto:'81'},admin).total,1);
+ assert.strictEqual(op.lista({ciclo:94,produto:'1'},admin).total,1);
+ assert.strictEqual(op.lista({ciclo:94,produto:'83'},admin).total,1);
+ assert.strictEqual(op.lista({ciclo:94,produto:'sem'},admin).total,1);
+ assert.strictEqual(op.painel({ciclo:94,produto:'92'},admin).kpis.total,1);
+ assert.match(op.lista({ciclo:94,produto:'92'},admin).linhas[0].curso,/PEDAGOGIA/);
+ assert.strictEqual(db.prepare("SELECT curso_nome FROM ma_oportunidades WHERE identificador='codigo-ped'").get().curso_nome,'ESPRE_PED');
+});

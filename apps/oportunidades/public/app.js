@@ -398,7 +398,7 @@
   // A coluna de identificação da planilha se chama exatamente "Identificador" (também aceita o nome antigo).
   const ALIASES = {
     identificador: ['identificador', 'identificador aluno', 'id aluno'], nome: ['nome completo', 'nome', 'nome do aluno', 'nome do candidato', 'candidato', 'aluno'], cpf: ['cpf', 'cpf aluno', 'cpf do aluno'],
-    telefone: ['telefone', 'celular', 'whatsapp', 'telefone celular', 'fone'], curso_cod: ['curso codigo', 'codigo curso', 'cod curso', 'codigo do curso'], curso_nome: ['curso nome', 'nome curso', 'curso', 'nome do curso'],
+    telefone: ['telefone', 'celular', 'whatsapp', 'telefone celular', 'fone'], curso_cod: ['curso codigo', 'codigo curso', 'cod curso', 'codigo do curso', 'cd curso'], curso_nome: ['curso nome', 'nome curso', 'nm curso', 'curso', 'nome do curso'],
     polo_fonte: ['polo', 'polo de apoio', 'unidade polo', 'nome polo'], prioridade: ['prioridade'], ultimo_atendimento: ['dt ult atendimento', 'dt ultimo atendimento', 'data ultimo atendimento', 'ultimo atendimento', 'data ult atendimento'],
     data_retorno: ['dt retorno', 'data retorno', 'data de retorno', 'retorno'], data_registro: ['dt registro', 'data registro', 'data de registro', 'data inscricao', 'dt inscricao', 'data de inscricao'],
     interacoes: ['interacoes', 'qtd interacoes'], status_origem: ['status', 'situacao', 'status inscricao', 'situacao inscricao', 'status da inscricao'], origem: ['origem'], localizacao: ['localizacao'], contato: ['contato'],
@@ -420,6 +420,8 @@
       const item = { linha: headIndex + i + 2 };
       for (const key of Object.keys(ALIASES)) item[key] = idx[key] < 0 ? '' : String(row[idx[key]] ?? '').trim();
       if (idx.curso_cod >= 0 && idx.curso_cod === idx.curso_nome) item.curso_cod = '';
+      // O relatório de acompanhamento traz códigos na coluna Curso (não o nome).
+      if (!item.curso_cod && /^(?:EGRAD|ESPRE|EPOS|HPOS|POS|ETEC)_[A-Z0-9_]+$/i.test(item.curso_nome)) item.curso_cod = item.curso_nome.toUpperCase();
       linhas.push(item);
     });
     if (!linhas.length) throw new Error('A planilha não tem candidatos abaixo do cabeçalho.');

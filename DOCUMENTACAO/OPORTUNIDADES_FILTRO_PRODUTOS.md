@@ -17,3 +17,25 @@ A planilha de catálogo `planilha_leads_preenchida.xlsx` fornecida pelo usuário
 Um produto filtrado sem resultado agora alerta quando existem oportunidades ainda sem produto identificado nos demais filtros. Esse aviso não altera contagens nem presume que o filtro deveria ter candidatos.
 
 Validação complementar: 34 testes passaram. O benchmark sintético continua em aproximadamente 65 ms na primeira carga e 4–10 ms nas leituras seguintes de painel. A correção é de reconhecimento no código; a quantidade efetiva de candidatos em produção depende da fonte e dos vínculos cadastrados.
+
+## Correção da coluna Curso no acompanhamento (17/11/2026)
+
+Reprodução com `listagem-acompanhar-atendimentos.xlsx`: 157 linhas; a coluna
+`Curso` contém códigos (ESPRE_PED, ESPRE_BEDU, ESPRE_FAR, EGRAD_ADM etc.).
+O importador os guardava somente em `curso_nome`, enquanto a classificação
+procurava os códigos em `curso_cod`. Assim, até Pós/EAD não eram reconhecidos.
+
+A importação agora preenche também `curso_cod` quando Curso é um código conhecido
+pelo formato. A leitura do servidor reconhece igualmente os registros antigos:
+não há migração destrutiva, reimportação obrigatória ou alteração do atendimento.
+`cursos-fonte.json` contém somente código→nome dos 58 cursos ESPRE do catálogo
+`planilha_leads_preenchida.xlsx` enviado pelo usuário. Não contém dados pessoais,
+IDs locais de produto ou novas regras comerciais. O produto continua vindo do
+mapeamento explícito do Mundo Azul ou do cadastro de cursos, respeitando polo.
+Códigos desconhecidos permanecem sem classificação; não recebem um produto por
+suposição. EPOS/HPOS, EGRAD e ETEC seguem o nível explícito da fonte.
+
+Validação: teste que reproduziu zero em Semi-Licenciatura antes da correção e
+passou depois, usando código na coluna nome e código vazio; verifica painel e
+candidatos, Pós, Graduação, Farmácia, Educação Física e código desconhecido.
+Teste do próprio mapSheet com o cabeçalho real do acompanhamento.
