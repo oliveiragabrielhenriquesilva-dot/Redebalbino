@@ -1242,7 +1242,9 @@ function lerConferencia(id) {
 
 // ---------------------------------------------------------------- campanhas de incentivo
 const csvIds = (v) => (Array.isArray(v) ? v : String(v || '').split(',')).map(Number).filter(Boolean);
+const campanhasRegras = require('./campanhas-regras')({db,all,get,run,tx,falha,registrar});
 function premio(c, qtd) {
+  const avancada=campanhasRegras.config(c); if(avancada) return campanhasRegras.premio(avancada,qtd);
   const N = Math.max(1, c.qtd);
   if (c.tipo === 'meta') return { valor: qtd >= N ? c.valor : 0, falta: qtd >= N ? 0 : N - qtd };
   if (c.tipo === 'escalonada') return { valor: qtd >= N ? c.valor + (qtd - N) * c.adicional : 0, falta: qtd >= N ? 1 : N - qtd };
@@ -1250,21 +1252,24 @@ function premio(c, qtd) {
   return { valor: qtd * c.valor, falta: 1 }; // por_matricula
 }
 function resultadoCampanha(c, usuario, detalhe = false) {
-  const prods = csvIds(c.produtos), polos = csvIds(c.polos);
+  const prods = csvIds(c.produtos), polos = csvIds(c.polos), avancada=campanhasRegras.config(c), validacoes=avancada?campanhasRegras.validacoes(c.id):new Map();
   const campoPolo=c.beneficiario==='polo'?'m.polo_id':'COALESCE(m.tutor_polo_id,m.polo_id)';
   const w = ['m.data BETWEEN ? AND ?']; const p = [c.inicio, c.fim];
-  if (prods.length) w.push(`m.produto_id IN (${prods.join(',')})`);
+  if (prods.length && !avancada?.validar_elegibilidade) w.push(`m.produto_id IN (${prods.join(',')})`);
   if (polos.length) w.push(`${campoPolo} IN (${polos.join(',')})`);
   if (usuario.papel === 'visualizador' && usuario.polo_id) { w.push(campoPolo+' = ?'); p.push(usuario.polo_id); }
   // CPF repetido no mesmo produto conta uma vez (fica com a primeira)
   const linhas = all(`SELECT m.id, m.ciclo_id, m.data, m.tutor_id, ${campoPolo} polo_id, m.polo_id polo_destino_id, po.nome polo_destino, m.cpf, m.produto_id, m.aluno, m.curso, m.valor, tu.nome tutor, (SELECT nome FROM polos WHERE id=${campoPolo}) polo, pr.nome produto FROM matriculas m
     JOIN tutores tu ON tu.id = m.tutor_id JOIN polos po ON po.id = m.polo_id JOIN produtos pr ON pr.id = m.produto_id WHERE ${w.join(' AND ')} ORDER BY m.data, m.id`, ...p);
   const vistos = new Set(); const grupos = {}; const itens = []; const raCamp = {};
-  const chave = (l) => c.beneficiario === 'polo' ? `p${l.polo_id}` : `${l.tutor_id}-${l.polo_id}`;
+  const chave = (l) => c.beneficiario === 'polo' ? `p${l.polo_id}` : avancada ? `t${l.tutor_id}` : `${l.tutor_id}-${l.polo_id}`;
   for (const l of linhas) {
-    const item = { data: l.data, aluno: l.aluno, cpf: usuario && usuario.papel === 'visualizador' ? mascaraCpf(l.cpf) : formataCpf(l.cpf), ra: detalhe ? conciliacaoMA.raPorMatricula(l.ciclo_id, raCamp)[l.id] || null : null, curso: l.curso, produto: l.produto, valor: l.valor, grupo: chave(l), polo_destino:l.polo_destino, polo_destino_id:l.polo_destino_id, polo_credito:l.polo, conta: true };
+    const validacao=validacoes.get(l.id)||null; const motivos=campanhasRegras.motivos(c,l,validacao);
+    const item = { id:l.id, validacao, motivos, data: l.data, aluno: l.aluno, cpf: usuario && usuario.papel === 'visualizador' ? mascaraCpf(l.cpf) : formataCpf(l.cpf), ra: detalhe ? conciliacaoMA.raPorMatricula(l.ciclo_id, raCamp)[l.id] || null : null, curso: l.curso, produto: l.produto, valor: l.valor, grupo: chave(l), polo_destino:l.polo_destino, polo_destino_id:l.polo_destino_id, polo_credito:l.polo, conta: true };
     if (detalhe) itens.push(item);
-    if (l.cpf) { const k = `${l.cpf}-${l.produto_id}`; if (vistos.has(k)) { item.conta = false; continue; } vistos.add(k); }
+    const gk=chave(l); grupos[gk] ??= {nome:c.beneficiario==='polo'?l.polo:l.tutor,polo:l.polo,qtd:0,ultima:null};
+    if(motivos.length){item.conta=false;continue;}
+    if (l.cpf) { const k = `${l.cpf}-${l.produto_id}`; if (vistos.has(k)) { item.conta = false; item.motivos.push('CPF repetido no mesmo produto'); continue; } vistos.add(k); }
     const k = chave(l);
     grupos[k] ??= { nome: c.beneficiario === 'polo' ? l.polo : l.tutor, polo: l.polo, qtd: 0, ultima: null };
     grupos[k].qtd++; grupos[k].ultima = l.data;
@@ -1274,13 +1279,13 @@ function resultadoCampanha(c, usuario, detalhe = false) {
     for (const po of all('SELECT id, nome FROM polos WHERE ativo = 1')) if (!polos.length || polos.includes(po.id)) grupos[`p${po.id}`] ??= { nome: po.nome, polo: po.nome, qtd: 0, ultima: null };
   } else {
     for (const r of all('SELECT tp.tutor_id, tp.polo_id, t.nome, po.nome polo FROM tutor_polos tp JOIN tutores t ON t.id = tp.tutor_id JOIN polos po ON po.id = tp.polo_id WHERE t.ativo = 1 AND po.ativo = 1 AND (t.polo_origem_id IS NULL OR t.polo_origem_id=tp.polo_id)'))
-      if (!polos.length || polos.includes(r.polo_id)) grupos[`${r.tutor_id}-${r.polo_id}`] ??= { nome: r.nome, polo: r.polo, qtd: 0, ultima: null };
+      if ((!polos.length || polos.includes(r.polo_id)) && !(usuario.papel==='visualizador'&&usuario.polo_id&&usuario.polo_id!==r.polo_id)) grupos[avancada?`t${r.tutor_id}`:`${r.tutor_id}-${r.polo_id}`] ??= { nome: r.nome, polo: r.polo, qtd: 0, ultima: null };
   }
   let lista = Object.entries(grupos).map(([k, g]) => ({ ...g, chave: k, ...premio(c, g.qtd) }));
-  if (usuario.papel === 'visualizador' && usuario.polo_id) { const pn = (get('SELECT nome FROM polos WHERE id = ?', usuario.polo_id) || {}).nome; lista = lista.filter(g => g.polo === pn); }
+  if (!avancada && usuario.papel === 'visualizador' && usuario.polo_id) { const pn = (get('SELECT nome FROM polos WHERE id = ?', usuario.polo_id) || {}).nome; lista = lista.filter(g => g.polo === pn); }
   lista.sort((a, b) => b.qtd - a.qtd || b.valor - a.valor || a.nome.localeCompare(b.nome));
   const hoje = hojeISO();
-  return { ...c, atribuicao:c.beneficiario==='polo'?'polo_destino':'polo_credito_tutor', produtos: prods, polos, situacao: hoje < c.inicio ? 'futura' : hoje > c.fim ? 'encerrada' : 'andamento',
+  return { ...c, config_avancada:avancada, atribuicao:c.beneficiario==='polo'?'polo_destino':'polo_credito_tutor', produtos: prods, polos, situacao: hoje < c.inicio ? 'futura' : hoje > c.fim ? 'encerrada' : 'andamento',
     ranking: lista, total_matriculas: lista.reduce((a, g) => a + g.qtd, 0), total_premio: lista.reduce((a, g) => a + g.valor, 0), ganhadores: lista.filter(g => g.valor > 0).length,
     ...(detalhe ? { matriculas: itens.filter(x => lista.some(g => g.chave === x.grupo)) } : {}) };
 }
@@ -1295,6 +1300,8 @@ function salvarCampanha(id, c, usuario) {
   if (!dataValida(d.inicio) || !dataValida(d.fim)) falha(400, 'Informe início e fim');
   if (d.fim < d.inicio) falha(400, 'O fim é antes do início');
   if (!['meta', 'escalonada', 'a_cada', 'por_matricula'].includes(d.tipo)) falha(400, 'Escolha o tipo de regra');
+  const avancada=campanhasRegras.normalizar(c);
+  if(avancada!==undefined)d.config_avancada=avancada?JSON.stringify(avancada):null;
   const cols = Object.keys(d);
   if (id) run(`UPDATE campanhas SET ${cols.map(k => `${k} = ?`).join(', ')} WHERE id = ?`, ...cols.map(k => d[k]), id);
   else id = Number(run(`INSERT INTO campanhas (${cols.join(', ')}) VALUES (${cols.map(() => '?').join(', ')})`, ...cols.map(k => d[k])).lastInsertRowid);
@@ -1643,6 +1650,18 @@ async function rotear(req, res) {
     return enviarJson(res,200,lista);
   }
   if (p === '/api/tutor' && m === 'GET') return enviarJson(res, 200, paginaTutor(q, usuario));
+  const cv=p.match(/^\/api\/campanhas\/(\d+)\/matriculas\/(\d+)\/(validacao|comprovante)$/);
+  if(cv){
+    const cid=Number(cv[1]),mid=Number(cv[2]),ca=get('SELECT * FROM campanhas WHERE id=?',cid);
+    if(!ca||!resultadoCampanha(ca,usuario,true).matriculas.some(x=>x.id===mid))falha(404,'Matrícula não encontrada nesta campanha.');
+    if(cv[3]==='validacao'&&m==='PUT'){exigeLancar();return enviarJson(res,200,campanhasRegras.salvarValidacao(cid,mid,await lerCorpo(req,8e6),usuario));}
+    if(cv[3]==='comprovante'&&m==='GET'){
+      const v=get('SELECT comprovante,comprovante_nome,comprovante_mime FROM campanha_validacoes WHERE campanha_id=? AND matricula_id=?',cid,mid);
+      if(!v?.comprovante)falha(404,'Comprovante não encontrado.');
+      res.writeHead(200,{'Content-Type':v.comprovante_mime,'Content-Disposition':'attachment; filename="'+String(v.comprovante_nome).replace(/[\r\n"\\]/g,'_')+'"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'});return res.end(Buffer.from(v.comprovante));
+    }
+    falha(405,'Método não permitido');
+  }
   let mc = p.match(/^\/api\/campanhas\/(\d+)$/);
   if (mc && m === 'GET') {
     const c = get('SELECT * FROM campanhas WHERE id = ?', Number(mc[1]));
@@ -1658,7 +1677,7 @@ async function rotear(req, res) {
     const id = mm[1] ? Number(mm[1]) : null;
     if (m === 'POST' && !id) return enviarJson(res, 200, { id: salvarCampanha(null, await lerCorpo(req), usuario) });
     if (m === 'PUT' && id) return enviarJson(res, 200, { id: salvarCampanha(id, await lerCorpo(req), usuario) });
-    if (m === 'DELETE' && id) { exigeAdmin(); run('DELETE FROM campanhas WHERE id = ?', id); registrar(usuario, 'excluiu campanha', `#${id}`); return enviarJson(res, 200, { ok: true }); }
+    if (m === 'DELETE' && id) { exigeAdmin(); tx(()=>{run('DELETE FROM campanha_validacoes WHERE campanha_id=?',id);run('DELETE FROM campanhas WHERE id = ?', id);}); registrar(usuario, 'excluiu campanha', `#${id}`); return enviarJson(res, 200, { ok: true }); }
   }
   if (p === '/api/conferencias' && m === 'GET') {
     const cicloId = Number(q.ciclo);
@@ -1936,4 +1955,5 @@ function iniciarRotinasHospedadas() {
 }
 if (require.main === module) servidor.listen(PORT, process.env.HOST || '0.0.0.0', iniciarRotinasHospedadas);
 
-module.exports = { servidor, db, conciliacaoMA, oportunidades, painel, ritmo, previsaoSemana, diario, origensPolo, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, hojeISO, percentualCalendario, gestao, iniciarRotinasHospedadas };
+module.exports = { premio, resultadoCampanha, salvarCampanha, campanhasRegras, servidor, db, conciliacaoMA, oportunidades, painel, ritmo, previsaoSemana, diario, origensPolo, metasTutorCalc, salvarMetasTutor, bootstrap, rotear, validarMatricula, salvarCadastro, dataValida, hojeISO, percentualCalendario, gestao, iniciarRotinasHospedadas };
+

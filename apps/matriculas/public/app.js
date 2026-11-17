@@ -1524,6 +1524,7 @@ async function telaMundoAzul(c, sub) {
 // ======================================================================= CAMPANHAS DE INCENTIVO
 const TIPOS_CAMPANHA = { meta: 'Meta única', escalonada: 'Escalonada', a_cada: 'A cada N matrículas', por_matricula: 'Valor por matrícula' };
 function regraCampanha(c) {
+  if(c.config_avancada)return c.config_avancada.faixas.map(f=>`${f.qtd} matrículas = ${brl(f.valor)}`).join(' · ')+` · depois, +${brl(c.config_avancada.adicional)} cada`;
   if (c.tipo === 'meta') return `${c.qtd} matrícula(s) = ${brl(c.valor)}`;
   if (c.tipo === 'escalonada') return `${c.qtd} matrícula(s) = ${brl(c.valor)} · a partir da ${c.qtd + 1}ª, +${brl(c.adicional)} cada`;
   if (c.tipo === 'a_cada') return `a cada ${c.qtd} matrícula(s) = ${brl(c.valor)}`;
@@ -1542,6 +1543,7 @@ function produtosCampanha(c) {
   return partes.join(' · ');
 }
 function faltaCampanha(c, g) {
+  if(c.config_avancada){const proxima=c.config_avancada.faixas.find(f=>f.qtd>g.qtd);return proxima?`faltam <b>${g.falta}</b> p/ ${brl(proxima.valor)}`:`próxima vale +${brl(c.config_avancada.adicional)}`;}
   if (c.tipo === 'por_matricula') return '<span class="muted">—</span>';
   if (c.tipo === 'meta') return g.valor ? '<span class="tag ok mini">bateu</span>' : `faltam <b>${g.falta}</b>`;
   if (c.tipo === 'escalonada') return g.valor ? `<span class="muted">próxima vale +${brl(c.adicional)}</span>` : `faltam <b>${g.falta}</b> p/ ${brl(c.valor)}`;
@@ -1584,7 +1586,7 @@ async function telaCampanhas(c) {
         <div class="cp-num"><span>${int(x.total_matriculas)} matr.</span><span>${x.ganhadores} premiado(s)</span><span><b>${brl(x.total_premio)}</b></span></div></button>`).join('')}</div>`
       : '<div class="card"><div class="vazio">Nenhuma campanha cadastrada. Crie a primeira em "+ Nova campanha".</div></div>'}
     ${cp ? `<div class="card mt"><div class="card-cab"><h2>${esc(cp.nome)}</h2>${sitTag[cp.situacao]}
-        <button class="btn" id="cp-whats">Copiar para o WhatsApp</button><a class="btn" href="#/relatorio-campanha/${cp.id}" target="_blank" rel="noopener">Relatório / PDF</a>${podeLancar() ? '<button class="btn" id="cp-editar">Editar</button>' : ''}${eAdmin() ? '<button class="btn perigo" id="cp-excluir">Excluir</button>' : ''}</div>
+        <button class="btn" id="cp-whats">Copiar para o WhatsApp</button><a class="btn" href="#/relatorio-campanha/${cp.id}" target="_blank" rel="noopener">${cp.config_avancada?.validar_elegibilidade ? 'Conferir matrículas / Relatório' : 'Relatório / PDF'}</a>${podeLancar() ? '<button class="btn" id="cp-editar">Editar</button>' : ''}${eAdmin() ? '<button class="btn perigo" id="cp-excluir">Excluir</button>' : ''}</div>
       <div class="space-resumo">
         <div>Período<b>${dataBR(cp.inicio)}${cp.fim !== cp.inicio ? ' a ' + dataBR(cp.fim) : ''}</b></div>
         <div>Regra<b style="font-size:14px">${esc(regraCampanha(cp))}</b></div>
@@ -2427,11 +2429,11 @@ async function telaRelatorioCampanha(id) {
   const render = () => {
     const det = $('#rc-det').checked;
     const premiados = cp.ranking.filter(g => g.valor > 0);
-    const comMatr = cp.ranking.filter(g => g.qtd);
+    const comMatr = cp.ranking.filter(g => g.qtd || cp.matriculas.some(x=>x.grupo===g.chave));
     $('#cp-rel').innerHTML = `<section class="rel-pagina rel-campanha">${timbreRelatorio('Relatório de campanha', cp.nome, `${dataBR(cp.inicio)}${cp.fim !== cp.inicio ? ' a ' + dataBR(cp.fim) : ''}`)}
-      <div class="rel-kpis"><div><span>Situação</span><b style="font-size:14px">${esc(sit)}</b></div><div><span>Matrículas válidas</span><b>${int(cp.total_matriculas)}</b></div><div><span>Premiados</span><b>${int(premiados.length)}</b><em>de ${int(comMatr.length)} com matrícula</em></div><div><span>Total a pagar</span><b>${brl(cp.total_premio)}</b></div></div>
+      <div class="rel-kpis"><div><span>Situação</span><b style="font-size:14px">${esc(sit)}${cp.config_avancada?.validar_elegibilidade?' · sujeito à conferência':''}</b></div><div><span>Matrículas válidas</span><b>${int(cp.total_matriculas)}</b></div><div><span>Premiados</span><b>${int(premiados.length)}</b><em>de ${int(comMatr.length)} com matrícula</em></div><div><span>Total a pagar</span><b>${brl(cp.total_premio)}</b></div></div>
       <p class="rp-nota">Este relatório apura as regras e premiações da campanha. Metas do processo, Spaces e SAVE/GAP não se aplicam a este recorte; consulte os relatórios de acompanhamento para esses indicadores.</p>
-      <div class="rel-condicoes"><h2>Regras da campanha</h2><p><b>Regra:</b> ${esc(regraCampanha(cp))} (${esc(TIPOS_CAMPANHA[cp.tipo] || cp.tipo)})<br><b>Produtos:</b> ${esc(produtosCampanha(cp))}<br><b>Polos:</b> ${cp.polos.length ? cp.polos.map(i => esc(nomePor('polos', i))).join(', ') : 'todos'}<br><b>Premiação por:</b> ${porPolo ? 'polo de destino' : 'tutor — consolidação pelo polo de crédito'}${cp.obs ? `<br><b>Observação:</b> ${esc(cp.obs)}` : ''}</p></div>
+      <div class="rel-condicoes"><h2>Regras da campanha</h2><p><b>Regra:</b> ${esc(regraCampanha(cp))} (${esc(TIPOS_CAMPANHA[cp.tipo] || cp.tipo)})<br><b>Produtos:</b> ${esc(produtosCampanha(cp))}<br><b>Polos:</b> ${cp.polos.length ? cp.polos.map(i => esc(nomePor('polos', i))).join(', ') : 'todos'}<br><b>Premiação por:</b> ${porPolo ? 'polo de destino' : cp.config_avancada ? 'colaborador — consolidado entre polos' : 'tutor — consolidação pelo polo de crédito'}${cp.obs ? `<br><b>Observação:</b> ${esc(cp.obs)}` : ''}</p></div>
 
       <h2>Pagamento</h2>
       <table class="t"><thead><tr><th>#</th><th>${porPolo ? 'Polo' : 'Tutor'}</th>${porPolo ? '' : '<th>Polo</th>'}<th class="num">Matrículas</th><th class="num">Prêmio</th><th>Pago</th></tr></thead><tbody>
@@ -2445,13 +2447,30 @@ async function telaRelatorioCampanha(id) {
       ${det ? `<h2>Matrículas de cada ${porPolo ? 'polo' : 'tutor'}</h2>
       ${comMatr.map(g => `<h3 class="rc-sub">${esc(g.nome)}${porPolo ? '' : ` <span class="muted">· ${esc(g.polo)}</span>`} — ${int(g.qtd)} válida(s) · ${brl(g.valor)}</h3>
         <table class="t"><thead><tr><th>Data</th><th>Aluno</th><th>Produto</th><th>Curso</th><th class="num">Mensalidade</th><th>Conta?</th></tr></thead><tbody>
-        ${cp.matriculas.filter(x => x.grupo === g.chave).map(x => `<tr class="${x.conta ? '' : 'rc-nao'}"><td>${dataBR(x.data)}</td><td>${esc(x.aluno || 'não informado')}${idAluno(x)}</td><td>${esc(x.produto)}</td><td class="muted">${esc(x.curso || '—')}</td><td class="num">${brl(x.valor)}</td><td>${x.conta ? 'sim' : 'não — CPF repetido no mesmo produto'}</td></tr>`).join('')}</tbody></table>`).join('') || '<p class="muted">Nenhuma matrícula no período.</p>'}` : ''}
+        ${cp.matriculas.filter(x => x.grupo === g.chave).map(x => `<tr class="${x.conta ? '' : 'rc-nao'}"><td>${dataBR(x.data)}</td><td>${esc(x.aluno || 'não informado')}${idAluno(x)}</td><td>${esc(x.produto)}</td><td class="muted">${esc(x.curso || '—')}</td><td class="num">${brl(x.valor)}</td><td>${x.conta ? 'sim' : esc((x.motivos||[]).join('; '))}${cp.config_avancada?.validar_elegibilidade ? `<br><small>Candidato: ${esc(x.validacao?.numero_candidato||'pendente')}</small>${x.validacao?.tem_arquivo?`<br><a href="/matriculas/api/campanhas/${cp.id}/matriculas/${x.id}/comprovante" target="_blank" rel="noopener">Comprovante</a>`:''}${x.validacao?.comprovante_ref?`<br><a href="${esc(x.validacao.comprovante_ref)}" target="_blank" rel="noopener">Comprovante publicado</a>`:''}${podeLancar()?`<br><button class="btn" style="white-space:normal" data-validar="${x.id}">Conferir elegibilidade</button>`:''}`:''}</td></tr>`).join('')}</tbody></table>`).join('') || '<p class="muted">Nenhuma matrícula no período.</p>'}` : ''}
 
       <div class="rc-assin"><div>Responsável pela apuração</div><div>Aprovação</div></div>
       <footer class="rel-rodape">Contam as matrículas lançadas de ${dataBR(cp.inicio)} a ${dataBR(cp.fim)} nos produtos e polos da campanha, de qualquer processo. CPF repetido no mesmo produto conta uma vez (fica a primeira). Valores calculados no momento da emissão.</footer></section>`;
   };
+  $('#cp-rel').addEventListener('click',e=>{const b=e.target.closest('[data-validar]');if(b)modalValidacaoCampanha(cp,cp.matriculas.find(x=>x.id===Number(b.dataset.validar)),()=>telaRelatorioCampanha(id));});
   $('#rc-det').onchange = render;
   render();
+}
+
+function modalValidacaoCampanha(cp,x,depois){
+ const v=x.validacao||{};
+ const m=abrirModal(`<header><h3>Conferir incentivo — ${esc(x.aluno)}</h3><button class="btn" data-fechar>✕</button></header><form id="f-incentivo"><div class="corpo"><div id="inc-msg"></div><p>${esc(x.produto)} · ${esc(x.polo_credito)} · ${esc(x.curso||'')}</p><div class="form-grid">
+ <label class="campo"><span>Número do candidato</span><input name="numero" value="${esc(v.numero_candidato||'')}"></label>
+ <label class="campo"><span>Participação do colaborador</span><select name="atendimento"><option value="nao_informado">Não conferida</option><option value="assistida">Atendimento assistido</option><option value="autonoma">100% pelo candidato (Digital / Eu Indico)</option></select></label>
+ <label class="campo"><span>Pagamento</span><select name="pagamento"><option value="pendente">Pendente de conferência</option><option value="confirmado">Confirmado</option><option value="cancelada">Cancelada</option></select></label>
+ <label class="campo"><span>Comprovante (PDF, PNG ou JPEG, até 5 MB)</span><input name="arquivo" type="file" accept="application/pdf,image/png,image/jpeg"><small>${v.tem_arquivo?'Comprovante já anexado; novo arquivo substitui o anterior.':''}</small></label>
+ <label class="campo inteiro"><span>Ou link HTTPS do comprovante publicado</span><input name="referencia" type="url" value="${esc(v.comprovante_ref||'')}"></label></div></div><footer><button type="button" class="btn" data-fechar>Cancelar</button><button class="btn prim">Salvar conferência</button></footer></form>`,720);
+ const f=$('#f-incentivo',m);f.atendimento.value=v.atendimento||'nao_informado';f.pagamento.value=v.pagamento||'pendente';
+ f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button.prim');b.disabled=true;try{
+  const body={numero_candidato:f.numero.value,atendimento:f.atendimento.value,pagamento:f.pagamento.value,comprovante_ref:f.referencia.value};const file=f.arquivo.files[0];
+  if(file){if(file.size>5*1024*1024)throw Error('O arquivo deve ter até 5 MB');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error('Falha ao ler comprovante'));r.readAsDataURL(file);});body.arquivo={nome:file.name,tipo:file.type,base64:data.split(',')[1]};}
+  await api(`/api/campanhas/${cp.id}/matriculas/${x.id}/validacao`,{method:'PUT',body});fecharModal();toast('Conferência salva');depois();
+ }catch(err){$('#inc-msg',m).textContent=err.message;b.disabled=false;}};
 }
 
 function modalCampanha(cp, depois) {
@@ -2465,6 +2484,8 @@ function modalCampanha(cp, depois) {
       <label class="campo" id="cp-l-qtd"><span>Matrículas</span><input type="number" name="qtd" min="1"></label>
       <label class="campo"><span id="cp-l-valor">Prêmio (R$)</span><input type="text" name="valor" inputmode="decimal"></label>
       <label class="campo" id="cp-l-adic"><span>Adicional por matrícula a mais (R$)</span><input type="text" name="adicional" inputmode="decimal"></label>
+      <label class="campo inteiro"><span>Faixas de prêmio total (opcional, uma por linha: quantidade=valor)</span><textarea name="faixas" placeholder="2=30&#10;3=75&#10;4=100"></textarea></label>
+      <label class="check inteiro"><input type="checkbox" name="elegibilidade"> Exigir candidato, atendimento assistido, pagamento e comprovante</label>
       <div class="inteiro info" id="cp-prev" style="margin:0"></div>
       <div class="campo inteiro"><span>Produtos que contam <small class="muted">(nenhum marcado = todos)</small></span>
         <div class="cp-prods">${B.categorias.map(k => { const ps = B.produtos.filter(p => p.categoria_id === k.id && p.ativo); if (!ps.length) return '';
@@ -2475,6 +2496,7 @@ function modalCampanha(cp, depois) {
     </div></div>
     <footer><button type="button" class="btn" data-fechar>Cancelar</button><button class="btn prim">Salvar campanha</button></footer></form>`, 720);
   const f = $('#f-cp', m);
+  f.faixas.value=(v.config_avancada?.faixas||[]).map(x=>`${x.qtd}=${x.valor}`).join('\n');f.elegibilidade.checked=!!v.config_avancada?.validar_elegibilidade;
   f.nome.value = v.nome; f.inicio.value = v.inicio; f.fim.value = v.fim; f.tipo.value = v.tipo; f.qtd.value = v.qtd;
   f.valor.value = String(v.valor).replace('.', ','); f.adicional.value = String(v.adicional || 0).replace('.', ','); f.beneficiario.value = v.beneficiario; f.obs.value = v.obs || '';
   $$('[name=produtos]', f).forEach(i => { i.checked = v.produtos.includes(Number(i.value)); });
@@ -2488,16 +2510,20 @@ function modalCampanha(cp, depois) {
     $('#cp-l-adic', m).style.display = t === 'escalonada' ? '' : 'none';
     $('#cp-l-qtd', m).style.display = t === 'por_matricula' ? 'none' : '';
     $('#cp-l-valor', m).textContent = t === 'por_matricula' ? 'Valor por matrícula (R$)' : t === 'escalonada' ? 'Prêmio ao atingir (R$)' : 'Prêmio (R$)';
-    const c = { tipo: t, qtd: Number(f.qtd.value) || 1, valor: parseValorBR(f.valor.value), adicional: parseValorBR(f.adicional.value) };
-    const ex = [1, 2, 3, 4, 5, 6].map(n => { const N = c.qtd; const val = t === 'meta' ? (n >= N ? c.valor : 0) : t === 'escalonada' ? (n >= N ? c.valor + (n - N) * c.adicional : 0) : t === 'a_cada' ? Math.floor(n / N) * c.valor : n * c.valor; return `${n} → ${brl(val)}`; });
+    const faixas=f.faixas.value.trim().split(/\n/).filter(Boolean).map(x=>{const [q,v]=x.split('=');return {qtd:Number(q),valor:parseValorBR(v||'0')};}).sort((a,b)=>a.qtd-b.qtd);
+    const c = { config_avancada:faixas.length?{faixas,adicional:parseValorBR(f.adicional.value)}:null, tipo: t, qtd: Number(f.qtd.value) || 1, valor: parseValorBR(f.valor.value), adicional: parseValorBR(f.adicional.value) };
+    const ex = [1, 2, 3, 4, 5, 6].map(n => { const N = c.qtd; const reached=faixas.filter(f=>n>=f.qtd).at(-1),last=faixas.at(-1); const val = faixas.length ? (reached?reached.valor+Math.max(0,n-last.qtd)*c.adicional:0) : t === 'meta' ? (n >= N ? c.valor : 0) : t === 'escalonada' ? (n >= N ? c.valor + (n - N) * c.adicional : 0) : t === 'a_cada' ? Math.floor(n / N) * c.valor : n * c.valor; return `${n} → ${brl(val)}`; });
     $('#cp-prev', m).innerHTML = `<b>${esc(regraCampanha(c))}</b><br><span style="font-size:12.5px">Simulação: ${ex.join(' · ')}</span>`;
   };
-  ['tipo', 'qtd', 'valor', 'adicional'].forEach(k => { f[k].oninput = atualizar; f[k].onchange = atualizar; });
+  ['tipo', 'qtd', 'valor', 'adicional','faixas'].forEach(k => { f[k].oninput = atualizar; f[k].onchange = atualizar; });
   atualizar();
   f.onsubmit = async (ev) => {
     ev.preventDefault();
     const corpo = { nome: f.nome.value, inicio: f.inicio.value, fim: f.fim.value, tipo: f.tipo.value, qtd: f.qtd.value, valor: f.valor.value, adicional: f.adicional.value,
       produtos: $$('[name=produtos]:checked', f).map(i => Number(i.value)), polos: $$('[name=polos]:checked', f).map(i => Number(i.value)), beneficiario: f.beneficiario.value, obs: f.obs.value };
+    const faixas=f.faixas.value.trim().split(/\n/).filter(Boolean).map(x=>{const [q,v]=x.split('=');return {qtd:Number(q),valor:parseValorBR(v||'0')};});
+    corpo.config_avancada=faixas.length?{faixas,adicional:parseValorBR(f.adicional.value),validar_elegibilidade:f.elegibilidade.checked}:null;
+    if(faixas.length)corpo.tipo='escalonada';
     try {
       const r = await api(cp ? '/api/campanhas/' + cp.id : '/api/campanhas', { method: cp ? 'PUT' : 'POST', body: corpo });
       ls.set('campanha-aberta', r.id); fecharModal(); toast('Campanha salva'); depois && depois();
@@ -3114,4 +3140,5 @@ function modalTrocarSenha() {
 }
 
 iniciar();
+
 
