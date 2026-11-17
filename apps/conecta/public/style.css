@@ -34,3 +34,26 @@ main{padding-top:27px}.header{margin-bottom:23px;align-items:flex-start}.header 
 
 [data-import-style="import-style-1"]{margin-top:15px}[data-import-style="import-style-2"]{margin-top:13px}[data-import-style="import-style-3"]{margin-top:10px}
 .brand img{width:52px;height:52px}.brand small{letter-spacing:2px}.brand strong{font-weight:750}
+
+
+/* Aparência clara em todas as visões: início, catálogo, curso e simulador. */
+@media screen {
+ html[data-theme="light"]{color-scheme:light;--bg:#edf3fb;--panel:#fff;--text:#142b49;--muted:#4b5e76;--line:#bdccdc;--cyan:#1d4ed8;--blue:#1d4ed8;--amber:#85400d}
+ html[data-theme="light"] body{background:var(--bg)}
+ html[data-theme="light"] aside{background:#fff}
+ html[data-theme="light"] :is(.btn,.nav button.active,.course-tabs button:first-child.active,.modality-switch button,.advanced-filters summary){background:#e5edff;color:#142b49}
+ html[data-theme="light"] .btn.primary{background:#1d4ed8;color:#fff}
+ html[data-theme="light"] :is(.hero,.stat,.panel,details,.filters,.course-card,.course-hero,.course-hero.has-calculator,.fee-calculator,.detail-sections .panel,.comm-accordions>details,.search-home,.module-card,.module-card.featured){background:#fff;border-color:var(--line);color:var(--text)}
+ html[data-theme="light"] :is(.module-card:hover,.module-card.featured:hover,.course-card:hover){background:#f3f7fd}
+ html[data-theme="light"] :is(.source-text,.detail-sections .source-text,.comm-body .source-text,.comm-title,.fee-hint,.fee-summary,.fee-result>span,.fee-source,.fee-missing span,.catalog-degree,.course-card p,.module-category,.module-desc,.search-home>label,.search-hint){color:var(--muted)}
+ html[data-theme="light"] :is(input,select,.fee-fields input,.search-home input){background:#fff;color:var(--text);border-color:#8294aa}
+ html[data-theme="light"] input::placeholder{color:#536985}
+ html[data-theme="light"] :is(.module-title,.fee-base strong,.fee-summary b){color:var(--text)}
+ html[data-theme="light"] :is(.module-icon,.module-card.featured .module-icon,.tag,.tag.semi,.modality-switch button.active,.comm-accordions>details>summary){background:#e5edff;border-color:var(--line);color:#1d4ed8}
+ html[data-theme="light"] :is(.module-action,.module-card.featured .module-action){color:#1d4ed8;border-color:var(--line)}
+ html[data-theme="light"] .fee-result{background:#e7f5ec;color:#166534;border-color:#92b9a0}
+ html[data-theme="light"] .fee-result>strong{color:#166534}
+ html[data-theme="light"] .notice{background:#fff3d6;color:#85400d}
+ html[data-theme="light"] .fee-error{color:#a91521}
+ html[data-theme="light"] .fee-fields input[aria-invalid="true"]{border-color:#a91521}
+}

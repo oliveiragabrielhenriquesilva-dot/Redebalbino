@@ -17,6 +17,7 @@
   const THEME_STORAGE_KEY = 'balbino-informa-tema-v1';
   const S = { data: null, today: isoOf(new Date()), product: 'graduacao', year: '', currentOnly: false, matrixSearch: '', category: '', marco: null, course: '' };
   function setTheme(theme, persist = false) {
+    if (window.BalbinoTheme) return window.BalbinoTheme.set(theme);
     const isDark = theme !== 'light';
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
     const button = $('themeToggle');
@@ -585,4 +586,5 @@
   }
   load().catch(e => { $('erro').textContent = e.message; $('erro').classList.remove('hidden'); });
 })();
+
 

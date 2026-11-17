@@ -824,3 +824,22 @@ html[data-tema="escuro"] .sede-tag { color:#e9d5ff; background:#4c1d95; }
     print-color-adjust: exact;
   }
 }
+
+
+/* Gráficos usam as mesmas cores semânticas do painel, nos dois temas. */
+.rb-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:18px 0}
+.rb-chart{min-width:0;margin-bottom:18px}
+.rb-chart-row{margin:18px 0}
+.rb-chart-label{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:13px;margin-bottom:8px}
+.rb-chart-label span{color:var(--text-3)}
+.rb-chart-track{height:24px;position:relative;background:var(--surface-2);border-radius:5px;overflow:hidden}
+.rb-chart-fill{position:absolute;inset:5px auto 5px 0;background:var(--accent);border-radius:3px;min-width:0}
+.rb-chart-target{position:absolute;inset:1px auto 1px 0;border:2px dashed var(--text-3);border-radius:5px;box-sizing:border-box}
+.rb-daily-chart{display:block;width:100%;max-height:320px;color:var(--text-3);overflow:visible}
+.rb-daily-chart text{fill:currentColor;font:12px sans-serif}
+.rb-chart-axis{fill:none;stroke:var(--line-strong);stroke-width:1}
+.rb-chart-line{fill:none;stroke:var(--accent);stroke-width:3;stroke-linejoin:round}
+.rb-daily-chart circle{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.rb-daily-chart circle:focus{outline:2px solid var(--accent)}
+.rb-chart details summary{cursor:pointer;color:var(--accent);padding:12px 0}
+@media(max-width:850px){.rb-chart-grid{grid-template-columns:1fr}}

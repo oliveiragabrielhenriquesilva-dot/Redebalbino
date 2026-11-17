@@ -217,7 +217,7 @@ function montarShell() {
   </div>`;
   const atualizarTema = () => { const escuro = document.documentElement.dataset.tema === 'escuro'; $('#b-tema').textContent = escuro ? '☀️ Tema claro' : '🌙 Tema escuro'; const logo = $('.side .marca .marca-oficial'); if (logo) logo.src = '/brand/rede-balbino-simbolo.svg'; };
   atualizarTema();
-  $('#b-tema').onclick = () => { const tema = document.documentElement.dataset.tema === 'escuro' ? 'claro' : 'escuro'; document.documentElement.dataset.tema = tema; ls.set('tema', tema); atualizarTema(); };
+  $('#b-tema').onclick = () => { const tema = document.documentElement.dataset.tema === 'escuro' ? 'claro' : 'escuro'; if (window.BalbinoTheme) window.BalbinoTheme.set(tema); else { document.documentElement.dataset.tema = tema; ls.set('tema', tema); } atualizarTema(); };
   $('#sel-ciclo').value = estado.ciclo || '';
   $('#sel-polo').value = estado.polo || '';
   $('#sel-ciclo').onchange = (e) => { estado.ciclo = Number(e.target.value); ls.set('ciclo', estado.ciclo); rotear(); };
@@ -529,7 +529,7 @@ async function telaPainel(c, aba) {
 
   const maxOrigem = Math.max(1, ...d.porOrigem.map(o => o.qtd));
   // RPV está temporariamente suspenso na interface; dados e APIs são preservados.
-  const abas = [['resumo', 'Resumo'], ...(umPolo ? [] : [['produtos', 'Produtos × Polos'], ['polos', 'Ranking de polos']]), ['equipe', 'Equipe'], ['origens', 'Origens'], ['spaces', 'Spaces']];
+  const abas = [['resumo', 'Resumo'], ['graficos', 'Gráficos'], ...(umPolo ? [] : [['produtos', 'Produtos × Polos'], ['polos', 'Ranking de polos']]), ['equipe', 'Equipe'], ['origens', 'Origens'], ['spaces', 'Spaces']];
   if (!abas.some(x => x[0] === aba)) aba = 'resumo';
   const avisoVazio = (o) => `<div class="card mt"><div class="vazio">Nenhuma matrícula lançada ${umPolo ? 'neste polo ' : ''}neste processo ainda. ${o}</div></div>`;
   const tabMatriz = () => {
@@ -577,6 +577,7 @@ async function telaPainel(c, aba) {
     </div>`;
   };
   const conteudoAba = () => {
+    if (aba === 'graficos') return window.BalbinoGraficos.render(d);
     if (aba === 'rpv') return tabRPV();
     if (aba === 'produtos') return d.usaMeta ? `<div class="card"><div class="card-cab"><h2>SAVE / GAP — polo × produto</h2><span class="muted">número grande = SAVE/GAP · embaixo = realizado/meta · clique na célula para abrir o polo naquele produto</span></div><div class="corpo sem-pad">${tabMatriz()}</div></div>`
       : '<div class="card"><div class="vazio">A matriz usa as metas — remova os filtros de tutor, origem e período para vê-la.</div></div>';
@@ -3115,3 +3116,4 @@ function modalTrocarSenha() {
 }
 
 iniciar();
+

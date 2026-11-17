@@ -3,6 +3,7 @@
   const $ = id => document.getElementById(id);
   const THEME_KEY = 'balbino-portal-theme-v1';
   function setTheme(theme, persist = false) {
+    if (window.BalbinoTheme) return window.BalbinoTheme.set(theme);
     const isDark = theme !== 'light';
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
     const button = $('themeToggle');
@@ -271,3 +272,4 @@
   render();
   refresh().catch(err => { $('loginError').textContent = err.message; show($('loginError'), true); });
 })();
+

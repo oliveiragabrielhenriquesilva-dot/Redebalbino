@@ -5,6 +5,7 @@
   const THEME_KEY = 'balbino-theme';
   function carregarTema() { try { const t = localStorage.getItem(THEME_KEY) || localStorage.getItem('balbino:tema'); if (t === 'claro' || t === 'light') return 'claro'; if (t === 'escuro' || t === 'dark') return 'escuro'; } catch {} return 'escuro'; }
   function aplicarTema(tema, salvar = false) {
+    if (window.BalbinoTheme) return window.BalbinoTheme.set(tema);
     const claro = tema === 'claro'; document.documentElement.dataset.tema = claro ? 'claro' : 'escuro';
     const botao = $('theme-toggle');
     if (botao) { botao.textContent = claro ? '🌙 Tema escuro' : '☀️ Tema claro'; botao.setAttribute('aria-label', claro ? 'Mudar para tema escuro' : 'Mudar para tema claro'); botao.setAttribute('aria-pressed', String(claro)); }
@@ -536,3 +537,4 @@
     setTab(state.tab);
   })();
 })();
+

@@ -551,6 +551,13 @@ const server = http.createServer((req, res) => {
     '/brand/monograma-rede-balbino.webp': 'monograma-rede-balbino.webp',
     '/brand/monograma-rede-balbino-branco.webp': 'monograma-rede-balbino-branco.webp'
   };
+  const shellAssets = { '/brand/theme.js': ['theme.js', 'text/javascript; charset=utf-8'], '/brand/shell.css': ['shell.css', 'text/css; charset=utf-8'] };
+  if (shellAssets[url.pathname]) {
+    const [name, type] = shellAssets[url.pathname];
+    const content = fs.readFileSync(path.join(ROOT, 'brand', name));
+    res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+    return req.method === 'HEAD' ? res.end() : res.end(content);
+  }
   if (url.pathname === '/brand/balbino.css') {
     const content = fs.readFileSync(path.join(ROOT, 'brand', 'balbino.css'));
     res.writeHead(200, { 'Content-Type': 'text/css; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -609,3 +616,4 @@ server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta
 startApps().catch(error => {
   console.error('Não foi possível preparar os sistemas:', error);
 });
+
