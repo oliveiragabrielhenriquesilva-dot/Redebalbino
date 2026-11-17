@@ -167,3 +167,19 @@ test('snapshot invalida após atendimento, alteração de cadastro e escrita por
  assert.strictEqual(op.detalhe(id,admin).oportunidade.nome,'Nome Atualizado Externamente');
  assert.ok(op.painel(q,tutorFranca).por_polo.every(p=>p.key==='1'));
 });
+
+test('Educação Física distingue bacharelado, licenciatura e EAD com nomes reais do catálogo',()=>{
+ db.exec(`INSERT INTO produtos(id,nome,categoria_id) VALUES(91,'Semi - Bacharel em Educação Física',1),(92,'Semi - Licenciatura',1);
+ INSERT INTO cursos(nome,produto_id,apelidos,polos) VALUES('Bacharel em Ed. Física',91,'Educação Física','1'),('Licenciatura em Educação Física',92,'Educação Física','1');`);
+ const source=[
+ ['ef-bach','ESPRE_BEDU','EDUCAÇÃO FÍSICA - BACHARELADO (GRADUAÇÃO - SEMIPRESENCIAL)'],
+ ['ef-lic','ESPRE_EDU','EDUCAÇÃO FÍSICA - LICENCIATURA (GRADUAÇÃO - SEMIPRESENCIAL)'],
+ ['ef-ead','EGRAD_BEDU','EDUCAÇÃO FÍSICA - BACHARELADO (GRADUAÇÃO - EAD)'],
+ ['ef-amb','','Educação Física']
+ ];
+ op.importar({ciclo:90,confirmado:true,linhas:source.map(([identificador,curso_cod,curso_nome])=>({identificador,curso_cod,curso_nome,polo_fonte:'Franca',nome:'Candidato '+identificador}))},admin);
+ assert.deepStrictEqual(op.lista({ciclo:90,produto:'91'},admin).linhas.map(r=>r.identificador),['ef-bach']);
+ assert.deepStrictEqual(op.lista({ciclo:90,produto:'92'},admin).linhas.map(r=>r.identificador),['ef-lic']);
+ assert.strictEqual(op.lista({ciclo:90,q:'ef-ead'},admin).linhas[0].produto,'Graduação');
+ assert.strictEqual(op.lista({ciclo:90,q:'ef-amb'},admin).linhas[0].produto,'');
+});

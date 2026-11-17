@@ -9,3 +9,11 @@ Os demais produtos reutilizam o dicionário de códigos, os nomes mapeados do Mu
 O mesmo recorte se aplica ao painel, aos candidatos e às exportações. O parâmetro Produto permanece na URL ao atualizar ou compartilhar o link. A lista também exibe o produto reconhecido junto do curso. Foi removido o caractere > que sobrava após a área de filtros.
 
 Validação: 25 testes passaram, incluindo nove de Oportunidades. Casos novos cobrem Pós por código e por sufixo, Bem-estar com apelido, Saúde agrupada, Engenharia, proteção do EAD, restrição por polo e exportação no mesmo recorte. Não houve migração de banco. Atualizar o aplicativo Node completo na Hostinger para aplicar backend e frontend juntos.
+
+## Educação Física — equivalência de nomes e grau
+
+A planilha de catálogo `planilha_leads_preenchida.xlsx` fornecida pelo usuário contém Educação Física — Bacharelado (ESPRE_BEDU/EGRAD_BEDU) e Educação Física — Licenciatura (ESPRE_EDU/EGRAD_EDU), com modalidade explícita no nome. O classificador passa a reconhecer grau no início ou no final do nome e a abreviação Ed. Física, preservando a distinção de grau no produto cadastrado. A prioridade do EAD continua válida; nomes genéricos ambíguos não são atribuídos a um produto arbitrário. Restrições de polo continuam aplicadas.
+
+Um produto filtrado sem resultado agora alerta quando existem oportunidades ainda sem produto identificado nos demais filtros. Esse aviso não altera contagens nem presume que o filtro deveria ter candidatos.
+
+Validação complementar: 34 testes passaram. O benchmark sintético continua em aproximadamente 65 ms na primeira carga e 4–10 ms nas leituras seguintes de painel. A correção é de reconhecimento no código; a quantidade efetiva de candidatos em produção depende da fonte e dos vínculos cadastrados.

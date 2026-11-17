@@ -179,9 +179,15 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     for (const r of all('SELECT curso_nome, produto_id FROM ma_lista_cursos WHERE produto_id IS NOT NULL AND curso_nome IS NOT NULL')) {
       const k = norm(r.curso_nome); const ids = porNomeCurso.get(k) || new Set(); ids.add(r.produto_id); porNomeCurso.set(k, ids);
     }
-    const limpar = nome => norm(nome).replace(/^(?:graduacao|licenciatura|bacharelado|superior de tecnologia|tecnologo|curso superior de tecnologia) em /, '').replace(/ (?:graduacao )?(?:ead|semipresencial|hibrido)$/, '').trim();
+    const grauCurso = nome => /\blicenciatura\b/.test(norm(nome)) ? 'licenciatura' : /\bbacharel(?:ado)?\b/.test(norm(nome)) ? 'bacharelado' : null;
+    const limpar = nome => norm(nome)
+      .replace(/ (?:graduacao )?(?:ead|semipresencial|hibrido)$/, '')
+      .replace(/^(?:graduacao|licenciatura|bacharelado|bacharel|superior de tecnologia|tecnologo|curso superior de tecnologia) em /, '')
+      .replace(/ (?:bacharelado|bacharel|licenciatura)$/, '')
+      .replace(/\bed fisica\b/g, 'educacao fisica').trim();
     const cursos = all('SELECT nome, produto_id, apelidos, polos FROM cursos WHERE ativo=1 AND produto_id IS NOT NULL').map(c => ({
       produto_id: c.produto_id,
+      grau: grauCurso(c.nome) || grauCurso(produtos[c.produto_id]),
       permitidos: String(c.polos || '').split(',').filter(Boolean).map(Number),
       nomes: [c.nome, ...String(c.apelidos || '').split(/[,;\n]/)].map(limpar).filter(Boolean)
     }));
@@ -199,12 +205,14 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       const mapeados = porNomeCurso.get(n); if (mapeados?.size === 1) return [...mapeados][0];
       // Reutiliza cursos, apelidos e polos do cadastro existente; não cria regras genéricas por área.
       const alvo = limpar(nome), candidatos = [];
+      const grau = grauCurso(nome) || (/^ESPRE_BEDU$/i.test(codigo) ? 'bacharelado' : /^ESPRE_EDU$/i.test(codigo) ? 'licenciatura' : null);
       for (const curso of cursos) {
+        if (grau && curso.grau && grau !== curso.grau) continue;
         const permitidos = curso.permitidos;
         if (permitidos.length && (!polo || !permitidos.includes(Number(polo)))) continue;
         const nomes = curso.nomes;
         const matches = nomes.filter(n => alvo === n || (n.length >= 4 && (alvo + ' ').startsWith(n + ' ')));
-        if (matches.length) candidatos.push({ id: curso.produto_id, score: Math.max(...matches.map(n => n.length + (n === alvo ? 10000 : 0))) });
+        if (matches.length) candidatos.push({ id: curso.produto_id, score: Math.max(...matches.map(n => n.length + (n === alvo ? 10000 : 0))) + (grau && grau === curso.grau ? 5000 : 0) });
       }
       if (!candidatos.length) return null;
       const max = Math.max(...candidatos.map(c => c.score));
@@ -477,6 +485,10 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     const semPolo = base.filter(r => r.polo_key === 'sem').length;
     if (semPolo && !poloRestrito(usuario)) avisos.push(`${semPolo} oportunidade(s) com polo não reconhecido. Elas aparecem para a administração, mas não para tutores, até o nome do polo ser vinculado (use “Vincular polos” na importação).`);
     if (k.ra.aguardando) avisos.push(`${k.ra.aguardando} oportunidade(s) aguardando conciliação: há aluno com RA possivelmente correspondente, mas sem CPF único que confirme. Elas não entram na conversão até alguém confirmar o vínculo.`);
+    if (f.produto && f.produto !== 'sem' && !rows.length) {
+      const pendentes = filtrar(base, {...f,produto:undefined}).filter(r=>r.produto_key==='sem').length;
+      if (pendentes) avisos.push(`Este produto não tem oportunidades classificadas no recorte. Há ${pendentes} oportunidade(s) sem produto identificado nos demais filtros; confira os vínculos dos cursos antes de concluir que não existem candidatos.`);
+    }
     // comparação com outro processo e/ou outro período de inscrição (mesmos demais filtros)
     let comparacao = null;
     const cmpCiclo = Number(q.cmp_ciclo) || null, cmpDe = String(q.cmp_de || ''), cmpAte = String(q.cmp_ate || '');
