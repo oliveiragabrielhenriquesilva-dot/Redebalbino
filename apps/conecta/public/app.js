@@ -34,7 +34,7 @@ function showMode(m){
  if($('sourceLink'))$('sourceLink').href=m==='overview'?'https://bussola.unicesumar.edu.br/categoria/novo-marco-regulatorio':'https://bussola.unicesumar.edu.br/argumentario';
  selected=null;$('overview').hidden=m!=='overview';$('catalogView').hidden=m==='overview'||m==='home'||m==='calendar';$('detail').hidden=true;
  $('pageTitle').textContent=({calendar:'Calendário Acadêmico',home:'Balbino Conecta',overview:'Marco Regulatório 2027',all:'Cursos e Argumentário Comercial',ead:'Cursos EAD',semipresencial:'Cursos semipresenciais'})[m];
- $('pageSub').textContent=m==='calendar'?'Escolha o módulo para consultar as datas acadêmicas.':m==='home'?'Cursos, orientações e calendário acadêmico em um só lugar.':m==='overview'?'Orientações de 2027 e particularidades de cada curso.':'Busque o curso e abra sua ficha para consultar argumentos, dados acadêmicos e simular a mensalidade.';
+ $('pageSub').textContent=m==='calendar'?'Consulte os prazos do módulo e o calendário administrativo da UniCesumar.':m==='home'?'Cursos, orientações e calendário acadêmico em um só lugar.':m==='overview'?'Orientações de 2027 e particularidades de cada curso.':'Busque o curso e abra sua ficha para consultar argumentos, dados acadêmicos e simular a mensalidade.';
  document.querySelectorAll('nav [data-mode]').forEach(b=>{b.classList.toggle('active',b.dataset.mode===m);b.setAttribute('aria-current',b.dataset.mode===m?'page':'false')});
  if(m!=='overview'&&m!=='home'&&m!=='calendar'){fillFilters();renderCatalog()}
 }
@@ -114,4 +114,5 @@ function routeFromHash(){
 routeFromHash();window.addEventListener('hashchange',routeFromHash);
 
 })().catch(()=>{const main=document.querySelector('main');const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Não foi possível carregar o Balbino Conecta. Atualize a página ou entre novamente no Portal.';main.replaceChildren(p);});
+
 

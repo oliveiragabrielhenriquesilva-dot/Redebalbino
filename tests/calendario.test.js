@@ -24,3 +24,14 @@ test('navegação mostra módulo antes de abrir seu conteúdo e alterna duraçã
  context.BalbinoCalendar.route('#calendario-academico/54-2026');assert.match(box.innerHTML,/role="tablist"/);assert.match(box.innerHTML,/1ª e da 2ª disciplina/);assert.match(nodes.get('#cal-events').innerHTML,/26\/10\/2026/);
  box.onclick({target:{closest:()=>({dataset:{calWeeks:'10'}})}});assert.equal(location.hash,'#calendario-academico/54-2026/10-semanas');assert.match(box.innerHTML,/Prazos das disciplinas com duração de 10 semanas/);assert.doesNotMatch(nodes.get('#cal-events').innerHTML,/26\/10\/2026/);
 });
+
+test('calendário administrativo tem rota própria, fonte externa e retorno ao hub',()=>{
+ const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+ const box={innerHTML:'',querySelector(){return {innerHTML:'',value:'',textContent:''}}};
+ const context={Intl,Date,location:{hash:'#calendario-academico'},history:{replaceState(){}}};context.globalThis=context;
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../apps/conecta/public/calendario.js'),'utf8'),context);
+ context.BalbinoCalendar.mount(box);assert.match(box.innerHTML,/Calendário Administrativo/);assert.match(box.innerHTML,/#calendario-academico\/54-2026/);assert.doesNotMatch(box.innerHTML,/<iframe/);
+ context.BalbinoCalendar.route('#calendario-academico/administrativo');assert.match(box.innerHTML,/src="https:\/\/secretaria-unicesumar.github.io\/calendariounicesumar\/"/);assert.match(box.innerHTML,/title="Calendário Administrativo/);assert.match(box.innerHTML,/Abrir em nova aba/);assert.match(box.innerHTML,/Voltar aos calendários/);
+ context.BalbinoCalendar.route('#calendario-academico');assert.doesNotMatch(box.innerHTML,/<iframe/);
+ const gateway=fs.readFileSync(path.join(__dirname,'../server.js'),'utf8');assert.match(gateway,/frame-src https:\/\/secretaria-unicesumar.github.io;/);
+});

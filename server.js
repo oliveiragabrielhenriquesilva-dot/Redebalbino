@@ -472,7 +472,7 @@ function serveConecta(req, res, url) {
   const file = CONECTA_FILES.get(url.pathname.slice('/conecta'.length));
   if (!file) return jsonReply(res, 404, { error: 'Arquivo não encontrado.' });
   const content = file[0] === 'dados.json' ? readConectaData() : fs.readFileSync(path.join(ROOT, 'apps/conecta/public', file[0]));
-  res.writeHead(200, { 'Content-Type': file[1], 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" });
+  res.writeHead(200, { 'Content-Type': file[1], 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; frame-src https://secretaria-unicesumar.github.io; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" });
   return req.method === 'HEAD' ? res.end() : res.end(content);
 }
 
@@ -619,4 +619,5 @@ server.listen(PORT, '0.0.0.0', () => console.log(`Central Balbino ativa na porta
 startApps().catch(error => {
   console.error('Não foi possível preparar os sistemas:', error);
 });
+
 
