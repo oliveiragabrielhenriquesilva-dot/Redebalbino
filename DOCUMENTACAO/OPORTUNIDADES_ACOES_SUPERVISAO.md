@@ -1,137 +1,84 @@
 # Ações da supervisão
 
-O menu lateral segue a estrutura de Matrículas: Painel gerencial, Candidatos,
-Ações da supervisão, Importações e Definições. Os acessos ao Portal, Meus sistemas,
-Matrículas, tema e saída permanecem disponíveis. Em telas pequenas, o botão de
-menu abre a navegação lateral.
+## Regra vigente: uma linha = uma participação
 
-## Distribuição
+A distribuição deve reproduzir as abas da planilha. O mesmo lead e curso podem
+aparecer duas vezes, em tutoras diferentes ou em linhas distintas da mesma aba.
+Cada linha gera sua própria participação, contando na carteira da tutora indicada
+naquela aba. Não se escolhe uma única tutora nem se descarta a repetição.
 
-Em Ações da supervisão, Nova ação por planilha lê todas as abas do XLSX. Cada aba
-representa uma tutora. Informe nome da ação, supervisora e período. A associação
-com a tutora usa nome ou apelido exato cadastrado, ou a seleção manual na prévia.
-A aba Bia pode ser vinculada ao cadastro de Beatriz sem renomear a tutora.
+Isso não duplica o cadastro geral do candidato. O responsável geral da ficha
+permanece independente das carteiras das ações. O vínculo guarda ação, lead,
+tutora, aba, linha original e situação inicial do RA. A confirmação repetida do
+mesmo arquivo/nome/período abre a ação existente.
 
-O servidor procura apenas oportunidades existentes no processo selecionado,
-usando CPF válido e curso. Não cria leads nem substitui nome, telefone, status
-de origem, etapa, anotações ou atendimentos. Ao confirmar a prévia, grava a ação,
-vincula os leads e atualiza o responsável atual com evento no histórico.
+## Importação e revisão
 
-CPF com mais de uma inscrição no mesmo curso, pessoa não localizada, tutora não
-identificada e lead repetido em abas de tutoras diferentes ficam pendentes. Não
-há atribuição arbitrária. A prévia mostra essas linhas antes de confirmar e o
-relatório mantém as pendências fora dos indicadores. Uma segunda confirmação
-da mesma distribuição, nome e período abre a ação existente sem repetir a operação.
+A importação lê todas as abas do XLSX e mostra prévia antes da gravação. Nome ou
+apelido cadastrado identifica a tutora; também é possível mapear cada aba para um
+cadastro ativo. Códigos de curso antigos guardados no campo nome são recuperados.
+CPFs numéricos em notação científica são expandidos como inteiros seguros e seus
+dígitos verificadores continuam validados.
 
-A planilha Oportunidades.xlsx enviada em 17/11/2026 tem quatro abas: Bia,
-Tainara, Marcelly e Emilly. Há 37 linhas em cada aba, 148 linhas ao todo e 138 CPFs
-distintos. Há pessoas em mais de uma aba, incluindo inscrições com o mesmo curso;
-esses casos precisam de resolução pela supervisão. A planilha e seus CPFs não são
-incluídos no repositório.
+A busca usa CPF e curso. Sem CPF, pode usar nome completo normalizado, telefone
+e curso para uma correspondência única em cadastro igualmente sem CPF. Sem
+telefone, a revisão oferece inscrições do mesmo nome e curso para escolha
+explícita. Não se inventa CPF. Mais de uma inscrição correspondente permanece
+para revisão; selecionar a inscrição resolve todas as linhas daquele grupo,
+criando uma participação por linha e mantendo as tutoras das respectivas abas.
+
+Permissões, polo da inscrição e atuação da tutora são verificados no servidor.
+Uma versão das pendências impede revisão concorrente desatualizada (409).
+As operações de vínculo, revisão e eventos são transacionais. Etapa, observações,
+dados de origem e histórico geral não são sobrescritos pela distribuição.
 
 ## Indicadores
 
-- Leads: inscrições existentes efetivamente vinculadas; uma pessoa pode ter mais
-  de uma inscrição em cursos diferentes.
-- Atendidos: leads com ao menos um atendimento não anulado registrado no sistema
-  entre o início e o fim da ação (ou a data da consulta). Vários atendimentos do
-  mesmo lead contam uma vez na taxa. Contatos da planilha antiga não são prova
-  de atendimento nesta ação.
-- Taxa de atendimento: atendidos / leads vinculados.
-- RA inicial: situação salva no momento da distribuição.
-- Novas confirmações de RA: leads sem RA confirmado na distribuição e com RA
-  confirmado na consulta atual, pelo motor de conciliação oficial de Oportunidades.
-- Conversão: novas confirmações / leads sem RA confirmado na distribuição.
-  Denominador zero aparece como indisponível. A comparação é desde a distribuição;
-  não atribui causalidade à ação e não usa a data de pagamento como corte.
+Cards mostram ações; a mais recente abre automaticamente. Cards por tutora
+filtram os indicadores e a lista para sua carteira. Ver toda a ação retorna ao
+consolidado. A conferência mostra linhas recebidas, participações vinculadas e
+pendências por aba. Totais de participações e inscrições distintas são separados.
 
-O período filtra os atendimentos. As confirmações de RA seguem o estado atual
-da lista oficial, inclusive importações posteriores; esta diferença é explicitada
-na tela. O relatório mostra responsáveis da ação separadamente do autor de cada
-atendimento e indica quando a própria tutora atribuída registrou o contato.
+Atendimento vale no período da ação, por participação. Ao abrir um lead pela
+carteira da ação, o formulário envia a participação e o contato fica vinculado a
+ela. Um contato da carteira de Bia não marca a participação de Tainara atendida.
+Contatos antigos sem participação só entram automaticamente quando há uma única
+participação daquele lead na ação. Em repetição, não se atribui o contato genérico
+às duas carteiras.
 
-Acesso a leitura respeita o polo do usuário. Pendências da distribuição e criação
-estão limitadas a quem pode distribuir leads. Cada ação tem os seus próprios
-vínculos e situação inicial; alterar o responsável global depois não reescreve
-quem recebeu o lead naquela ação.
+Taxa de atendimento = participações atendidas / participações vinculadas.
+Conversão = participações com nova confirmação de RA / participações sem RA na
+distribuição. RA inicial já confirmado não é nova conversão. Os resultados seguem
+o motor oficial de conciliação e são mostrados por participação; os cadastros e
+as matrículas do sistema geral não são duplicados. Denominador zero é indisponível.
 
-## API e validação
+## Exclusão e acesso
+
+Excluir retira a ação do painel por marcação, mantendo vínculos, leads,
+responsáveis gerais e atendimentos. Ações excluídas permite restaurar a mesma ação.
+Quem distribui pode revisar, excluir e restaurar. Leitura respeita o polo; tutores
+não acessam pendências administrativas nem a lista de ações excluídas.
+
+## Estrutura e API
+
+ma_op_acoes guarda metadados e exclusão. ma_op_acao_leads tem ID por participação
+e chave única por ação/aba/linha original; não há unicidade por lead. A migração
+copia os vínculos antigos em transação e mantém IDs de ações e os dados anteriores.
+ma_oportunidade_atendimentos.acao_lead_id identifica a participação atendida.
+ma_op_acao_eventos e o histórico do lead registram revisão, exclusão e restauração.
 
 - GET /api/ma/oportunidades/acoes?ciclo=ID
 - POST /api/ma/oportunidades/acoes/previa
 - POST /api/ma/oportunidades/acoes (confirmado=true)
 - GET /api/ma/oportunidades/acoes/ID
+- POST /api/ma/oportunidades/acoes/ID/resolver
+- DELETE /api/ma/oportunidades/acoes/ID
+- POST /api/ma/oportunidades/acoes/ID/restaurar
 
-Tabelas novas e aditivas: ma_op_acoes e ma_op_acao_leads. Criação, vínculos,
-responsáveis e histórico são gravados na mesma transação. A atualização invalida
-o cache existente pelas revisões do SQLite.
+## Fonte conferida em 17/11/2026
 
-Testes cobrem prévia sem escrita, CPF e curso, apelido de tutora, seleção manual,
-conflitos entre abas, nenhum novo lead, preservação de dados, confirmação repetida,
-acesso por polo, atendimentos e RA inicial versus novo. A leitura da planilha é
-validada para todas as abas, incluindo CPF numérico ou com sufixo decimal.
-
-## CPFs numéricos do Excel
-
-O XML de Oportunidades.xlsx contém 147 CPFs preenchidos em notação científica.
-O leitor agora expande células numéricas que representem inteiros seguros; a API
-também aceita esses valores e decimais inteiros, mantendo a validação dos dígitos.
-Não descarta o expoente nem considera todo número válido. Valores fracionários,
-fora do intervalo seguro ou com dígitos verificadores errados são rejeitados.
-
-Validação do arquivo original em banco temporário com as inscrições correspondentes:
-147 CPFs reconhecidos; 137 linhas sem conflito, 10 linhas com o mesmo lead/curso
-atribuído a tutoras diferentes e 1 linha sem CPF. Isso verifica a leitura e a
-regra de conflito; não representa vínculo ou contagem validada na base de produção.
-
-## Registros da importação antiga
-
-A base enriquecida deve carregar o código recuperado de curso_nome, não apenas
-o valor original de curso_cod. A exibição traduzia ESPRE_PED para Pedagogia,
-mas entregava curso_cod vazio para a busca de ações; o CPF era localizado e a
-comparação de curso descartava o registro. O código resolvido e o nome original
-agora seguem na base interna. Teste de regressão reproduz a falha com curso_cod
-vazio e curso_nome=ESPRE_PED e verifica o vínculo sem reimportação.
-A prévia distingue CPF ausente da base de CPF encontrado com curso divergente.
-
-## Cards, revisão e exclusão recuperável
-
-A lista de seleção foi substituída por cards com leads, tutoras, atendimento e
-pendências. A ação mais recente abre automaticamente; cada card abre o seu painel.
-O parâmetro `acao` conserva a seleção ao compartilhar/reabrir a página.
-
-Pendências são agrupadas por pessoa, CPF mascarado e curso. O administrador pode
-conferir os IDs de inscrição e respectivas datas, escolher uma inscrição e uma
-tutora e vincular o lead. O servidor revalida o grupo, a inscrição, o polo e a
-permissão, verifica uma versão das pendências para evitar alterações concorrentes,
-resolve juntas as linhas repetidas e registra o histórico. Nenhuma inscrição é
-apagada; registros antigos duplicados permanecem na base.
-
-DELETE /api/ma/oportunidades/acoes/ID exclui a ação do painel por marcação, sem
-apagar vínculos, leads ou atendimentos e sem reatribuir responsáveis. Em Ações
-excluídas, POST /api/ma/oportunidades/acoes/ID/restaurar recupera a mesma ação.
-Somente quem pode distribuir pode excluir, restaurar ou revisar pendências.
-Tutores não consultam a lista excluída. ma_op_acao_eventos guarda o histórico da
-revisão/exclusão/restauração; as colunas novas de exclusão são aditivas.
-
-POST /api/ma/oportunidades/acoes/ID/resolver recebe versao, grupo,
-oportunidade_id e tutor_id. Uma versão desatualizada retorna 409, sem alterações.
-
-## Visão individual e conferência de origem
-
-Cards por tutora abrem indicadores e leads apenas daquela responsável dentro da
-ação; Ver toda a ação retorna ao consolidado. A conferência das linhas por aba
-explica recebidas = vinculadas + pendentes + repetições resolvidas, inclusive
-após a revisão de uma pendência.
-
-CPF ausente: novas importações podem localizar um registro também sem CPF pela
-combinação única de nome completo normalizado, telefone e curso. Sem telefone,
-a pendência pode apresentar inscrições do mesmo nome completo e curso para
-escolha explícita; a API exige a seleção e valida novamente a correspondência.
-Isso não cria CPF nem elimina a validação de um CPF preenchido e inválido.
-
-Conferência em 17/11: o XLSX originalmente enviado tem 37 registros por aba (148
-linhas), Agnales em Bia linha 37 e Tainara linha 28, nenhum em Marcelly. Um print
-posterior da planilha aberta mostra Agnales em Marcelly linha 99. Portanto, esse
-print não corresponde ao conteúdo do XLSX recebido; novas atribuições devem
-aguardar a versão atualizada da fonte para conciliar a distribuição.
+O XLSX originalmente enviado tem 37 linhas por aba (148 ao todo). Agnales aparece
+em Bia, linha 37, e Tainara, linha 28; não aparece na aba Marcelly desse arquivo,
+que termina na linha 38. Um print posterior mostra Agnales em Marcelly, linha 99.
+É necessário o arquivo correspondente à versão atual para reconciliar a
+operacionalização. Não se substitui a planilha atual pelo conteúdo do XLSX antigo.

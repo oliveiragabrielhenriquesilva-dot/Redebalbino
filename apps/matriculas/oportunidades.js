@@ -729,10 +729,13 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     if (!ETAPA_LABEL[etapa]) falha(400, 'Etapa inválida.');
     const proximo = c.proximo_contato === undefined ? undefined : (String(c.proximo_contato || '').trim() || null);
     if (proximo && !isoValido(proximo)) falha(400, 'Data de retorno inválida.');
+    const participacao = c.participacao_id ? get('SELECT l.id FROM ma_op_acao_leads l JOIN ma_op_acoes a ON a.id=l.acao_id WHERE l.id=? AND l.oportunidade_id=? AND a.excluida_em IS NULL',Number(c.participacao_id),id) : null;
+    if(c.participacao_id&&!participacao)falha(400,'Participação inválida para este lead.');
     return tx(() => {
       const aid = Number(run(`INSERT INTO ma_oportunidade_atendimentos (oportunidade_id, data, canal, resultado, etapa_antes, etapa_depois, proximo_contato, autor_login, autor_nome, autor_usuario_id, autor_tutor_id)
         VALUES (?,?,?,?,?,?,?,?,?,?,?)`, id, data, canal, resultado, o.etapa, etapa, proximo === undefined ? o.proximo_contato : proximo, quem(usuario).login, quem(usuario).nome,
         usuario.id > 0 ? usuario.id : null, usuario.tutor_id || null).lastInsertRowid);
+      if(participacao)run('UPDATE ma_oportunidade_atendimentos SET acao_lead_id=? WHERE id=?',participacao.id,aid);
       run(`UPDATE ma_oportunidades SET etapa=?, proximo_contato=?, atualizado_por=?, atualizado_em=datetime('now','localtime') WHERE id=?`,
         etapa, proximo === undefined ? o.proximo_contato : proximo, usuario.login, id);
       if (etapa !== o.etapa) evento(id, 'etapa', ETAPA_LABEL[o.etapa] || o.etapa, ETAPA_LABEL[etapa], usuario, { detalhe: `Atendimento #${aid}` });

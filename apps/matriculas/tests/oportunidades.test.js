@@ -204,7 +204,7 @@ test('relatório real com código na coluna Curso classifica registros antigos s
 test('ação da supervisão vincula somente leads existentes e preserva fonte e histórico',()=>{
  db.exec(`INSERT INTO ciclos(id,nome,padrao) VALUES(95,'Ação supervisão',0);
  INSERT INTO tutores(id,nome,apelidos) VALUES(95,'Beatriz','Bia'),(96,'Emilly',NULL);
- INSERT INTO tutor_polos(tutor_id,polo_id) VALUES(95,1),(96,2);`);
+ INSERT INTO tutor_polos(tutor_id,polo_id) VALUES(95,1),(96,2),(96,1);`);
  op.importar({ciclo:95,confirmado:true,linhas:[
   {identificador:'acao-1',nome:'Lead ação',cpf:'52998224725',curso_cod:'ESPRE_PED',curso_nome:'Pedagogia',polo_fonte:'Franca',status_origem:'Inscrito'},
   {identificador:'acao-2',nome:'Outro lead ação',cpf:'11144477735',curso_cod:'ESPRE_PED',polo_fonte:'Batatais'}]},admin);
@@ -223,7 +223,7 @@ test('ação da supervisão vincula somente leads existentes e preserva fonte e 
  assert.strictEqual(created.vinculados,2);assert.strictEqual(created.pendentes,1);
  assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_oportunidades').get().n,count);
  const after=db.prepare('SELECT * FROM ma_oportunidades WHERE id=?').get(id);
- assert.deepStrictEqual([after.responsavel_tutor_id,after.observacao,after.etapa,after.status_origem],[95,'Preservar anotação','negociacao','Inscrito']);
+ assert.deepStrictEqual([after.responsavel_tutor_id,after.observacao,after.etapa,after.status_origem],[null,'Preservar anotação','negociacao','Inscrito']);
  assert.strictEqual(op.acoes.criar({...input,confirmado:true},admin).id,created.id);
  assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_op_acoes').get().n,1);
  assert.strictEqual(op.acoes.relatorio(created.id,admin).kpis.total,2);
@@ -242,15 +242,15 @@ test('ação da supervisão vincula somente leads existentes e preserva fonte e 
  const baseline=op.acoes.relatorio(second.id,admin);assert.strictEqual(baseline.kpis.ja_convertidos,1);assert.strictEqual(baseline.kpis.novas_conversoes,0);assert.strictEqual(baseline.kpis.taxa_conversao,null);
 });
 
-test('distribuição não escolhe tutora em conflitos nem muda de curso só por CPF',()=>{
+test('distribuição mantém repetições entre tutoras sem mudar o curso por CPF',()=>{
  const input={ciclo:95,nome:'Conflitos',inicio:'2026-01-01',linhas:[
  {aba:'Bia',cpf:'52998224725',curso_cod:'ESPRE_PED'},
  {aba:'Emilly',cpf:'52998224725',curso_cod:'ESPRE_PED'},
  {aba:'Bia',cpf:'11144477735',curso_cod:'ESPRE_BEDU'}]};
- const p=op.acoes.previa(input,admin);assert.strictEqual(p.totais.vinculaveis,0);
- assert.ok(p.linhas.slice(0,2).every(r=>/tutoras diferentes/.test(r.motivo)));
+ const p=op.acoes.previa(input,admin);assert.strictEqual(p.totais.vinculaveis,2);
+ assert.ok(p.linhas.slice(0,2).every(r=>!r.motivo));
  assert.match(p.linhas[2].motivo,/curso não corresponde/);
- assert.throws(()=>op.acoes.criar({...input,confirmado:true},admin),/Nenhum lead/);
+ assert.strictEqual(op.acoes.criar({...input,confirmado:true},admin).vinculados,2);
  assert.strictEqual(op.acoes.previa({...input,linhas:[{...input.linhas[0],aba:'Apelido desconhecido'}]},admin).totais.pendentes,1);
  assert.strictEqual(op.acoes.previa({...input,linhas:[{...input.linhas[0],aba:'Apelido desconhecido'}],tutores:{'Apelido desconhecido':95}},admin).totais.vinculaveis,1);
 });
@@ -284,8 +284,8 @@ test('resolve pendência agrupada com inscrição e tutora explícitas sem dupli
  assert.throws(()=>op.acoes.resolver(created.id,body,tutorFranca),/acesso/);
  assert.throws(()=>op.acoes.resolver(created.id,{...body,oportunidade_id:999999},admin),/correspondente/);
  const result=op.acoes.resolver(created.id,body,admin);assert.strictEqual(result.resolvidas,2);
- const after=op.acoes.relatorio(created.id,admin);assert.strictEqual(after.kpis.total,2);assert.strictEqual(after.pendencias.length,0);
- assert.strictEqual(db.prepare('SELECT responsavel_tutor_id FROM ma_oportunidades WHERE id=?').get(body.oportunidade_id).responsavel_tutor_id,95);
+ const after=op.acoes.relatorio(created.id,admin);assert.strictEqual(after.kpis.total,3);assert.strictEqual(after.pendencias.length,0);
+ assert.strictEqual(db.prepare('SELECT responsavel_tutor_id FROM ma_oportunidades WHERE id=?').get(body.oportunidade_id).responsavel_tutor_id,null);
  assert.strictEqual(db.prepare("SELECT responsavel_tutor_id FROM ma_oportunidades WHERE identificador='REVA'").get().responsavel_tutor_id,null);
  assert.throws(()=>op.acoes.resolver(created.id,body,admin),/pendências mudaram/);
  assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_op_acao_eventos WHERE acao_id=?').get(created.id).n,1);
@@ -318,6 +318,27 @@ test('ação sem CPF pode localizar nome, telefone e curso e mantém conferênci
  assert.strictEqual(op.acoes.relatorio(manual.id,admin).kpis.total,2);
  const acao=op.acoes.listar({ciclo:97},admin).acoes.find(a=>a.nome==='Revisão');
  const check=op.acoes.relatorio(acao.id,admin).conferencia;
- assert.deepStrictEqual([check.recebidas,check.vinculados,check.pendentes,check.repetidas_resolvidas],[3,2,0,1]);
+ assert.deepStrictEqual([check.recebidas,check.vinculados,check.pendentes,check.repetidas_resolvidas],[3,3,0,0]);
  assert.strictEqual(check.por_aba.reduce((n,a)=>n+a.recebidas,0),3);
+});
+
+test('cada linha repetida vira participação e atendimento fica restrito à participação escolhida',()=>{
+ const input={ciclo:95,nome:'Carteiras repetidas',inicio:'2026-01-01',confirmado:true,linhas:[
+ {aba:'Bia',linha:7,nome:'Lead ação',cpf:'52998224725',curso_cod:'ESPRE_PED'},
+ {aba:'Emilly',linha:11,nome:'Lead ação',cpf:'52998224725',curso_cod:'ESPRE_PED'}]};
+ const before=db.prepare('SELECT count(*) n FROM ma_oportunidades').get().n;
+ const created=op.acoes.criar(input,admin),report=op.acoes.relatorio(created.id,admin);
+ assert.strictEqual(report.kpis.total,2);assert.strictEqual(report.kpis.leads_unicos,1);assert.strictEqual(report.kpis.atendidos,0);
+ assert.strictEqual(new Set(report.linhas.map(l=>l.participacao_id)).size,2);
+ assert.ok(report.por_tutora.every(t=>t.total===1));
+ const bia=report.linhas.find(l=>l.tutor_id===95);
+ op.registrarAtendimento(bia.id,{canal:'telefone',resultado:'Contato para a carteira Bia',participacao_id:bia.participacao_id},admin);
+ const after=op.acoes.relatorio(created.id,admin);
+ assert.strictEqual(after.por_tutora.find(t=>t.id===95).atendidos,1);
+ assert.strictEqual(after.por_tutora.find(t=>t.id===96).atendidos,0);
+ assert.strictEqual(after.kpis.atendidos,1);assert.strictEqual(after.kpis.taxa_atendimento,50);
+ assert.strictEqual(op.acoes.listar({ciclo:95},admin).acoes.find(a=>a.id===created.id).atendidos,1);
+ assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_oportunidades').get().n,before);
+ assert.deepStrictEqual(after.conferencia.por_aba.map(a=>a.recebidas),[1,1]);
+ assert.throws(()=>op.registrarAtendimento(bia.id,{resultado:'Não existe',participacao_id:999999},admin),/Participação inválida/);
 });

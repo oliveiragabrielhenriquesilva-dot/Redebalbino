@@ -8,10 +8,22 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
  criado_em TEXT NOT NULL DEFAULT (datetime('now','localtime')), criado_por TEXT,
  pendencias TEXT NOT NULL DEFAULT '[]', UNIQUE(ciclo_id,hash));
  CREATE TABLE IF NOT EXISTS ma_op_acao_leads (
- acao_id INTEGER NOT NULL REFERENCES ma_op_acoes(id), oportunidade_id INTEGER NOT NULL REFERENCES ma_oportunidades(id),
- tutor_id INTEGER NOT NULL REFERENCES tutores(id), aba TEXT NOT NULL, ra_inicial TEXT NOT NULL,
- PRIMARY KEY(acao_id,oportunidade_id));
+ id INTEGER PRIMARY KEY, acao_id INTEGER NOT NULL REFERENCES ma_op_acoes(id), oportunidade_id INTEGER NOT NULL REFERENCES ma_oportunidades(id),
+ tutor_id INTEGER NOT NULL REFERENCES tutores(id), aba TEXT NOT NULL, linha_fonte INTEGER, ra_inicial TEXT NOT NULL,
+ UNIQUE(acao_id,aba,linha_fonte));
  CREATE INDEX IF NOT EXISTS ix_op_acao_lead ON ma_op_acao_leads(oportunidade_id,acao_id);`);
+ if(!all('PRAGMA table_info(ma_op_acao_leads)').some(c=>c.name==='id'))tx(()=>{
+  db.exec(`CREATE TABLE ma_op_acao_leads_novo(id INTEGER PRIMARY KEY,acao_id INTEGER NOT NULL REFERENCES ma_op_acoes(id),oportunidade_id INTEGER NOT NULL REFERENCES ma_oportunidades(id),tutor_id INTEGER NOT NULL REFERENCES tutores(id),aba TEXT NOT NULL,linha_fonte INTEGER,ra_inicial TEXT NOT NULL,UNIQUE(acao_id,aba,linha_fonte));
+  INSERT INTO ma_op_acao_leads_novo(acao_id,oportunidade_id,tutor_id,aba,ra_inicial) SELECT acao_id,oportunidade_id,tutor_id,aba,ra_inicial FROM ma_op_acao_leads;
+  DROP TABLE ma_op_acao_leads;ALTER TABLE ma_op_acao_leads_novo RENAME TO ma_op_acao_leads;
+  CREATE INDEX ix_op_acao_lead ON ma_op_acao_leads(oportunidade_id,acao_id);`);
+ });
+ if(!all('PRAGMA table_info(ma_oportunidade_atendimentos)').some(c=>c.name==='acao_lead_id'))db.exec('ALTER TABLE ma_oportunidade_atendimentos ADD COLUMN acao_lead_id INTEGER REFERENCES ma_op_acao_leads(id)');
+ function contatosPorParticipacao(ls,eventos){
+  const quantidades=new Map();for(const l of ls)quantidades.set(l.oportunidade_id,(quantidades.get(l.oportunidade_id)||0)+1);
+  const porLead=new Map();for(const e of eventos){const es=porLead.get(e.oportunidade_id)||[];es.push(e);porLead.set(e.oportunidade_id,es);}
+  return new Map(ls.map(l=>[l.id,(porLead.get(l.oportunidade_id)||[]).filter(e=>e.acao_lead_id?e.acao_lead_id===l.id:quantidades.get(l.oportunidade_id)===1)]));
+ }
  const colunas=all('PRAGMA table_info(ma_op_acoes)').map(c=>c.name);
  if(!colunas.includes('excluida_em'))db.exec('ALTER TABLE ma_op_acoes ADD COLUMN excluida_em TEXT');
  if(!colunas.includes('excluida_por'))db.exec('ALTER TABLE ma_op_acoes ADD COLUMN excluida_por TEXT');
@@ -50,11 +62,7 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
     motivo:!cpf&&!semCpf?'CPF inválido':semCpf&&!telefone?'CPF não informado — confira a inscrição pelo nome e curso':!t?'Vincule a aba a uma tutora cadastrada':!matches.length?(matchesCpf.length?'CPF localizado, mas o curso não corresponde às inscrições deste processo':'CPF não localizado nas oportunidades deste processo'):matches.length>1?'Mais de uma inscrição corresponde ao CPF e curso':!r.polo_id?'Polo do lead não reconhecido':(polosTutora.get(t.id)||[]).length&&!(polosTutora.get(t.id)||[]).includes(r.polo_id)?'Tutora não vinculada ao polo deste lead':'',
     atual:r?.responsavel||'',polo:r?.polo||''};
   });
-  const grupos=new Map();for(const r of linhas)if(r.oportunidade_id){const a=grupos.get(r.oportunidade_id)||[];a.push(r);grupos.set(r.oportunidade_id,a);}
-  for(const group of grupos.values()){
-   if(new Set(group.map(r=>r.tutor_id)).size>1)for(const r of group)r.motivo='Mesmo lead distribuído para tutoras diferentes';
-   else for(const r of group.slice(1))r.motivo='Linha repetida na mesma distribuição';
-  }
+  const fontes=new Set();for(const r of linhas){const k=JSON.stringify([r.aba,r.linha]);if(fontes.has(k))falha(400,'A mesma linha de origem foi enviada mais de uma vez.');fontes.add(k);}
   const hash=crypto.createHash('sha256').update(JSON.stringify({nome:norm(nome),inicio,fim,linhas:c.linhas.map(r=>[String(r.aba||'').trim(),cpfNormalizado(r.cpf).valor,String(r.curso_cod||'').trim().toUpperCase()]).sort((a,b)=>JSON.stringify(a).localeCompare(JSON.stringify(b)))})).digest('hex');
   const existente=get('SELECT id,nome FROM ma_op_acoes WHERE ciclo_id=? AND hash=?',ciclo,hash);
   return {ciclo,nome,inicio,fim:fim||null,supervisora:String(c.supervisora||'').trim().slice(0,120),arquivo:String(c.arquivo||'').slice(0,180),hash,existente,
@@ -71,9 +79,9 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
    for(const r of validos){
     const o=get('SELECT * FROM ma_oportunidades WHERE id=?',r.oportunidade_id),antes=nomeResponsavel(o);
     lerResponsavel({responsavel:'t:'+r.tutor_id});
-    run('INSERT INTO ma_op_acao_leads(acao_id,oportunidade_id,tutor_id,aba,ra_inicial) VALUES(?,?,?,?,?)',id,o.id,r.tutor_id,r.aba,r.ra_inicial);
-    run("UPDATE ma_oportunidades SET responsavel_id=NULL,responsavel_tutor_id=?,atualizado_por=?,atualizado_em=datetime('now','localtime') WHERE id=?",r.tutor_id,u.login,o.id);
-    evento(o.id,'acao',antes,r.tutora,u,{detalhe:`Ação #${id}: ${a.nome}`});
+    run('INSERT INTO ma_op_acao_leads(acao_id,oportunidade_id,tutor_id,aba,linha_fonte,ra_inicial) VALUES(?,?,?,?,?,?)',id,o.id,r.tutor_id,r.aba,r.linha,r.ra_inicial);
+    // A carteira pertence à participação; um lead pode estar nas carteiras de duas tutoras.
+    evento(o.id,'acao',null,r.tutora,u,{detalhe:`Ação #${id}: ${a.nome} · ${r.aba}, linha ${r.linha}`});
    }
    return {ok:true,id,vinculados:validos.length,pendentes:a.totais.pendentes};
   });
@@ -83,8 +91,9 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   const excluidas=q.excluidas==='1';if(excluidas)exigir(u);
   const links=all('SELECT l.* FROM ma_op_acao_leads l JOIN ma_op_acoes a ON a.id=l.acao_id WHERE a.ciclo_id=?',ciclo),porAcao=new Map();
   for(const l of links)if(porId.has(l.oportunidade_id)){const xs=porAcao.get(l.acao_id)||[];xs.push(l);porAcao.set(l.acao_id,xs);}
+  const eventos=all('SELECT e.* FROM ma_oportunidade_atendimentos e JOIN ma_oportunidades o ON o.id=e.oportunidade_id WHERE o.ciclo_id=? AND e.anulado=0',ciclo);
   return {acoes:all('SELECT * FROM ma_op_acoes WHERE ciclo_id=? ORDER BY id DESC',ciclo).filter(a=>Boolean(a.excluida_em)===excluidas&&(permissoes(u).importar||porAcao.has(a.id))).map(a=>{
-   const ls=porAcao.get(a.id)||[],ate=a.fim&&a.fim<hojeISO()?a.fim:hojeISO();const atendidos=ls.filter(l=>porId.get(l.oportunidade_id).datas_atendimento.some(d=>d>=a.inicio&&d<=ate)).length;
+   const ls=porAcao.get(a.id)||[],ate=a.fim&&a.fim<hojeISO()?a.fim:hojeISO();const contatos=contatosPorParticipacao(ls,eventos.filter(e=>e.data>=a.inicio&&e.data<=ate)),atendidos=ls.filter(l=>contatos.get(l.id).length).length;
    const novos=ls.filter(l=>l.ra_inicial!=='confirmado'&&porId.get(l.oportunidade_id).ra_situacao==='confirmado').length;
    return {id:a.id,nome:a.nome,supervisora:a.supervisora,inicio:a.inicio,fim:a.fim,criado_em:a.criado_em,excluida_em:a.excluida_em,total:ls.length,atendidos,novas_conversoes:novos,taxa_atendimento:ls.length?100*atendidos/ls.length:null,tutoras:new Set(ls.map(l=>l.tutor_id)).size,pendentes:permissoes(u).importar?JSON.parse(a.pendencias).length:0};
   })};
@@ -95,18 +104,19 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   const links=all('SELECT l.*,t.nome tutora FROM ma_op_acao_leads l JOIN tutores t ON t.id=l.tutor_id WHERE l.acao_id=?',a.id).filter(l=>porId.has(l.oportunidade_id));
   if(!links.length&&!permissoes(u).importar)falha(404,'Ação não encontrada.');
   const fim=a.fim&&a.fim<hojeISO()?a.fim:hojeISO();
-  const eventos=all(`SELECT e.oportunidade_id,e.data,e.autor_tutor_id,e.autor_nome FROM ma_oportunidade_atendimentos e JOIN ma_op_acao_leads l ON l.oportunidade_id=e.oportunidade_id WHERE l.acao_id=? AND e.anulado=0 AND e.data>=? AND e.data<=?`,a.id,a.inicio,fim);
-  const atend=new Map();for(const e of eventos){const xs=atend.get(e.oportunidade_id)||[];xs.push(e);atend.set(e.oportunidade_id,xs);}
-  const linhas=links.map(l=>{const r=porId.get(l.oportunidade_id),ats=atend.get(l.oportunidade_id)||[];return {
-   id:r.id,nome:r.nome,cpf:mascaraCpf(r.cpf),curso:r.curso,polo:r.polo,tutor_id:l.tutor_id,tutora:l.tutora,aba:l.aba,
+  const eventos=all(`SELECT DISTINCT e.id,e.oportunidade_id,e.data,e.autor_tutor_id,e.autor_nome,e.acao_lead_id FROM ma_oportunidade_atendimentos e JOIN ma_op_acao_leads l ON l.oportunidade_id=e.oportunidade_id WHERE l.acao_id=? AND e.anulado=0 AND e.data>=? AND e.data<=?`,a.id,a.inicio,fim);
+  const atend=contatosPorParticipacao(links,eventos);
+  const linhas=links.map(l=>{const r=porId.get(l.oportunidade_id),ats=atend.get(l.id)||[];return {
+   id:r.id,participacao_id:l.id,linha_fonte:l.linha_fonte,nome:r.nome,cpf:mascaraCpf(r.cpf),curso:r.curso,polo:r.polo,tutor_id:l.tutor_id,tutora:l.tutora,aba:l.aba,
    atendido:ats.length>0,atendimentos:ats.length,atendido_pela_tutora:ats.some(e=>Number(e.autor_tutor_id)===l.tutor_id),
    ra_inicial:l.ra_inicial,ra_atual:r.ra_situacao,convertido_apos_inicio:l.ra_inicial!=='confirmado'&&r.ra_situacao==='confirmado',etapa:r.etapa};});
   const resumir=ls=>{const total=ls.length,atendidos=ls.filter(r=>r.atendido).length,ja=ls.filter(r=>r.ra_inicial==='confirmado').length,novos=ls.filter(r=>r.convertido_apos_inicio).length;
-   return {total,atendidos,nao_atendidos:total-atendidos,taxa_atendimento:total?100*atendidos/total:null,ja_convertidos:ja,elegiveis:total-ja,novas_conversoes:novos,taxa_conversao:total>ja?100*novos/(total-ja):null,ra_confirmado:ls.filter(r=>r.ra_atual==='confirmado').length};};
+   return {total,leads_unicos:new Set(ls.map(r=>r.id)).size,atendidos,nao_atendidos:total-atendidos,taxa_atendimento:total?100*atendidos/total:null,ja_convertidos:ja,elegiveis:total-ja,novas_conversoes:novos,taxa_conversao:total>ja?100*novos/(total-ja):null,ra_confirmado:ls.filter(r=>r.ra_atual==='confirmado').length};};
   const por_tutora=[...new Set(links.map(l=>l.tutor_id))].map(id=>({id,nome:links.find(l=>l.tutor_id===id).tutora,...resumir(linhas.filter(r=>r.tutor_id===id))}));
   const resolucoes=all("SELECT detalhe FROM ma_op_acao_eventos WHERE acao_id=? AND tipo='resolveu_pendencia'",a.id).map(e=>JSON.parse(e.detalhe));
-  const resolvidosIds=new Set(resolucoes.map(e=>e.oportunidade_id));
-  const recebidas=[...links.filter(l=>!resolvidosIds.has(l.oportunidade_id)).map(l=>({aba:l.aba})),...resolucoes.flatMap(e=>e.linhas),...JSON.parse(a.pendencias)];
+  const resolvidosIds=new Set(resolucoes.flatMap(e=>(e.participacoes||[]).map(p=>p.participacao_id).filter(Boolean)));
+  const legadosIds=new Set(resolucoes.filter(e=>!(e.participacoes||[]).some(p=>p.participacao_id)).map(e=>e.oportunidade_id));
+  const recebidas=[...links.filter(l=>!resolvidosIds.has(l.id)&&!(l.linha_fonte==null&&legadosIds.has(l.oportunidade_id))).map(l=>({aba:l.aba})),...resolucoes.flatMap(e=>e.linhas),...JSON.parse(a.pendencias)];
   const por_aba=[...new Set(recebidas.map(r=>r.aba))].map(aba=>{const fonte=recebidas.filter(r=>r.aba===aba).length,vinculados=links.filter(l=>l.aba===aba).length,pendentes=JSON.parse(a.pendencias).filter(p=>p.aba===aba).length;return {aba,recebidas:fonte,vinculados,pendentes,repetidas_resolvidas:fonte-vinculados-pendentes};});
   const conferencia=permissoes(u).importar?{recebidas:recebidas.length,vinculados:links.length,pendentes:JSON.parse(a.pendencias).length,repetidas_resolvidas:recebidas.length-links.length-JSON.parse(a.pendencias).length,por_aba}:null;
   const {hash,pendencias,...acao}=a;
@@ -125,17 +135,20 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
    const {base}=carregarBase(a.ciclo_id,u),grupos=gruposPendentes(a,base),g=grupos.find(g=>g.key===c.grupo);
    if(!g)falha(400,'Pendência não encontrada.');
    const escolhido=g.candidatos.find(r=>r.id===Number(c.oportunidade_id));if(!escolhido)falha(400,'Escolha uma inscrição correspondente ao lead e curso.');
-   const tutor_id=Number(c.tutor_id);lerResponsavel({responsavel:'t:'+tutor_id});const t=get('SELECT id,nome FROM tutores WHERE id=?',tutor_id);
-   const r=base.find(r=>r.id===escolhido.id),polos=all('SELECT polo_id FROM tutor_polos WHERE tutor_id=?',tutor_id).map(r=>r.polo_id);
-   if(!r.polo_id||(polos.length&&!polos.includes(r.polo_id)))falha(400,'Tutora não vinculada ao polo do lead.');
-   if(get('SELECT 1 FROM ma_op_acao_leads WHERE acao_id=? AND oportunidade_id=?',a.id,r.id))falha(409,'Esta inscrição já está vinculada à ação.');
-   const pendencias=JSON.parse(a.pendencias),resolvidas=g.indices.map(i=>pendencias[i]),origem=resolvidas.find(p=>p.tutor_id===tutor_id)||resolvidas[0];
-   run('INSERT INTO ma_op_acao_leads(acao_id,oportunidade_id,tutor_id,aba,ra_inicial) VALUES(?,?,?,?,?)',a.id,r.id,tutor_id,origem.aba,origem.ra_inicial||r.ra_situacao);
-   run("UPDATE ma_oportunidades SET responsavel_id=NULL,responsavel_tutor_id=?,atualizado_por=?,atualizado_em=datetime('now','localtime') WHERE id=?",tutor_id,u.login,r.id);
+   const pendencias=JSON.parse(a.pendencias),resolvidas=g.indices.map(i=>pendencias[i]),r=base.find(r=>r.id===escolhido.id);
+   const novos=[];
+   for(const origem of resolvidas){
+    const tutor_id=Number(origem.tutor_id||c.tutor_id);lerResponsavel({responsavel:'t:'+tutor_id});const t=get('SELECT id,nome FROM tutores WHERE id=?',tutor_id);
+    const polos=all('SELECT polo_id FROM tutor_polos WHERE tutor_id=?',tutor_id).map(p=>p.polo_id);
+    if(!r.polo_id||(polos.length&&!polos.includes(r.polo_id)))falha(400,'Tutora não vinculada ao polo do lead.');
+    if(get('SELECT 1 FROM ma_op_acao_leads WHERE acao_id=? AND aba=? AND linha_fonte=?',a.id,origem.aba,origem.linha))falha(409,'Esta linha da planilha já está vinculada à ação.');
+    const participacao_id=Number(run('INSERT INTO ma_op_acao_leads(acao_id,oportunidade_id,tutor_id,aba,linha_fonte,ra_inicial) VALUES(?,?,?,?,?,?)',a.id,r.id,tutor_id,origem.aba,origem.linha,origem.ra_inicial||r.ra_situacao).lastInsertRowid);
+    novos.push({participacao_id,tutor_id,aba:origem.aba,linha:origem.linha});
+    evento(r.id,'acao',null,t.nome,u,{detalhe:`Participação na ação #${a.id}: ${a.nome} · ${origem.aba}, linha ${origem.linha}`});
+   }
    run('UPDATE ma_op_acoes SET pendencias=? WHERE id=?',JSON.stringify(pendencias.filter((_,i)=>!g.indices.includes(i))),a.id);
-   run('INSERT INTO ma_op_acao_eventos(acao_id,tipo,detalhe,por_login) VALUES(?,?,?,?)',a.id,'resolveu_pendencia',JSON.stringify({linhas:resolvidas,oportunidade_id:r.id,tutor_id}),u.login);
-   evento(r.id,'acao',r.responsavel,t.nome,u,{detalhe:`Pendência resolvida na ação #${a.id}: ${a.nome}`});
-   return {ok:true,resolvidas:g.indices.length,vinculados:1};
+   run('INSERT INTO ma_op_acao_eventos(acao_id,tipo,detalhe,por_login) VALUES(?,?,?,?)',a.id,'resolveu_pendencia',JSON.stringify({linhas:resolvidas,oportunidade_id:r.id,participacoes:novos}),u.login);
+   return {ok:true,resolvidas:g.indices.length,vinculados:novos.length};
   });
  }
  function excluir(id,u,restaurar=false){
