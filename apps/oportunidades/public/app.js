@@ -22,13 +22,10 @@
   const drillRegistry = [];
 
   // ------------------------------------------------------------ requisições
-  async function api(url, options = {}) {
-    const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { ...(options.body ? { 'Content-Type': 'application/json' } : {}), ...(options.headers || {}) } });
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 401) { location.assign('/?next=' + encodeURIComponent(location.pathname)); throw new Error('Sessão expirada.'); }
-    if (!res.ok) throw new Error(data.erro || data.error || `Falha na consulta (${res.status}).`);
-    return data;
-  }
+  const requests = window.BalbinoRequests.create({onUnauthorized:()=>location.assign('/?next='+encodeURIComponent(location.pathname))});
+  const api = (url,options={})=>requests.json(url,options);
+  const cancelled = error => error?.name === 'AbortError';
+  let readVersion=0;
   function params(extra = {}, base = state.f) {
     const p = new URLSearchParams();
     if (state.ciclo) p.set('ciclo', state.ciclo);
@@ -161,8 +158,9 @@
   }
 
   // ------------------------------------------------------------ painel
-  async function loadPainel() {
+  async function loadPainel(version=++readVersion) {
     const d = await api(`${API}/painel?${params()}`);
+    if(version!==readVersion||state.tab!=='painel')return;
     state.painel = d; drillRegistry.length = 0;
     const k = d.kpis;
     $('avisos').innerHTML = d.avisos.map(a => `<div class="aviso">${esc(a)}</div>`).join('');
@@ -256,10 +254,11 @@
     pager.innerHTML = data.paginas > 1 ? `<button class="mini" data-page="${data.pagina - 1}" ${data.pagina <= 1 ? 'disabled' : ''}>Anterior</button><span>Página ${data.pagina} de ${data.paginas}</span><button class="mini" data-page="${data.pagina + 1}" ${data.pagina >= data.paginas ? 'disabled' : ''}>Próxima</button>` : '';
     pager.querySelectorAll('[data-page]').forEach(b => b.addEventListener('click', () => onPage(Number(b.dataset.page))));
   }
-  async function loadLista() {
-    const data = await api(`${API}/lista?${params({ ordem: state.list.order, pagina: state.list.page, por_pagina: 100 })}`);
+  async function loadLista(version=++readVersion) {
+    const data = await api(`${API}/lista?${params({ ordem: state.list.order, pagina: state.list.page, por_pagina: 50 })}`);
+    if(version!==readVersion||state.tab!=='candidatos')return;
     $('list-count').textContent = `${fmtN(data.total)} candidato(s) · ${fmtN(data.ra.confirmado)} com RA confirmado · ${fmtN(data.ra.aguardando)} aguardando conciliação`;
-    renderList($('list-table'), $('list-pager'), data, p => { state.list.page = p; loadLista().catch(e => showError(e.message)); });
+    renderList($('list-table'), $('list-pager'), data, p => { state.list.page = p; loadLista().catch(e => {if(!cancelled(e))showError(e.message);}); });
   }
 
   // ------------------------------------------------------------ detalhamento (drill-down)
@@ -272,7 +271,7 @@
       const data = await api(`${API}/lista?${params({ ...extra, ordem: 'nome', pagina: page, por_pagina: 50 })}`);
       $('drill-sub').textContent = `${fmtN(data.total)} candidato(s) — filtros atuais${Object.keys(extra).length ? ' + este recorte' : ''}`;
       renderList($('drill-table'), $('drill-pager'), data, p => openDrill(title, extra, p));
-    } catch (e) { $('drill-sub').textContent = e.message; }
+    } catch (e) { if(!cancelled(e))$('drill-sub').textContent = e.message; }
   }
   function download(formato, extra = {}) {
     const p = params({ ...extra, formato }); for (const k of ['cmp_ciclo', 'cmp_de', 'cmp_ate']) p.delete(k);
@@ -285,7 +284,7 @@
     body.innerHTML = '<p class="empty">Carregando…</p>';
     if (!$('detail-dialog').open) $('detail-dialog').showModal();
     try { state.detail = await api(`${API}/${id}`); renderDetail(); }
-    catch (e) { body.innerHTML = `<div class="dialog-head"><h2>Não foi possível abrir</h2><button type="button" class="icon-button" data-close aria-label="Fechar">×</button></div><div class="error">${esc(e.message)}</div>`; }
+    catch (e) { if(cancelled(e))return; body.innerHTML = `<div class="dialog-head"><h2>Não foi possível abrir</h2><button type="button" class="icon-button" data-close aria-label="Fechar">×</button></div><div class="error">${esc(e.message)}</div>`; }
   }
   function renderDetail() {
     const { oportunidade: o, atendimentos, eventos, ra_candidatos: cand, permissoes: p, importacao, primeira_importacao } = state.detail;
@@ -491,8 +490,9 @@
       } catch (e) { $('import-err').textContent = e.message; ev.target.disabled = false; }
     });
   }
-  async function loadImportacoes() {
+  async function loadImportacoes(version=++readVersion) {
     const d = await api(`${API}/importacoes?ciclo=${encodeURIComponent(state.ciclo)}`);
+    if(version!==readVersion||state.tab!=='importacoes')return;
     $('imports').innerHTML = d.importacoes.length ? `<div class="table-wrap"><table><thead><tr><th>#</th><th>Quando / quem</th><th>Arquivo</th><th class="n">Linhas</th><th class="n">Novas</th><th class="n">Atualizadas</th><th class="n">Sem mudança</th><th class="n">Ignoradas</th><th class="n">Com alerta</th><th></th></tr></thead><tbody>${d.importacoes.map(i => `
       <tr><td>${i.id}</td><td>${esc(i.criado_em)}<span class="sub">${esc(i.criado_por_nome || i.criado_por)}</span></td><td>${esc(i.arquivo || '—')}</td><td class="n">${fmtN(i.linhas)}</td><td class="n">${fmtN(i.novos)}</td><td class="n">${fmtN(i.atualizados)}</td><td class="n">${fmtN(i.inalterados)}</td><td class="n">${fmtN(i.ignorados)}</td><td class="n">${fmtN(i.com_alerta)}</td>
       <td>${i.problemas.length ? `<details><summary>Ver ${fmtN(i.problemas.length)} linha(s)</summary><ul class="problems">${i.problemas.map(p => `<li>Linha ${p.linha} · ${esc(p.identificador || 'sem identificador')}: ${[...p.motivos, ...p.alertas].map(esc).join(' ')}</li>`).join('')}</ul></details>` : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">Nenhuma importação registrada neste processo.</p>';
@@ -500,15 +500,17 @@
 
   // ------------------------------------------------------------ navegação
   async function refresh() {
+    const version=++readVersion;
     showError('');
     filterSummary(); saveUrl();
     try {
-      if (state.tab === 'painel') await loadPainel();
-      else if (state.tab === 'candidatos') await loadLista();
-      else if (state.tab === 'importacoes') await loadImportacoes();
-    } catch (e) { showError(e.message); }
+      if (state.tab === 'painel') await loadPainel(version);
+      else if (state.tab === 'candidatos') await loadLista(version);
+      else if (state.tab === 'importacoes') await loadImportacoes(version);
+    } catch (e) { if(version===readVersion&&!cancelled(e))showError(e.message); }
   }
   function setTab(tab) {
+    if(state.tab!==tab)requests.cancelReads();
     state.tab = tab;
     document.querySelectorAll('.tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('hidden', v.id !== 'view-' + tab));
@@ -523,7 +525,7 @@
   $('clear-filters').addEventListener('click', () => { state.f = {}; writeFilters(); state.list.page = 1; refresh(); });
   $('toggle-filters').addEventListener('click', () => { state.filtersOpen = !state.filtersOpen; $('filter-advanced').classList.toggle('hidden', !state.filtersOpen); $('toggle-filters').textContent = state.filtersOpen ? 'Menos filtros (12)' : 'Mais filtros (12)'; $('toggle-filters').setAttribute('aria-expanded', state.filtersOpen); });
   $('toggle-compare').addEventListener('click', () => { state.compareOpen = !state.compareOpen; $('compare-row').classList.toggle('hidden', !state.compareOpen); $('toggle-compare').setAttribute('aria-expanded', state.compareOpen); });
-  $('cycle').addEventListener('change', async () => { state.ciclo = $('cycle').value; try { await loadOpcoes(); } catch (e) { showError(e.message); } refresh(); });
+  $('cycle').addEventListener('change', async () => { requests.cancelReads();++readVersion;state.ciclo = $('cycle').value; try { await loadOpcoes(); } catch (e) { if(!cancelled(e))showError(e.message);return; } state.list.page=1; refresh(); });
   document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
   $('list-order').addEventListener('change', () => { state.list.order = $('list-order').value; state.list.page = 1; refresh(); });
   $('export-csv').addEventListener('click', () => download('csv'));

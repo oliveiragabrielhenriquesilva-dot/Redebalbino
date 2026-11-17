@@ -156,8 +156,18 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     return id;
   }
 
+  // Snapshot curto em memória, segregado por processo/polo. Toda escrita invalida a revisão.
+  // total_changes observa esta conexão; data_version observa outras conexões SQLite.
+  const leituras = new Map();
+  let contextoAtual = null;
+  const revisaoBanco = () => `${get('SELECT total_changes() AS n').n}:${get('PRAGMA data_version').data_version}:${hojeISO()}`;
+  const CACHE_MS = 5000, MAX_SNAPSHOTS = 6;
+
   // ------------------------------------------------------------------ carga e enriquecimento (uma vez por requisição)
   function criarContexto() {
+    const revisao = revisaoBanco(), agora = Date.now();
+    if (contextoAtual && contextoAtual.revisao === revisao && agora - contextoAtual.criado < CACHE_MS) return contextoAtual.valor;
+    leituras.clear();
     const poloMemo = new Map();
     const poloId = nome => { const k = String(nome || '').trim(); if (!k) return null; if (!poloMemo.has(k)) poloMemo.set(k, poloDaFonte(k) || null); return poloMemo.get(k); };
     const polos = Object.fromEntries(all('SELECT id, nome FROM polos').map(r => [r.id, r.nome]));
@@ -169,10 +179,17 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     for (const r of all('SELECT curso_nome, produto_id FROM ma_lista_cursos WHERE produto_id IS NOT NULL AND curso_nome IS NOT NULL')) {
       const k = norm(r.curso_nome); const ids = porNomeCurso.get(k) || new Set(); ids.add(r.produto_id); porNomeCurso.set(k, ids);
     }
-    const cursos = all('SELECT nome, produto_id, apelidos, polos FROM cursos WHERE ativo=1 AND produto_id IS NOT NULL');
-    const produtoNome = nomes => { const ids = catalogo.filter(p => nomes.includes(norm(p.nome))).map(p => p.id); return ids.length === 1 ? ids[0] : null; };
     const limpar = nome => norm(nome).replace(/^(?:graduacao|licenciatura|bacharelado|superior de tecnologia|tecnologo|curso superior de tecnologia) em /, '').replace(/ (?:graduacao )?(?:ead|semipresencial|hibrido)$/, '').trim();
-    const produtoId = (cod, nome, polo) => {
+    const cursos = all('SELECT nome, produto_id, apelidos, polos FROM cursos WHERE ativo=1 AND produto_id IS NOT NULL').map(c => ({
+      produto_id: c.produto_id,
+      permitidos: String(c.polos || '').split(',').filter(Boolean).map(Number),
+      nomes: [c.nome, ...String(c.apelidos || '').split(/[,;\n]/)].map(limpar).filter(Boolean)
+    }));
+    const idsPorNome = new Map();
+    for (const p of catalogo) { const k=norm(p.nome); const ids=idsPorNome.get(k)||[];ids.push(p.id);idsPorNome.set(k,ids); }
+    const produtoNome = nomes => { const ids = nomes.flatMap(n => idsPorNome.get(n)||[]); return ids.length === 1 ? ids[0] : null; };
+    const produtoMemo = new Map();
+    const resolverProduto = (cod, nome, polo) => {
       const codigo = String(cod || '').trim(), n = norm(nome);
       // Nível explícito na fonte tem prioridade sobre palavras como Saúde/Engenharia no nome.
       if (/^(?:[eh]?pos)(?:_|\b)/i.test(codigo) || /\bpos graduacao\b/.test(n) || /^(?:mba|especializacao)\b/.test(n)) return produtoNome(['pos', 'pos graduacao']);
@@ -183,9 +200,9 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       // Reutiliza cursos, apelidos e polos do cadastro existente; não cria regras genéricas por área.
       const alvo = limpar(nome), candidatos = [];
       for (const curso of cursos) {
-        const permitidos = String(curso.polos || '').split(',').filter(Boolean).map(Number);
+        const permitidos = curso.permitidos;
         if (permitidos.length && (!polo || !permitidos.includes(Number(polo)))) continue;
-        const nomes = [curso.nome, ...String(curso.apelidos || '').split(/[,;\n]/)].map(limpar).filter(Boolean);
+        const nomes = curso.nomes;
         const matches = nomes.filter(n => alvo === n || (n.length >= 4 && (alvo + ' ').startsWith(n + ' ')));
         if (matches.length) candidatos.push({ id: curso.produto_id, score: Math.max(...matches.map(n => n.length + (n === alvo ? 10000 : 0))) });
       }
@@ -194,7 +211,14 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       const ids = [...new Set(candidatos.filter(c => c.score === max).map(c => c.id))];
       return ids.length === 1 ? ids[0] : null;
     };
-    return { poloId, polos, produtos, subgrupos, catalogo, produtoId };
+    const produtoId = (cod,nome,polo) => {
+      const chave=JSON.stringify([cod||'',nome||'',polo||null]);
+      if (!produtoMemo.has(chave)) produtoMemo.set(chave,resolverProduto(cod,nome,polo));
+      return produtoMemo.get(chave);
+    };
+    const valor = { poloId, polos, produtos, subgrupos, catalogo, produtoId, revisao };
+    contextoAtual = {revisao,criado:agora,valor};
+    return valor;
   }
 
   function tipoProduto(nomeProduto, codigoCurso, nomeCurso) {
@@ -246,6 +270,9 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
 
   function carregarBase(cicloId, usuario, ctx = criarContexto()) {
     const restrito = poloRestrito(usuario);
+    const chave = `${ctx.revisao}:${cicloId}:${restrito || 'rede'}`;
+    const anterior = leituras.get(chave);
+    if (anterior && Date.now()-anterior.criado < CACHE_MS) return anterior.valor;
     const hoje = hojeISO(), em7 = addDiasISO(hoje, 7);
     const rows = all(`SELECT o.*, u.nome resp_usuario_nome, t.nome resp_tutor_nome FROM ma_oportunidades o
       LEFT JOIN usuarios u ON u.id=o.responsavel_id LEFT JOIN tutores t ON t.id=o.responsavel_tutor_id
@@ -293,7 +320,10 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
         fora_ultima_importacao: !!(ultimaImp && o.importacao_id && o.importacao_id !== ultimaImp)
       });
     }
-    return { base, idx, ctx, cicloId };
+    const valor = { base, idx, ctx, cicloId };
+    if (leituras.size >= MAX_SNAPSHOTS) leituras.delete(leituras.keys().next().value);
+    leituras.set(chave,{criado:Date.now(),valor});
+    return valor;
   }
 
   // ------------------------------------------------------------------ filtros (os mesmos para painel, lista e exportação)
@@ -539,12 +569,12 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
   function lista(q, usuario) {
     const cicloId = cicloValido(q.ciclo);
     const f = lerFiltros(q);
-    const rows = filtrar(carregarBase(cicloId, usuario).base, f).map(r => ({ ...r, atendimentos: contarAtendimentosFiltrados(r, f) })).sort(ORDENS[q.ordem] || ORDENS.retorno);
+    const rows = filtrar(carregarBase(cicloId, usuario).base, f).sort(ORDENS[q.ordem] || ORDENS.retorno);
     const porPagina = Math.min(500, Math.max(10, Number(q.por_pagina) || 100));
     const pagina = Math.max(1, Number(q.pagina) || 1);
     const p = permissoes(usuario);
     return { ciclo: cicloId, total: rows.length, pagina, por_pagina: porPagina, paginas: Math.max(1, Math.ceil(rows.length / porPagina)),
-      ra: contarRA(rows), linhas: rows.slice((pagina - 1) * porPagina, pagina * porPagina).map(r => linhaPublica(r, p.atender)), permissoes: p };
+      ra: contarRA(rows), linhas: rows.slice((pagina - 1) * porPagina, pagina * porPagina).map(r => linhaPublica({ ...r, atendimentos: contarAtendimentosFiltrados(r, f) }, p.atender)), permissoes: p };
   }
 
   const COLUNAS_EXPORT = [
@@ -849,10 +879,17 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     if (p !== '/api/ma/oportunidades' && !p.startsWith('/api/ma/oportunidades/')) return false;
     if (m !== 'GET' && m !== 'HEAD') exigeMesmaOrigem(req);
     const exigeImportar = () => { if (!permissoes(usuario).importar) falha(403, 'Somente quem lança pode importar a planilha.'); };
-    if (p === '/api/ma/oportunidades' && m === 'GET') { enviarJson(res, 200, listaCompat(q, usuario)); return true; }
-    if (p === '/api/ma/oportunidades/opcoes' && m === 'GET') { enviarJson(res, 200, opcoes(q, usuario)); return true; }
-    if (p === '/api/ma/oportunidades/painel' && m === 'GET') { enviarJson(res, 200, painel(q, usuario)); return true; }
-    if (p === '/api/ma/oportunidades/lista' && m === 'GET') { enviarJson(res, 200, lista(q, usuario)); return true; }
+    const responderLeitura = calcular => {
+      const inicio = performance.now();
+      const dados = calcular(), duracao = performance.now()-inicio;
+      res.setHeader('Server-Timing', `oportunidades;dur=${duracao.toFixed(1)}`);
+      if (duracao>=500) console.warn(`[oportunidades-lento] ${new Date().toISOString()} GET ${p.replace(/\/\d+(?=\/|$)/g,'/:id')} ${duracao.toFixed(0)}ms`);
+      enviarJson(res,200,dados);
+    };
+    if (p === '/api/ma/oportunidades' && m === 'GET') { responderLeitura(()=>listaCompat(q, usuario)); return true; }
+    if (p === '/api/ma/oportunidades/opcoes' && m === 'GET') { responderLeitura(()=>opcoes(q, usuario)); return true; }
+    if (p === '/api/ma/oportunidades/painel' && m === 'GET') { responderLeitura(()=>painel(q, usuario)); return true; }
+    if (p === '/api/ma/oportunidades/lista' && m === 'GET') { responderLeitura(()=>lista(q, usuario)); return true; }
     if (p === '/api/ma/oportunidades/exportar' && m === 'GET') {
       const out = exportar(q, usuario);
       res.writeHead(200, { 'Content-Type': out.tipo, 'Content-Disposition': `attachment; filename="${out.nome}"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Length': out.corpo.length });
@@ -862,7 +899,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     if (p === '/api/ma/oportunidades/importar/previa' && m === 'POST') { exigeImportar(); enviarJson(res, 200, previaImportacao(await lerCorpo(req, 4e7), usuario)); return true; }
     if (p === '/api/ma/oportunidades/importar' && m === 'POST') { exigeImportar(); enviarJson(res, 200, importar(await lerCorpo(req, 4e7), usuario)); return true; }
     let mm = p.match(/^\/api\/ma\/oportunidades\/(\d+)$/);
-    if (mm && m === 'GET') { enviarJson(res, 200, detalhe(Number(mm[1]), usuario)); return true; }
+    if (mm && m === 'GET') { responderLeitura(()=>detalhe(Number(mm[1]), usuario)); return true; }
     if (mm && m === 'PUT') { enviarJson(res, 200, salvar(Number(mm[1]), await lerCorpo(req), usuario)); return true; }
     mm = p.match(/^\/api\/ma\/oportunidades\/(\d+)\/atendimentos$/);
     if (mm && m === 'POST') { enviarJson(res, 200, registrarAtendimento(Number(mm[1]), await lerCorpo(req), usuario)); return true; }

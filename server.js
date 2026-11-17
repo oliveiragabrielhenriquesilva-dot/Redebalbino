@@ -537,7 +537,7 @@ const server = http.createServer((req, res) => {
       if(!base?.server)return jsonReply(res,503,{error:'Sistema de Matrículas ainda está iniciando.'});
       return proxy(req,res,alias,url.pathname.slice('/oportunidades'.length)+url.search);
     }
-    const files={'/oportunidades/':['index.html','text/html; charset=utf-8'],'/oportunidades/index.html':['index.html','text/html; charset=utf-8'],'/oportunidades/app.js':['app.js','text/javascript; charset=utf-8'],'/oportunidades/style.css':['style.css','text/css; charset=utf-8']};
+    const files={'/oportunidades/requests.js':['requests.js','text/javascript; charset=utf-8'],'/oportunidades/':['index.html','text/html; charset=utf-8'],'/oportunidades/index.html':['index.html','text/html; charset=utf-8'],'/oportunidades/app.js':['app.js','text/javascript; charset=utf-8'],'/oportunidades/style.css':['style.css','text/css; charset=utf-8']};
     const asset=files[url.pathname];
     if(!asset)return res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'}).end('Arquivo não encontrado.');
     const content=fs.readFileSync(path.join(ROOT,'apps','oportunidades','public',asset[0]));

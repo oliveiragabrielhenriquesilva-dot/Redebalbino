@@ -154,3 +154,16 @@ test('cards por polo respeitam recorte, retornos e acesso mesmo quando o polo es
   assert.strictEqual(p1.hoje,op.painel({ciclo:2,polo:'1',retorno:'hoje'},admin).kpis.total);
   assert.strictEqual(p1.proximos7,op.painel({ciclo:2,polo:'1',retorno:'proximos7'},admin).kpis.total);
 });
+
+test('snapshot invalida após atendimento, alteração de cadastro e escrita por outra conexão',()=>{
+ const q={ciclo:90},initial=op.painel(q,admin);const id=db.prepare("SELECT id FROM ma_oportunidades WHERE ciclo_id=90 AND identificador='b1'").get().id;
+ op.registrarAtendimento(id,{data:'2026-11-01',resultado:'Teste invalidação',canal:'telefone'},admin);
+ assert.strictEqual(op.painel(q,admin).kpis.atendimentos_registrados,initial.kpis.atendimentos_registrados+1);
+ const before=op.lista({ciclo:90,q:'b1'},admin).linhas[0].produto;
+ db.prepare("UPDATE cursos SET produto_id=85 WHERE nome='Estética e Cosmética'").run();
+ assert.notStrictEqual(op.lista({ciclo:90,q:'b1'},admin).linhas[0].produto,before);
+ const {DatabaseSync}=require('node:sqlite');const other=new DatabaseSync(path.join(dir,'matriculas.db'));
+ try{other.prepare('UPDATE ma_oportunidades SET nome=? WHERE id=?').run('Nome Atualizado Externamente',id);}finally{other.close();}
+ assert.strictEqual(op.detalhe(id,admin).oportunidade.nome,'Nome Atualizado Externamente');
+ assert.ok(op.painel(q,tutorFranca).por_polo.every(p=>p.key==='1'));
+});
