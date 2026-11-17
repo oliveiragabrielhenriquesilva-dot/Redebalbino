@@ -18,7 +18,7 @@ test('uma sessão central atende os aplicativos e a saída revoga o acesso', asy
   fs.cpSync(path.join(__dirname,'../apps/conecta'),path.join(root,'apps/conecta'),{recursive:true});
   put('apps/informa/fonte.js', "exports.criarFonte=()=>({calendario:async()=>({eventos:[]})});");
   put('apps/informa/public/index.html', '<h1>Informa</h1>');
-  put('apps/oportunidades/public/index.html', '<h1>Oportunidades</h1>');
+  fs.cpSync(path.join(__dirname,'../apps/oportunidades/public'),path.join(root,'apps/oportunidades/public'),{recursive:true});
   put('apps/matriculas/server.js', `exports.servidor=require('node:http').createServer((req,res)=>{res.setHeader('Content-Type','application/json');res.end(JSON.stringify({identity:JSON.parse(req.headers['x-balbino-portal']||'null')}));});exports.iniciarRotinasHospedadas=()=>{};`);
   const socket = createServer(); socket.listen(0, '127.0.0.1'); await once(socket, 'listening'); const port = socket.address().port; await new Promise(r=>socket.close(r));
   const password = crypto.randomBytes(20).toString('hex');
@@ -41,6 +41,9 @@ test('uma sessão central atende os aplicativos e a saída revoga o acesso', asy
   const login=await fetch(base+'/api/portal/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'qa-admin',password})});
   assert.equal(login.status,200);const cookie=login.headers.get('set-cookie').split(';')[0];
   for (const route of ['/matriculas/','/oportunidades/','/informa/','/conecta/'])assert.equal((await get(route,cookie)).status,200,route);
+  const oportunidadesHtml=await(await get('/oportunidades/',cookie)).text();
+  const recursos=[...oportunidadesHtml.matchAll(/(?:href|src)="([^"]+\.(?:css|js)(?:\?[^"]*)?)"/g)].map(m=>m[1]);
+  for(const recurso of recursos){const resposta=await get(recurso,cookie);assert.equal(resposta.status,200,recurso);assert.match(resposta.headers.get('content-type'),recurso.includes('.css')?/text\/css/:/javascript/,recurso);assert.ok((await resposta.text()).length>0,recurso);}
   const snapshot=await(await get('/conecta/dados.json',cookie)).json();assert.equal(snapshot.courses.length,119);assert.equal(snapshot.courses.filter(c=>c.argumentario).length,115);
   assert.equal((await get('/conecta/data/manifest.json',cookie)).status,404);
   const order=['studeo','matriculas','conecta'];
@@ -68,3 +71,4 @@ test('uma sessão central atende os aplicativos e a saída revoga o acesso', asy
   assert.equal((await get('/informa/',cookie)).status,302);
   assert.equal((await get('/conecta/dados.json',cookie)).status,401);
 });
+
