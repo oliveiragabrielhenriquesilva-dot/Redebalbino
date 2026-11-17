@@ -70,3 +70,16 @@ Testes cobrem prévia sem escrita, CPF e curso, apelido de tutora, seleção man
 conflitos entre abas, nenhum novo lead, preservação de dados, confirmação repetida,
 acesso por polo, atendimentos e RA inicial versus novo. A leitura da planilha é
 validada para todas as abas, incluindo CPF numérico ou com sufixo decimal.
+
+## CPFs numéricos do Excel
+
+O XML de Oportunidades.xlsx contém 147 CPFs preenchidos em notação científica.
+O leitor agora expande células numéricas que representem inteiros seguros; a API
+também aceita esses valores e decimais inteiros, mantendo a validação dos dígitos.
+Não descarta o expoente nem considera todo número válido. Valores fracionários,
+fora do intervalo seguro ou com dígitos verificadores errados são rejeitados.
+
+Validação do arquivo original em banco temporário com as inscrições correspondentes:
+147 CPFs reconhecidos; 137 linhas sem conflito, 10 linhas com o mesmo lead/curso
+atribuído a tutoras diferentes e 1 linha sem CPF. Isso verifica a leitura e a
+regra de conflito; não representa vínculo ou contagem validada na base de produção.

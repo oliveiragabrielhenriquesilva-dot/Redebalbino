@@ -395,7 +395,7 @@
     const col = ref => { const m = /^([A-Z]+)/.exec(ref || ''); let n = 0; for (const ch of (m ? m[1] : 'A')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
     const out = [];
     for (const row of xml(source).getElementsByTagName('row')) {
-      const cells = []; for (const cell of row.getElementsByTagName('c')) { const type = cell.getAttribute('t'), v = cell.getElementsByTagName('v')[0]; let value = type === 'inlineStr' ? [...cell.getElementsByTagName('t')].map(x => x.textContent).join('') : v ? v.textContent : ''; if (type === 's') value = shared[Number(value)] || ''; cells[col(cell.getAttribute('r'))] = value; }
+      const cells = []; for (const cell of row.getElementsByTagName('c')) { const type = cell.getAttribute('t'), v = cell.getElementsByTagName('v')[0]; let value = type === 'inlineStr' ? [...cell.getElementsByTagName('t')].map(x => x.textContent).join('') : v ? v.textContent : ''; if (type === 's') value = shared[Number(value)] || ''; if ((!type || type === 'n') && value && Number.isSafeInteger(Number(value))) value = String(Number(value)); cells[col(cell.getAttribute('r'))] = value; }
       out[(Number(row.getAttribute('r')) || out.length + 1) - 1] = Array.from(cells, x => x ?? '');
     }
     result.push({nome:sheet.nome,rows:Array.from(out, x => x || [])});
@@ -539,7 +539,7 @@
       if(hi<0)throw new Error(`A aba ${sheet.nome} não tem a coluna CPF.`);
       const h=sheet.rows[hi].map(normHeader),cpf=h.indexOf('cpf'),nome=h.findIndex(x=>['nome completo','nome'].includes(x)),curso=h.findIndex(x=>['curso','curso codigo','cd curso','codigo do curso'].includes(x));
       if(curso<0)throw new Error(`A aba ${sheet.nome} não tem a coluna Curso.`);
-      sheet.rows.slice(hi+1).forEach((row,i)=>{if(!row.some(v=>String(v??'').trim()))return;linhas.push({aba:sheet.nome,linha:hi+i+2,nome:String(row[nome]||''),cpf:String(row[cpf]||'').replace(/\.0+$/,''),curso_cod:String(row[curso]||'').trim()});});
+      sheet.rows.slice(hi+1).forEach((row,i)=>{if(!row.some(v=>String(v??'').trim()))return;linhas.push({aba:sheet.nome,linha:hi+i+2,nome:String(row[nome]||''),cpf:String(row[cpf]??'').trim(),curso_cod:String(row[curso]||'').trim()});});
     }
     return linhas;
   }

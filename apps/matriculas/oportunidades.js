@@ -126,7 +126,15 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
   }
   // CPF normalizado: só dígitos, com zeros à esquerda (planilhas costumam perder o zero inicial).
   function cpfNormalizado(v) {
-    const d = soDig(v);
+    let fonte = String(v ?? '').trim();
+    // Excel pode gravar identificadores numéricos como 5.2998224725E10.
+    // Expande somente inteiros seguros; mantém a verificação dos dígitos do CPF.
+    if (/^[+-]?\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(fonte)) {
+      const numero = Number(fonte);
+      if (!Number.isSafeInteger(numero) || numero < 0) return { valor: null, informado: true, valido: false };
+      fonte = String(numero);
+    }
+    const d = soDig(fonte);
     if (!d) return { valor: null, informado: false, valido: true };
     const c = d.length >= 9 && d.length <= 11 ? d.padStart(11, '0') : d;
     return cpfValido(c) ? { valor: c, informado: true, valido: true } : { valor: null, informado: true, valido: false };

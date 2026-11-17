@@ -254,3 +254,11 @@ test('distribuição não escolhe tutora em conflitos nem muda de curso só por 
  assert.strictEqual(op.acoes.previa({...input,linhas:[{...input.linhas[0],aba:'Apelido desconhecido'}]},admin).totais.pendentes,1);
  assert.strictEqual(op.acoes.previa({...input,linhas:[{...input.linhas[0],aba:'Apelido desconhecido'}],tutores:{'Apelido desconhecido':95}},admin).totais.vinculaveis,1);
 });
+
+test('CPF numérico do Excel em notação científica mantém os dígitos e a validação',()=>{
+ for(const value of ['5.2998224725E10','5.2998224725e+10','52998224725.0',52998224725])assert.strictEqual(op.cpfNormalizado(value).valor,'52998224725');
+ assert.strictEqual(op.cpfNormalizado('529.982.247-25').valor,'52998224725');
+ for(const value of ['5.2998224724E10','1e100','52998224725.5'])assert.strictEqual(op.cpfNormalizado(value).valido,false);
+ const input={ciclo:95,nome:'Excel científico',inicio:'2026-01-01',linhas:[{aba:'Bia',cpf:'5.2998224725E10',curso_cod:'ESPRE_PED'}]};
+ assert.strictEqual(op.acoes.previa(input,admin).totais.vinculaveis,1);
+});

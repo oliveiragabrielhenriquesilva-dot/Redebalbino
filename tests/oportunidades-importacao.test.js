@@ -30,6 +30,6 @@ test('ação lê todas as abas e mantém a tutora indicada na aba para cada linh
  const input=['Bia','Tainara','Marcelly','Emilly'].map(nome=>({nome,rows:[['Nome completo','CPF','Telefone','Curso'],['Candidato teste',52998224725,'16990000000','ESPRE_PED'],['Outro teste','11144477735.0','','EGRAD_ADM']]}));
  const mapped=context.mapActionSheets(input);
  assert.equal(mapped.length,8);assert.deepEqual(Array.from(new Set(mapped.map(r=>r.aba))),['Bia','Tainara','Marcelly','Emilly']);
- assert.equal(mapped[1].cpf,'11144477735');assert.equal(mapped[2].aba,'Tainara');
+ assert.equal(mapped[1].cpf,'11144477735.0');assert.equal(mapped[2].aba,'Tainara');
  assert.throws(()=>context.mapActionSheets([{nome:'Sem CPF',rows:[['Curso']]}]),/CPF/);
 });
