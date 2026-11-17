@@ -25,6 +25,8 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   if(!dataValida(inicio)||inicio>hojeISO()||(fim&&(!dataValida(fim)||fim<inicio)))falha(400,'Confira o período da ação. O início não pode ser futuro.');
   if(!Array.isArray(c.linhas)||!c.linhas.length||c.linhas.length>20000)falha(400,'Envie as linhas das abas da planilha.');
   const {base}=carregarBase(ciclo,u),porCpf=new Map();
+  const nomeChave=n=>norm(n).replace(/\s/g,'');
+  const telefoneChave=n=>String(n||'').replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');
   for(const r of base){const cpf=cpfNormalizado(r.cpf).valor;if(cpf){const a=porCpf.get(cpf)||[];a.push(r);porCpf.set(cpf,a);}}
   const tutores=all('SELECT id,nome,apelidos FROM tutores WHERE ativo=1');
   const polosTutora=new Map();for(const r of all('SELECT tutor_id,polo_id FROM tutor_polos')){const ps=polosTutora.get(r.tutor_id)||[];ps.push(r.polo_id);polosTutora.set(r.tutor_id,ps);}
@@ -38,13 +40,14 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   const linhas=c.linhas.map((l,i)=>{
    const aba=String(l.aba||'').trim().slice(0,100),cpf=cpfNormalizado(l.cpf).valor,t=tutorPorAba.get(aba),codigo=String(l.curso_cod||'').trim().toUpperCase();
    const matchesCpf=cpf?porCpf.get(cpf)||[]:[];
-   let matches=matchesCpf;
+   const semCpf=!String(l.cpf??'').trim(),telefone=telefoneChave(l.telefone);
+   let matches=semCpf&&telefone?base.filter(r=>!cpfNormalizado(r.cpf).valor&&nomeChave(r.nome)===nomeChave(l.nome)&&telefoneChave(r.telefone)===telefone):matchesCpf;
    // CPF e curso identificam a inscrição; não troca de curso quando o CPF tem outra oportunidade.
    if(codigo)matches=matches.filter(r=>fonteCodigo(r)===codigo);
    const r=matches.length===1?matches[0]:null;
-   return {linha:Number(l.linha)||i+2,aba,nome:String(l.nome||'').slice(0,180),cpf:mascaraCpf(cpf),curso:codigo,
+   return {linha:Number(l.linha)||i+2,aba,nome:String(l.nome||'').slice(0,180),cpf:mascaraCpf(cpf),curso:codigo,telefone:telefone||'',
     tutor_id:t?.id||null,tutora:t?.nome||'',oportunidade_id:r?.id||null,ra_inicial:r?.ra_situacao||null,
-    motivo:!cpf?(String(l.cpf??'').trim()?'CPF inválido':'CPF não informado'):!t?'Vincule a aba a uma tutora cadastrada':!matches.length?(matchesCpf.length?'CPF localizado, mas o curso não corresponde às inscrições deste processo':'CPF não localizado nas oportunidades deste processo'):matches.length>1?'Mais de uma inscrição corresponde ao CPF e curso':!r.polo_id?'Polo do lead não reconhecido':(polosTutora.get(t.id)||[]).length&&!(polosTutora.get(t.id)||[]).includes(r.polo_id)?'Tutora não vinculada ao polo deste lead':'',
+    motivo:!cpf&&!semCpf?'CPF inválido':semCpf&&!telefone?'CPF não informado — confira a inscrição pelo nome e curso':!t?'Vincule a aba a uma tutora cadastrada':!matches.length?(matchesCpf.length?'CPF localizado, mas o curso não corresponde às inscrições deste processo':'CPF não localizado nas oportunidades deste processo'):matches.length>1?'Mais de uma inscrição corresponde ao CPF e curso':!r.polo_id?'Polo do lead não reconhecido':(polosTutora.get(t.id)||[]).length&&!(polosTutora.get(t.id)||[]).includes(r.polo_id)?'Tutora não vinculada ao polo deste lead':'',
     atual:r?.responsavel||'',polo:r?.polo||''};
   });
   const grupos=new Map();for(const r of linhas)if(r.oportunidade_id){const a=grupos.get(r.oportunidade_id)||[];a.push(r);grupos.set(r.oportunidade_id,a);}
@@ -101,14 +104,19 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   const resumir=ls=>{const total=ls.length,atendidos=ls.filter(r=>r.atendido).length,ja=ls.filter(r=>r.ra_inicial==='confirmado').length,novos=ls.filter(r=>r.convertido_apos_inicio).length;
    return {total,atendidos,nao_atendidos:total-atendidos,taxa_atendimento:total?100*atendidos/total:null,ja_convertidos:ja,elegiveis:total-ja,novas_conversoes:novos,taxa_conversao:total>ja?100*novos/(total-ja):null,ra_confirmado:ls.filter(r=>r.ra_atual==='confirmado').length};};
   const por_tutora=[...new Set(links.map(l=>l.tutor_id))].map(id=>({id,nome:links.find(l=>l.tutor_id===id).tutora,...resumir(linhas.filter(r=>r.tutor_id===id))}));
+  const resolucoes=all("SELECT detalhe FROM ma_op_acao_eventos WHERE acao_id=? AND tipo='resolveu_pendencia'",a.id).map(e=>JSON.parse(e.detalhe));
+  const resolvidosIds=new Set(resolucoes.map(e=>e.oportunidade_id));
+  const recebidas=[...links.filter(l=>!resolvidosIds.has(l.oportunidade_id)).map(l=>({aba:l.aba})),...resolucoes.flatMap(e=>e.linhas),...JSON.parse(a.pendencias)];
+  const por_aba=[...new Set(recebidas.map(r=>r.aba))].map(aba=>{const fonte=recebidas.filter(r=>r.aba===aba).length,vinculados=links.filter(l=>l.aba===aba).length,pendentes=JSON.parse(a.pendencias).filter(p=>p.aba===aba).length;return {aba,recebidas:fonte,vinculados,pendentes,repetidas_resolvidas:fonte-vinculados-pendentes};});
+  const conferencia=permissoes(u).importar?{recebidas:recebidas.length,vinculados:links.length,pendentes:JSON.parse(a.pendencias).length,repetidas_resolvidas:recebidas.length-links.length-JSON.parse(a.pendencias).length,por_aba}:null;
   const {hash,pendencias,...acao}=a;
-  return {acao,pendencias_versao:permissoes(u).importar?versaoPendencias(pendencias):null,grupos_pendentes:permissoes(u).importar?gruposPendentes(a,base):[],kpis:resumir(linhas),por_tutora,linhas,pendencias:permissoes(u).importar?JSON.parse(pendencias):[],ate:fim};
+  return {acao,conferencia,pendencias_versao:permissoes(u).importar?versaoPendencias(pendencias):null,grupos_pendentes:permissoes(u).importar?gruposPendentes(a,base):[],kpis:resumir(linhas),por_tutora,linhas,pendencias:permissoes(u).importar?JSON.parse(pendencias):[],ate:fim};
  }
  const versaoPendencias = texto => crypto.createHash('sha256').update(texto).digest('hex');
  const chavePendencia = p => JSON.stringify([norm(p.nome),p.cpf||'',p.curso||'']);
  function gruposPendentes(a,base){
   const grupos=new Map();JSON.parse(a.pendencias).forEach((p,index)=>{const key=chavePendencia(p),g=grupos.get(key)||{key,nome:p.nome,cpf:p.cpf,curso:p.curso,indices:[],origens:[],motivo:p.motivo};g.indices.push(index);g.origens.push({aba:p.aba,linha:p.linha,tutor_id:p.tutor_id,tutora:p.tutora});grupos.set(key,g);});
-  return [...grupos.values()].map(g=>({...g,candidatos:!g.cpf?[]:base.filter(r=>norm(r.nome)===norm(g.nome)&&mascaraCpf(r.cpf)===g.cpf&&fonteCodigo(r)===g.curso).sort((a,b)=>String(b.data_registro||'').localeCompare(String(a.data_registro||''))||b.id-a.id).map(r=>({id:r.id,identificador:r.identificador,nome:r.nome,polo:r.polo,curso:r.curso,data:r.data_registro,status:r.status_origem,responsavel:r.responsavel,ra:r.ra_situacao}))}));
+  return [...grupos.values()].map(g=>({...g,candidatos:base.filter(r=>(g.cpf?norm(r.nome)===norm(g.nome)&&mascaraCpf(r.cpf)===g.cpf:!cpfNormalizado(r.cpf).valor&&norm(r.nome).replace(/\s/g,'')===norm(g.nome).replace(/\s/g,''))&&fonteCodigo(r)===g.curso).sort((a,b)=>String(b.data_registro||'').localeCompare(String(a.data_registro||''))||b.id-a.id).map(r=>({id:r.id,identificador:r.identificador,nome:r.nome,polo:r.polo,curso:r.curso,data:r.data_registro,status:r.status_origem,responsavel:r.responsavel,ra:r.ra_situacao}))}));
  }
  function resolver(id,c,u){
   exigir(u);return tx(()=>{

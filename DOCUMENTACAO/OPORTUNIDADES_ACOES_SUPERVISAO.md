@@ -116,3 +116,22 @@ revisão/exclusão/restauração; as colunas novas de exclusão são aditivas.
 
 POST /api/ma/oportunidades/acoes/ID/resolver recebe versao, grupo,
 oportunidade_id e tutor_id. Uma versão desatualizada retorna 409, sem alterações.
+
+## Visão individual e conferência de origem
+
+Cards por tutora abrem indicadores e leads apenas daquela responsável dentro da
+ação; Ver toda a ação retorna ao consolidado. A conferência das linhas por aba
+explica recebidas = vinculadas + pendentes + repetições resolvidas, inclusive
+após a revisão de uma pendência.
+
+CPF ausente: novas importações podem localizar um registro também sem CPF pela
+combinação única de nome completo normalizado, telefone e curso. Sem telefone,
+a pendência pode apresentar inscrições do mesmo nome completo e curso para
+escolha explícita; a API exige a seleção e valida novamente a correspondência.
+Isso não cria CPF nem elimina a validação de um CPF preenchido e inválido.
+
+Conferência em 17/11: o XLSX originalmente enviado tem 37 registros por aba (148
+linhas), Agnales em Bia linha 37 e Tainara linha 28, nenhum em Marcelly. Um print
+posterior da planilha aberta mostra Agnales em Marcelly linha 99. Portanto, esse
+print não corresponde ao conteúdo do XLSX recebido; novas atribuições devem
+aguardar a versão atualizada da fonte para conciliar a distribuição.

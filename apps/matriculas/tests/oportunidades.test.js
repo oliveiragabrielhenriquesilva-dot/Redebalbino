@@ -307,3 +307,17 @@ test('excluir e restaurar ação preserva leads, responsáveis e histórico e ex
  assert.strictEqual(op.acoes.listar({ciclo:97},admin).acoes.length,1);
  assert.strictEqual(op.acoes.listar({ciclo:97,excluidas:'1'},admin).acoes.length,0);
 });
+
+test('ação sem CPF pode localizar nome, telefone e curso e mantém conferência das linhas após resolução',()=>{
+ db.exec(`INSERT INTO ma_oportunidades(ciclo_id,identificador,nome,telefone,curso_nome,polo_fonte) VALUES(97,'SEMCPF','Gabriel Teste Silva','16990000000','EGRAD_ADM','Franca');`);
+ const c={ciclo:97,nome:'Sem CPF',inicio:'2026-11-17',linhas:[{aba:'Bia',nome:'Gabriel Teste Silv a',telefone:'16990000000',curso_cod:'EGRAD_ADM'}]};
+ assert.strictEqual(op.acoes.previa(c,admin).totais.vinculaveis,1);
+ const manual=op.acoes.criar({...c,nome:'Revisão sem CPF',confirmado:true,linhas:[{...c.linhas[0],telefone:''},{aba:'Bia',nome:'Outro lead',cpf:'11144477735',curso_cod:'ESPRE_PED'}]},admin);
+ const d=op.acoes.relatorio(manual.id,admin),g=d.grupos_pendentes[0];assert.strictEqual(g.candidatos.length,1);
+ op.acoes.resolver(manual.id,{grupo:g.key,versao:d.pendencias_versao,oportunidade_id:g.candidatos[0].id,tutor_id:95},admin);
+ assert.strictEqual(op.acoes.relatorio(manual.id,admin).kpis.total,2);
+ const acao=op.acoes.listar({ciclo:97},admin).acoes.find(a=>a.nome==='Revisão');
+ const check=op.acoes.relatorio(acao.id,admin).conferencia;
+ assert.deepStrictEqual([check.recebidas,check.vinculados,check.pendentes,check.repetidas_resolvidas],[3,2,0,1]);
+ assert.strictEqual(check.por_aba.reduce((n,a)=>n+a.recebidas,0),3);
+});
