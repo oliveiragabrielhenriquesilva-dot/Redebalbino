@@ -342,3 +342,49 @@ test('cada linha repetida vira participação e atendimento fica restrito à par
  assert.deepStrictEqual(after.conferencia.por_aba.map(a=>a.recebidas),[1,1]);
  assert.throws(()=>op.registrarAtendimento(bia.id,{resultado:'Não existe',participacao_id:999999},admin),/Participação inválida/);
 });
+
+
+test('importação de atendimento atualiza ações por período e tutora e preserva o histórico',()=>{
+ db.exec("INSERT INTO ciclos(id,nome) VALUES(98,'Atendimento importado');");
+ const fonte={identificador:'FONTE-ACAO',nome:'Lead relatório',cpf:'52998224725',polo_fonte:'Franca',curso_cod:'ESPRE_PED',curso_nome:'ESPRE_PED',ultimo_atendimento:'13/11/2026',responsavel_origem:'Beatriz Carvalhaes Vila Nova',status_origem:'LEAD',interacoes:1};
+ const importar=campos=>op.importar({ciclo:98,confirmado:true,arquivo:'acompanhamento.xlsx',linhas:[{...fonte,...campos}]},admin);
+ importar({});
+ const input={ciclo:98,nome:'Ação integrada',inicio:'2026-11-14',fim:'2026-11-17',confirmado:true,linhas:[{aba:'Bia',linha:2,nome:fonte.nome,cpf:fonte.cpf,curso_cod:'ESPRE_PED'},{aba:'Emilly',linha:2,nome:fonte.nome,cpf:fonte.cpf,curso_cod:'ESPRE_PED'}]};
+ const a=op.acoes.criar(input,admin);
+ assert.strictEqual(op.acoes.relatorio(a.id,admin).kpis.atendidos,0);
+ const res=importar({ultimo_atendimento:'14/11/2026',status_origem:'QUALIFICADO'});
+ assert.strictEqual(res.acoes.acoes_atualizadas,1);
+ const d=op.acoes.relatorio(a.id,admin),bia=d.linhas.find(r=>r.tutor_id===95);
+ assert.strictEqual(d.kpis.atendidos,1);assert.strictEqual(d.kpis.taxa_atendimento,50);
+ assert.strictEqual(d.por_tutora.find(t=>t.id===95).atendidos,1);assert.strictEqual(d.por_tutora.find(t=>t.id===96).atendidos,0);
+ assert.strictEqual(bia.atendido_planilha,true);assert.strictEqual(bia.status_origem,'QUALIFICADO');assert.strictEqual(bia.contato_planilha_data,'2026-11-14');
+ const qtd=db.prepare('SELECT count(*) n FROM ma_op_contatos_fonte WHERE oportunidade_id=?').get(bia.id).n;
+ importar({ultimo_atendimento:'14/11/2026',status_origem:'QUALIFICADO'});
+ assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_op_contatos_fonte WHERE oportunidade_id=?').get(bia.id).n,qtd);
+ assert.strictEqual(op.acoes.relatorio(a.id,admin).kpis.atendidos,1);
+ op.registrarAtendimento(bia.id,{resultado:'Contato também registrado aqui',canal:'telefone',data:'2026-11-14',participacao_id:bia.participacao_id},admin);
+ assert.strictEqual(op.acoes.relatorio(a.id,admin).kpis.atendidos,1);
+ importar({ultimo_atendimento:'16/11/2026',responsavel_origem:'Emilly Barbosa de Oliveira',interacoes:2});
+ const ambas=op.acoes.relatorio(a.id,admin);assert.strictEqual(ambas.kpis.atendidos,2);assert.strictEqual(ambas.kpis.taxa_atendimento,100);assert.ok(ambas.linhas.every(r=>r.atendido_planilha));
+ assert.strictEqual(op.acoes.listar({ciclo:98},admin).acoes[0].atendidos,2);
+ const curta=op.acoes.criar({...input,nome:'Período encerrado',fim:'2026-11-15'},admin);
+ assert.strictEqual(op.acoes.relatorio(curta.id,admin).kpis.atendidos,1);
+ importar({ultimo_atendimento:'17/11/2026',responsavel_origem:'Responsável não cadastrado'});
+ assert.strictEqual(op.acoes.relatorio(a.id,admin).atualizacao_atendimento.responsavel_nao_identificado,1);
+ importar({ultimo_atendimento:'17/11/2026',responsavel_origem:''});
+ assert.strictEqual(op.acoes.relatorio(a.id,admin).atualizacao_atendimento.responsavel_nao_identificado,2);
+ importar({ultimo_atendimento:'18/11/2026',responsavel_origem:'Emilly'});
+ assert.strictEqual(db.prepare("SELECT count(*) n FROM ma_op_contatos_fonte WHERE oportunidade_id=? AND data='2026-11-18'").get(bia.id).n,0);
+ db.prepare("INSERT INTO ma_lista_alunos(ciclo_id,candidato,ra,nome,cpf,polo_fonte,ativo) VALUES(98,'FONTE-ACAO','RA-FONTE','Lead relatório','52998224725','Franca',1)").run();
+ const convertidas=op.acoes.relatorio(a.id,admin);assert.strictEqual(convertidas.kpis.novas_conversoes,2);assert.strictEqual(convertidas.kpis.atendidos,2);
+});
+
+test('responsável ambíguo no relatório não é atribuído pela primeira correspondência',()=>{
+ const a=op.acoes.listar({ciclo:98},admin).acoes.find(a=>a.nome==='Ação integrada');
+ db.exec("INSERT INTO tutores(id,nome,apelidos) VALUES(98,'Outra colaboradora','Beatriz');INSERT INTO tutor_polos VALUES(98,1);");
+ const d=op.acoes.relatorio(a.id,admin);
+ assert.strictEqual(d.linhas.find(r=>r.tutor_id===95).atendido_planilha,false);
+ assert.ok(d.atualizacao_atendimento.responsavel_nao_identificado>0);
+ db.prepare('UPDATE tutores SET ativo=0 WHERE id=98').run();
+ assert.strictEqual(op.acoes.relatorio(a.id,admin).linhas.find(r=>r.tutor_id===95).atendido_planilha,true);
+});

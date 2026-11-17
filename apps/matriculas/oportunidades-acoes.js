@@ -19,6 +19,46 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   CREATE INDEX ix_op_acao_lead ON ma_op_acao_leads(oportunidade_id,acao_id);`);
  });
  if(!all('PRAGMA table_info(ma_oportunidade_atendimentos)').some(c=>c.name==='acao_lead_id'))db.exec('ALTER TABLE ma_oportunidade_atendimentos ADD COLUMN acao_lead_id INTEGER REFERENCES ma_op_acao_leads(id)');
+ const jaTinhaFontes=!!get("SELECT 1 FROM sqlite_master WHERE type='table' AND name='ma_op_contatos_fonte'");
+ db.exec(`CREATE TABLE IF NOT EXISTS ma_op_contatos_fonte(id INTEGER PRIMARY KEY,oportunidade_id INTEGER NOT NULL REFERENCES ma_oportunidades(id),data TEXT NOT NULL,tutor_fonte TEXT NOT NULL,tutor_chave TEXT NOT NULL,primeira_importacao_id INTEGER,ultima_importacao_id INTEGER,interacoes INTEGER,criado_em TEXT NOT NULL DEFAULT (datetime('now','localtime')),UNIQUE(oportunidade_id,data,tutor_chave));
+ CREATE INDEX IF NOT EXISTS ix_op_contato_fonte ON ma_op_contatos_fonte(oportunidade_id,data);`);
+ if(!jaTinhaFontes&&all('PRAGMA table_info(ma_oportunidades)').some(c=>c.name==='responsavel_origem'))tx(()=>{
+  for(const o of all('SELECT id,ultimo_atendimento,responsavel_origem,interacoes,importacao_id FROM ma_oportunidades WHERE ultimo_atendimento IS NOT NULL'))gravarContatoFonte(o.id,o,o.importacao_id);
+ });
+ // Observações do relatório são fatos separados dos contatos digitados no sistema.
+ // Reimportar o mesmo contato atualiza a referência do arquivo, sem criar outro fato.
+ function gravarContatoFonte(id,valores,importacaoId){
+  const data=String(valores.ultimo_atendimento||'').slice(0,10),autor=String(valores.responsavel_origem||'').trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(data)||!Number.isFinite(Date.parse(data+'T12:00:00Z'))||new Date(data+'T12:00:00Z').toISOString().slice(0,10)!==data||data>hojeISO())return false;
+  const chave=norm(autor)||'sem responsavel';
+  const result=run(`INSERT INTO ma_op_contatos_fonte(oportunidade_id,data,tutor_fonte,tutor_chave,primeira_importacao_id,ultima_importacao_id,interacoes)
+    VALUES(?,?,?,?,?,?,?) ON CONFLICT(oportunidade_id,data,tutor_chave) DO UPDATE SET ultima_importacao_id=excluded.ultima_importacao_id,interacoes=COALESCE(excluded.interacoes,ma_op_contatos_fonte.interacoes)`,id,data,autor,chave,importacaoId||null,importacaoId||null,valores.interacoes??null);
+  return !!result.changes;
+ }
+ function sincronizarImportacao(cicloId,importacaoId,linhas){
+  let observacoes=0;for(const l of linhas)if(gravarContatoFonte(l.id,l.valores,importacaoId))observacoes++;
+  const afetadas=all('SELECT DISTINCT a.id FROM ma_op_acoes a JOIN ma_op_acao_leads l ON l.acao_id=a.id JOIN ma_oportunidades o ON o.id=l.oportunidade_id WHERE a.ciclo_id=? AND a.excluida_em IS NULL AND o.importacao_id=?',cicloId,importacaoId).length;
+  return {observacoes_atendimento:observacoes,acoes_atualizadas:afetadas};
+ }
+ function fontesDaAcao(ciclo,base){
+  const fatos=all('SELECT f.* FROM ma_op_contatos_fonte f JOIN ma_oportunidades o ON o.id=f.oportunidade_id WHERE o.ciclo_id=? ORDER BY f.data,f.id',ciclo),porLead=new Map(base.map(r=>[r.id,r]));
+  const tutores=all('SELECT id,nome,apelidos FROM tutores WHERE ativo=1').map(t=>({...t,nomes:[t.nome,...String(t.apelidos||'').split(/[,;\n]/)].map(norm).filter(Boolean)}));
+  const polos=new Map();for(const p of all('SELECT tutor_id,polo_id FROM tutor_polos')){const ps=polos.get(p.tutor_id)||[];ps.push(p.polo_id);polos.set(p.tutor_id,ps);}
+  const memo=new Map();
+  function resolver(nome,polo){
+   const n=norm(nome),key=JSON.stringify([n,polo]);if(memo.has(key))return memo.get(key);
+   const candidatos=tutores.filter(t=>!(polos.get(t.id)||[]).length||(polos.get(t.id)||[]).includes(polo)).map(t=>{
+    const scores=t.nomes.map(a=>n===a?10000+a.length:n.startsWith(a+' ')?a.length:0);
+    return {id:t.id,score:Math.max(0,...scores)};
+   }).filter(t=>t.score>0);
+   const max=Math.max(0,...candidatos.map(t=>t.score)),ids=candidatos.filter(t=>t.score===max).map(t=>t.id),id=ids.length===1?ids[0]:null;memo.set(key,id);return id;
+  }
+  return fatos.filter(f=>porLead.has(f.oportunidade_id)).map(f=>({...f,tutor_id:resolver(f.tutor_fonte,porLead.get(f.oportunidade_id).polo_id)}));
+ }
+ function fontesPorParticipacao(links,fontes){
+  const porLead=new Map();for(const f of fontes){const es=porLead.get(f.oportunidade_id)||[];es.push(f);porLead.set(f.oportunidade_id,es);}
+  return new Map(links.map(l=>[l.id,(porLead.get(l.oportunidade_id)||[]).filter(f=>f.tutor_id===l.tutor_id)]));
+ }
  function contatosPorParticipacao(ls,eventos){
   const quantidades=new Map();for(const l of ls)quantidades.set(l.oportunidade_id,(quantidades.get(l.oportunidade_id)||0)+1);
   const porLead=new Map();for(const e of eventos){const es=porLead.get(e.oportunidade_id)||[];es.push(e);porLead.set(e.oportunidade_id,es);}
@@ -91,9 +131,10 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   const excluidas=q.excluidas==='1';if(excluidas)exigir(u);
   const links=all('SELECT l.* FROM ma_op_acao_leads l JOIN ma_op_acoes a ON a.id=l.acao_id WHERE a.ciclo_id=?',ciclo),porAcao=new Map();
   for(const l of links)if(porId.has(l.oportunidade_id)){const xs=porAcao.get(l.acao_id)||[];xs.push(l);porAcao.set(l.acao_id,xs);}
+  const fontes=fontesDaAcao(ciclo,base);
   const eventos=all('SELECT e.* FROM ma_oportunidade_atendimentos e JOIN ma_oportunidades o ON o.id=e.oportunidade_id WHERE o.ciclo_id=? AND e.anulado=0',ciclo);
   return {acoes:all('SELECT * FROM ma_op_acoes WHERE ciclo_id=? ORDER BY id DESC',ciclo).filter(a=>Boolean(a.excluida_em)===excluidas&&(permissoes(u).importar||porAcao.has(a.id))).map(a=>{
-   const ls=porAcao.get(a.id)||[],ate=a.fim&&a.fim<hojeISO()?a.fim:hojeISO();const contatos=contatosPorParticipacao(ls,eventos.filter(e=>e.data>=a.inicio&&e.data<=ate)),atendidos=ls.filter(l=>contatos.get(l.id).length).length;
+   const ls=porAcao.get(a.id)||[],ate=a.fim&&a.fim<hojeISO()?a.fim:hojeISO();const contatos=contatosPorParticipacao(ls,eventos.filter(e=>e.data>=a.inicio&&e.data<=ate)),fontesFiltradas=fontesPorParticipacao(ls,fontes.filter(f=>f.data>=a.inicio&&f.data<=ate)),atendidos=ls.filter(l=>contatos.get(l.id).length||fontesFiltradas.get(l.id).length).length;
    const novos=ls.filter(l=>l.ra_inicial!=='confirmado'&&porId.get(l.oportunidade_id).ra_situacao==='confirmado').length;
    return {id:a.id,nome:a.nome,supervisora:a.supervisora,inicio:a.inicio,fim:a.fim,criado_em:a.criado_em,excluida_em:a.excluida_em,total:ls.length,atendidos,novas_conversoes:novos,taxa_atendimento:ls.length?100*atendidos/ls.length:null,tutoras:new Set(ls.map(l=>l.tutor_id)).size,pendentes:permissoes(u).importar?JSON.parse(a.pendencias).length:0};
   })};
@@ -106,12 +147,17 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   const fim=a.fim&&a.fim<hojeISO()?a.fim:hojeISO();
   const eventos=all(`SELECT DISTINCT e.id,e.oportunidade_id,e.data,e.autor_tutor_id,e.autor_nome,e.acao_lead_id FROM ma_oportunidade_atendimentos e JOIN ma_op_acao_leads l ON l.oportunidade_id=e.oportunidade_id WHERE l.acao_id=? AND e.anulado=0 AND e.data>=? AND e.data<=?`,a.id,a.inicio,fim);
   const atend=contatosPorParticipacao(links,eventos);
-  const linhas=links.map(l=>{const r=porId.get(l.oportunidade_id),ats=atend.get(l.id)||[];return {
-   id:r.id,participacao_id:l.id,linha_fonte:l.linha_fonte,nome:r.nome,cpf:mascaraCpf(r.cpf),curso:r.curso,polo:r.polo,tutor_id:l.tutor_id,tutora:l.tutora,aba:l.aba,
-   atendido:ats.length>0,atendimentos:ats.length,atendido_pela_tutora:ats.some(e=>Number(e.autor_tutor_id)===l.tutor_id),
+  const fontes=fontesDaAcao(a.ciclo_id,base).filter(f=>f.data>=a.inicio&&f.data<=fim);
+  const importados=fontesPorParticipacao(links,fontes);
+  const idsDaAcao=new Set(links.map(l=>l.oportunidade_id));
+  const desconhecidos=fontes.filter(f=>idsDaAcao.has(f.oportunidade_id)&&!f.tutor_id).length;
+  const ultimaFonte=get('SELECT id,arquivo,criado_em FROM ma_oportunidade_importacoes WHERE ciclo_id=? ORDER BY id DESC LIMIT 1',a.ciclo_id)||null;
+  const linhas=links.map(l=>{const r=porId.get(l.oportunidade_id),ats=atend.get(l.id)||[],fs=importados.get(l.id)||[],ultima=fs[fs.length-1];return {
+   id:r.id,participacao_id:l.id,linha_fonte:l.linha_fonte,nome:r.nome,status_origem:r.status_origem,cpf:mascaraCpf(r.cpf),curso:r.curso,polo:r.polo,tutor_id:l.tutor_id,tutora:l.tutora,aba:l.aba,
+   atendido:ats.length>0||fs.length>0,atendimentos:ats.length,atendido_sistema:ats.length>0,atendido_planilha:fs.length>0,contato_planilha_data:ultima?.data||null,contato_planilha_tutora:ultima?.tutor_fonte||null,atendido_pela_tutora:fs.length>0||ats.some(e=>Number(e.autor_tutor_id)===l.tutor_id),
    ra_inicial:l.ra_inicial,ra_atual:r.ra_situacao,convertido_apos_inicio:l.ra_inicial!=='confirmado'&&r.ra_situacao==='confirmado',etapa:r.etapa};});
   const resumir=ls=>{const total=ls.length,atendidos=ls.filter(r=>r.atendido).length,ja=ls.filter(r=>r.ra_inicial==='confirmado').length,novos=ls.filter(r=>r.convertido_apos_inicio).length;
-   return {total,leads_unicos:new Set(ls.map(r=>r.id)).size,atendidos,nao_atendidos:total-atendidos,taxa_atendimento:total?100*atendidos/total:null,ja_convertidos:ja,elegiveis:total-ja,novas_conversoes:novos,taxa_conversao:total>ja?100*novos/(total-ja):null,ra_confirmado:ls.filter(r=>r.ra_atual==='confirmado').length};};
+   return {total,leads_unicos:new Set(ls.map(r=>r.id)).size,atendidos,atendidos_planilha:ls.filter(r=>r.atendido_planilha).length,atendidos_sistema:ls.filter(r=>r.atendido_sistema).length,nao_atendidos:total-atendidos,taxa_atendimento:total?100*atendidos/total:null,ja_convertidos:ja,elegiveis:total-ja,novas_conversoes:novos,taxa_conversao:total>ja?100*novos/(total-ja):null,ra_confirmado:ls.filter(r=>r.ra_atual==='confirmado').length};};
   const por_tutora=[...new Set(links.map(l=>l.tutor_id))].map(id=>({id,nome:links.find(l=>l.tutor_id===id).tutora,...resumir(linhas.filter(r=>r.tutor_id===id))}));
   const resolucoes=all("SELECT detalhe FROM ma_op_acao_eventos WHERE acao_id=? AND tipo='resolveu_pendencia'",a.id).map(e=>JSON.parse(e.detalhe));
   const resolvidosIds=new Set(resolucoes.flatMap(e=>(e.participacoes||[]).map(p=>p.participacao_id).filter(Boolean)));
@@ -120,7 +166,7 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   const por_aba=[...new Set(recebidas.map(r=>r.aba))].map(aba=>{const fonte=recebidas.filter(r=>r.aba===aba).length,vinculados=links.filter(l=>l.aba===aba).length,pendentes=JSON.parse(a.pendencias).filter(p=>p.aba===aba).length;return {aba,recebidas:fonte,vinculados,pendentes,repetidas_resolvidas:fonte-vinculados-pendentes};});
   const conferencia=permissoes(u).importar?{recebidas:recebidas.length,vinculados:links.length,pendentes:JSON.parse(a.pendencias).length,repetidas_resolvidas:recebidas.length-links.length-JSON.parse(a.pendencias).length,por_aba}:null;
   const {hash,pendencias,...acao}=a;
-  return {acao,conferencia,pendencias_versao:permissoes(u).importar?versaoPendencias(pendencias):null,grupos_pendentes:permissoes(u).importar?gruposPendentes(a,base):[],kpis:resumir(linhas),por_tutora,linhas,pendencias:permissoes(u).importar?JSON.parse(pendencias):[],ate:fim};
+  return {acao,conferencia,atualizacao_atendimento:{ultima_importacao:ultimaFonte,responsavel_nao_identificado:desconhecidos},pendencias_versao:permissoes(u).importar?versaoPendencias(pendencias):null,grupos_pendentes:permissoes(u).importar?gruposPendentes(a,base):[],kpis:resumir(linhas),por_tutora,linhas,pendencias:permissoes(u).importar?JSON.parse(pendencias):[],ate:fim};
  }
  const versaoPendencias = texto => crypto.createHash('sha256').update(texto).digest('hex');
  const chavePendencia = p => JSON.stringify([norm(p.nome),p.cpf||'',p.curso||'']);
@@ -156,5 +202,6 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   return tx(()=>{run(restaurar?'UPDATE ma_op_acoes SET excluida_em=NULL,excluida_por=NULL WHERE id=?':"UPDATE ma_op_acoes SET excluida_em=datetime('now','localtime'),excluida_por=? WHERE id=?",...(restaurar?[a.id]:[u.login,a.id]));run('INSERT INTO ma_op_acao_eventos(acao_id,tipo,por_login) VALUES(?,?,?)',a.id,restaurar?'restaurou':'excluiu',u.login);return {ok:true};});
  }
 
- return {previa,criar,listar,relatorio,resolver,excluir};
+ return {previa,criar,listar,relatorio,resolver,excluir,sincronizarImportacao};
 };
+

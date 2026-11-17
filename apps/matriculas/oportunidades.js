@@ -868,18 +868,22 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
         VALUES (?, ?, ${CAMPOS_FONTE.map(() => '?').join(', ')}, ?, ?, datetime('now','localtime'))`);
       const upd = db.prepare(`UPDATE ma_oportunidades SET identificador=?, ${sets}, importacao_id=?, primeira_importacao_id=COALESCE(primeira_importacao_id, ?), fonte_atualizada_em=datetime('now','localtime'), atualizado_em=datetime('now','localtime') WHERE id=?`);
       const visto = db.prepare('UPDATE ma_oportunidades SET importacao_id=?, primeira_importacao_id=COALESCE(primeira_importacao_id, ?) WHERE id=?');
+      const contatosFonte=[];
       for (const r of validos) {
         const d = r._dados, vals = CAMPOS_FONTE.map(k => d.valores[k] ?? null);
         if (r.acao === 'novo') {
           const nid = Number(ins.run(a.cicloId, d.identificador, ...vals, impId, impId).lastInsertRowid);
+          contatosFonte.push({id:nid,valores:d.valores});
           evento(nid, 'importacao', null, 'Criada', usuario, { importacao_id: impId, detalhe: `Linha ${r.linha} de ${String(c.arquivo || 'planilha').slice(0, 120)}` });
         } else if (r.acao === 'atualizado') {
           upd.run(d.identificador, ...vals, impId, impId, d.alvo_id);
           evento(d.alvo_id, 'importacao', null, 'Atualizada', usuario, { importacao_id: impId, detalhe: 'Campos: ' + d.campos.join(', ') });
         } else visto.run(impId, impId, d.alvo_id);
+        if(r.acao!=='novo')contatosFonte.push({id:d.alvo_id,valores:d.valores});
       }
+      const atualizacaoAcoes=acoes.sincronizarImportacao(a.cicloId,impId,contatosFonte);
       registrar(usuario, 'importou oportunidades', `Processo ${a.cicloId}, importação #${impId}: ${a.totais.novos} novas, ${a.totais.atualizados} atualizadas, ${a.totais.inalterados} sem mudança, ${a.totais.ignorados} ignoradas`);
-      return { ok: true, importacao_id: impId, ...a.totais };
+      return { ok: true, importacao_id: impId, ...a.totais, acoes:atualizacaoAcoes };
     });
   }
   function importacoes(q, usuario) {
@@ -995,4 +999,5 @@ function gerarXlsx(planilhas) {
   return zipStored(files);
 }
 module.exports.gerarXlsx = gerarXlsx;
+
 

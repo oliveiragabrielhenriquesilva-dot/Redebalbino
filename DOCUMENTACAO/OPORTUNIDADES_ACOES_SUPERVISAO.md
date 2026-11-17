@@ -42,7 +42,7 @@ pendências por aba. Totais de participações e inscrições distintas são sep
 Atendimento vale no período da ação, por participação. Ao abrir um lead pela
 carteira da ação, o formulário envia a participação e o contato fica vinculado a
 ela. Um contato da carteira de Bia não marca a participação de Tainara atendida.
-Contatos antigos sem participação só entram automaticamente quando há uma única
+Contatos antigos digitados no sistema, sem participação, só entram automaticamente quando há uma única
 participação daquele lead na ação. Em repetição, não se atribui o contato genérico
 às duas carteiras.
 
@@ -82,3 +82,41 @@ em Bia, linha 37, e Tainara, linha 28; não aparece na aba Marcelly desse arquiv
 que termina na linha 38. Um print posterior mostra Agnales em Marcelly, linha 99.
 É necessário o arquivo correspondente à versão atual para reconciliar a
 operacionalização. Não se substitui a planilha atual pelo conteúdo do XLSX antigo.
+
+
+
+## Atualização automática pelo acompanhamento
+
+A importação do relatório de atendimento atualiza as ações existentes sem nova
+importação da distribuição. Status da inscrição e dados de origem continuam
+sendo atualizados no lead. A taxa de atendimento passa a combinar contatos do
+sistema e observações do relatório, dentro do período da ação.
+
+A data deve ser válida, não futura e estar entre início e fim da ação (ou hoje).
+A responsável do relatório é reconhecida por nome/apelido cadastrado ou prefixo
+único do nome completo, respeitando polos. Correspondência ambígua não é escolhida
+pela primeira ocorrência: aparece aviso e não se atribui o contato àquela carteira.
+Nome ou apelido exato tem precedência sobre prefixos. Um contato importado de Bia
+conta na participação de Bia; não na participação repetida de Emilly.
+
+ma_op_contatos_fonte guarda oportunidade, data, responsável original normalizada,
+primeira/última importação e contador de interações informado. A chave de
+observação é lead/data/responsável. Reimportar atualiza a referência sem repetir
+o fato. Importações seguintes não apagam os contatos já observados. Não se usa o
+contador cumulativo de interações como quantidade de novos contatos da ação.
+
+Na primeira atualização, as observações já existentes nos leads são preservadas
+na nova tabela. A migração e as importações são transacionais. As leituras da ação
+reconhecem o novo estado automaticamente; as escritas invalidam o cache SQLite.
+
+A API mostra atendido_sistema, atendido_planilha e último contato da planilha em
+cada participação. A taxa conta cada participação no máximo uma vez, mesmo com
+contatos nas duas fontes. A tela informa a última importação, a origem/data do
+atendimento e o status de inscrição atualizado. A importação retorna quantas
+ações tiveram dados sincronizados. Conversão continua dependendo do RA oficial.
+
+Validação cobre importação e reimportação por HTTP autenticado, atualização do
+status, taxa por tutora e cards, contato anterior ao início, fim da ação, data
+futura, responsável ausente/desconhecida/ambígua, repetição entre carteiras,
+preservação de contatos anteriores e união com atendimento manual. Há ainda
+verificação da migração com observação já existente.
