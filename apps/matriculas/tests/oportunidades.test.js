@@ -200,3 +200,57 @@ test('relatório real com código na coluna Curso classifica registros antigos s
  assert.match(op.lista({ciclo:94,produto:'92'},admin).linhas[0].curso,/PEDAGOGIA/);
  assert.strictEqual(db.prepare("SELECT curso_nome FROM ma_oportunidades WHERE identificador='codigo-ped'").get().curso_nome,'ESPRE_PED');
 });
+
+test('ação da supervisão vincula somente leads existentes e preserva fonte e histórico',()=>{
+ db.exec(`INSERT INTO ciclos(id,nome,padrao) VALUES(95,'Ação supervisão',0);
+ INSERT INTO tutores(id,nome,apelidos) VALUES(95,'Beatriz','Bia'),(96,'Emilly',NULL);
+ INSERT INTO tutor_polos(tutor_id,polo_id) VALUES(95,1),(96,2);`);
+ op.importar({ciclo:95,confirmado:true,linhas:[
+  {identificador:'acao-1',nome:'Lead ação',cpf:'52998224725',curso_cod:'ESPRE_PED',curso_nome:'Pedagogia',polo_fonte:'Franca',status_origem:'Inscrito'},
+  {identificador:'acao-2',nome:'Outro lead ação',cpf:'11144477735',curso_cod:'ESPRE_PED',polo_fonte:'Batatais'}]},admin);
+ const id=db.prepare("SELECT id FROM ma_oportunidades WHERE identificador='acao-1'").get().id;
+ op.salvar(id,{observacao:'Preservar anotação',etapa:'negociacao'},admin);
+ const count=db.prepare('SELECT count(*) n FROM ma_oportunidades').get().n;
+ const input={ciclo:95,nome:'Ação da supervisão',inicio:'2026-01-01',linhas:[
+  {aba:'Bia',cpf:'52998224725',curso_cod:'ESPRE_PED',nome:'Lead ação'},
+  {aba:'Emilly',cpf:'11144477735',curso_cod:'ESPRE_PED',nome:'Outro lead'},
+  {aba:'Bia',cpf:'39053344705',curso_cod:'ESPRE_PED',nome:'Ausente'}]};
+ const preview=op.acoes.previa(input,admin);assert.deepStrictEqual(preview.totais,{linhas:3,vinculaveis:2,pendentes:1});
+ assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_op_acoes').get().n,0);
+ assert.throws(()=>op.acoes.criar(input,admin),/Revise/);
+ assert.throws(()=>op.acoes.previa(input,tutorFranca),/acesso/);
+ const created=op.acoes.criar({...input,confirmado:true},admin);
+ assert.strictEqual(created.vinculados,2);assert.strictEqual(created.pendentes,1);
+ assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_oportunidades').get().n,count);
+ const after=db.prepare('SELECT * FROM ma_oportunidades WHERE id=?').get(id);
+ assert.deepStrictEqual([after.responsavel_tutor_id,after.observacao,after.etapa,after.status_origem],[95,'Preservar anotação','negociacao','Inscrito']);
+ assert.strictEqual(op.acoes.criar({...input,confirmado:true},admin).id,created.id);
+ assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_op_acoes').get().n,1);
+ assert.strictEqual(op.acoes.relatorio(created.id,admin).kpis.total,2);
+ assert.strictEqual(op.acoes.relatorio(created.id,tutorFranca).kpis.total,1);
+ assert.strictEqual(op.acoes.relatorio(created.id,tutorFranca).pendencias.length,0);
+ assert.strictEqual(op.acoes.listar({ciclo:95},tutorFranca).acoes[0].total,1);
+ const asBia={...tutorFranca,tutor_id:95};
+ op.registrarAtendimento(id,{canal:'telefone',resultado:'Atendimento da ação'},asBia);
+ const result=op.acoes.relatorio(created.id,admin);
+ assert.strictEqual(result.kpis.atendidos,1);assert.strictEqual(result.kpis.taxa_atendimento,50);
+ assert.strictEqual(result.linhas.find(r=>r.id===id).atendido_pela_tutora,true);
+ db.prepare("INSERT INTO ma_lista_alunos(ciclo_id,candidato,ra,nome,cpf,polo_fonte,ativo) VALUES(95,'ACAO1','ACAO-RA','Lead ação','52998224725','Franca',1)").run();
+ const converted=op.acoes.relatorio(created.id,admin);
+ assert.strictEqual(converted.kpis.novas_conversoes,1);assert.strictEqual(converted.kpis.taxa_conversao,50);
+ const second=op.acoes.criar({...input,nome:'Outro recorte',linhas:[input.linhas[0]],confirmado:true},admin);
+ const baseline=op.acoes.relatorio(second.id,admin);assert.strictEqual(baseline.kpis.ja_convertidos,1);assert.strictEqual(baseline.kpis.novas_conversoes,0);assert.strictEqual(baseline.kpis.taxa_conversao,null);
+});
+
+test('distribuição não escolhe tutora em conflitos nem muda de curso só por CPF',()=>{
+ const input={ciclo:95,nome:'Conflitos',inicio:'2026-01-01',linhas:[
+ {aba:'Bia',cpf:'52998224725',curso_cod:'ESPRE_PED'},
+ {aba:'Emilly',cpf:'52998224725',curso_cod:'ESPRE_PED'},
+ {aba:'Bia',cpf:'11144477735',curso_cod:'ESPRE_BEDU'}]};
+ const p=op.acoes.previa(input,admin);assert.strictEqual(p.totais.vinculaveis,0);
+ assert.ok(p.linhas.slice(0,2).every(r=>/tutoras diferentes/.test(r.motivo)));
+ assert.match(p.linhas[2].motivo,/não localizado/);
+ assert.throws(()=>op.acoes.criar({...input,confirmado:true},admin),/Nenhum lead/);
+ assert.strictEqual(op.acoes.previa({...input,linhas:[{...input.linhas[0],aba:'Apelido desconhecido'}]},admin).totais.pendentes,1);
+ assert.strictEqual(op.acoes.previa({...input,linhas:[{...input.linhas[0],aba:'Apelido desconhecido'}],tutores:{'Apelido desconhecido':95}},admin).totais.vinculaveis,1);
+});

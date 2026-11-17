@@ -894,6 +894,8 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       lista: rows.slice(0, 1000).map(r => ({ ...linhaPublica(r, p.atender), candidato_id: r.id, curso_nome: r.curso, polo_fonte: r.polo_fonte, situacao: r.ra_situacao === 'confirmado' ? 'matriculado' : r.etapa === 'perdido' ? 'perdida' : 'oportunidade', responsavel_origem: r.tutor_origem, observacao: r.observacao })) };
   }
 
+  const acoes = require('./oportunidades-acoes')({db,all,get,run,tx,falha,norm,hojeISO,cicloValido,permissoes,carregarBase,cpfNormalizado,mascaraCpf,evento,nomeResponsavel,lerResponsavel,cursoFonte});
+
   // ------------------------------------------------------------------ rotas /api/ma/oportunidades*
   async function rotas(req, res, p, m, q, usuario) {
     if (p !== '/api/ma/oportunidades' && !p.startsWith('/api/ma/oportunidades/')) return false;
@@ -906,6 +908,11 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       if (duracao>=500) console.warn(`[oportunidades-lento] ${new Date().toISOString()} GET ${p.replace(/\/\d+(?=\/|$)/g,'/:id')} ${duracao.toFixed(0)}ms`);
       enviarJson(res,200,dados);
     };
+    if (p === '/api/ma/oportunidades/acoes' && m === 'GET') { responderLeitura(()=>acoes.listar(q,usuario)); return true; }
+    if (p === '/api/ma/oportunidades/acoes/previa' && m === 'POST') { enviarJson(res,200,acoes.previa(await lerCorpo(req,4e7),usuario)); return true; }
+    if (p === '/api/ma/oportunidades/acoes' && m === 'POST') { enviarJson(res,200,acoes.criar(await lerCorpo(req,4e7),usuario)); return true; }
+    const acaoMatch = p.match(/^\/api\/ma\/oportunidades\/acoes\/(\d+)$/);
+    if (acaoMatch && m === 'GET') { responderLeitura(()=>acoes.relatorio(Number(acaoMatch[1]),usuario)); return true; }
     if (p === '/api/ma/oportunidades' && m === 'GET') { responderLeitura(()=>listaCompat(q, usuario)); return true; }
     if (p === '/api/ma/oportunidades/opcoes' && m === 'GET') { responderLeitura(()=>opcoes(q, usuario)); return true; }
     if (p === '/api/ma/oportunidades/painel' && m === 'GET') { responderLeitura(()=>painel(q, usuario)); return true; }
@@ -928,7 +935,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     falha(404, 'Rota não encontrada');
   }
 
-  return { rotas, painel, lista, exportar, opcoes, detalhe, salvar, registrarAtendimento, conciliar, previaImportacao, importar, importacoes, listaCompat, carregarBase, situacaoRA, dataFonte, cpfNormalizado, ETAPAS };
+  return { acoes, rotas, painel, lista, exportar, opcoes, detalhe, salvar, registrarAtendimento, conciliar, previaImportacao, importar, importacoes, listaCompat, carregarBase, situacaoRA, dataFonte, cpfNormalizado, ETAPAS };
 };
 
 // ------------------------------------------------------------------ XLSX mínimo (sem dependências): ZIP "stored" + SpreadsheetML

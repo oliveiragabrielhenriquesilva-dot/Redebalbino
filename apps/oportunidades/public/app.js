@@ -85,7 +85,7 @@
     const p = new URLSearchParams(location.search);
     state.ciclo = p.get('ciclo') || '';
     for (const [k, v] of p) if (!['ciclo', 'aba'].includes(k)) state.f[k] = v;
-    if (['candidatos', 'importacoes', 'definicoes'].includes(p.get('aba'))) state.tab = p.get('aba');
+    if (['candidatos', 'acoes', 'importacoes', 'definicoes'].includes(p.get('aba'))) state.tab = p.get('aba');
   }
   const labelOf = (opt, value) => (state.opts?.[opt] || []).find(x => String(x.value) === String(value))?.label || value;
 
@@ -356,7 +356,7 @@
   }
 
   // ------------------------------------------------------------ importação: leitura da planilha no navegador
-  async function readSheet(file) {
+  async function readSheet(file, allSheets = false) {
     const buf = new Uint8Array(await file.arrayBuffer()), dv = new DataView(buf.buffer);
     if (/\.csv$/i.test(file.name) || buf[0] !== 0x50) {
       let text = new TextDecoder('utf-8').decode(buf);
@@ -374,7 +374,7 @@
         else value += ch;
       }
       if (value || row.length) { row.push(value.trim()); rows.push(row); }
-      return rows;
+      return allSheets ? [{nome:file.name,rows}] : rows;
     }
     let end = -1; for (let i = buf.length - 22; i >= Math.max(0, buf.length - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { end = i; break; }
     if (end < 0) throw new Error('O arquivo não parece ser um Excel .xlsx válido.');
@@ -383,16 +383,24 @@
     const read = async name => { const f = files[name]; if (!f) return null; const start = f.local + 30 + dv.getUint16(f.local + 26, true) + dv.getUint16(f.local + 28, true), data = buf.slice(start, start + f.size); if (f.method === 0) return new TextDecoder().decode(data); if (typeof DecompressionStream === 'undefined') throw new Error('Este navegador não abre .xlsx. Atualize o navegador ou salve como CSV.'); return await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text(); };
     const xml = t => new DOMParser().parseFromString(t, 'application/xml'), shared = [];
     const ss = await read('xl/sharedStrings.xml'); if (ss) for (const si of xml(ss).getElementsByTagName('si')) shared.push([...si.getElementsByTagName('t')].map(x => x.textContent).join(''));
-    let sheetPath = 'xl/worksheets/sheet1.xml';
-    try { const wb = xml(await read('xl/workbook.xml')), rels = xml(await read('xl/_rels/workbook.xml.rels')), sheet = wb.getElementsByTagName('sheet')[0], rid = sheet.getAttribute('r:id') || sheet.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id'), rel = [...rels.getElementsByTagName('Relationship')].find(x => x.getAttribute('Id') === rid); if (rel) sheetPath = 'xl/' + rel.getAttribute('Target').replace(/^\/?xl\//, '').replace(/^\//, ''); } catch {}
-    const source = await read(sheetPath); if (!source) throw new Error('Não encontrei a primeira planilha no arquivo.');
+    const wb=xml(await read('xl/workbook.xml')), rels=xml(await read('xl/_rels/workbook.xml.rels'));
+    const sheets=[...wb.getElementsByTagName('sheet')].map(sheet=>{
+      const rid=sheet.getAttribute('r:id')||sheet.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+      const rel=[...rels.getElementsByTagName('Relationship')].find(r=>r.getAttribute('Id')===rid);
+      return {nome:sheet.getAttribute('name'),path:'xl/'+String(rel?.getAttribute('Target')||'worksheets/sheet1.xml').replace(/^\/?xl\//,'').replace(/^\//,'')};
+    });
+    const result=[];
+    for(const sheet of (allSheets?sheets:sheets.slice(0,1))){
+    const source=await read(sheet.path);if(!source)throw new Error('Não encontrei a aba '+sheet.nome+'.');
     const col = ref => { const m = /^([A-Z]+)/.exec(ref || ''); let n = 0; for (const ch of (m ? m[1] : 'A')) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
     const out = [];
     for (const row of xml(source).getElementsByTagName('row')) {
       const cells = []; for (const cell of row.getElementsByTagName('c')) { const type = cell.getAttribute('t'), v = cell.getElementsByTagName('v')[0]; let value = type === 'inlineStr' ? [...cell.getElementsByTagName('t')].map(x => x.textContent).join('') : v ? v.textContent : ''; if (type === 's') value = shared[Number(value)] || ''; cells[col(cell.getAttribute('r'))] = value; }
       out[(Number(row.getAttribute('r')) || out.length + 1) - 1] = Array.from(cells, x => x ?? '');
     }
-    return Array.from(out, x => x || []);
+    result.push({nome:sheet.nome,rows:Array.from(out, x => x || [])});
+    }
+    return allSheets?result:result[0].rows;
   }
   const normHeader = v => String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, ' ').trim();
   // A coluna de identificação da planilha se chama exatamente "Identificador" (também aceita o nome antigo).
@@ -500,6 +508,62 @@
       <td>${i.problemas.length ? `<details><summary>Ver ${fmtN(i.problemas.length)} linha(s)</summary><ul class="problems">${i.problemas.map(p => `<li>Linha ${p.linha} · ${esc(p.identificador || 'sem identificador')}: ${[...p.motivos, ...p.alertas].map(esc).join(' ')}</li>`).join('')}</ul></details>` : '—'}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">Nenhuma importação registrada neste processo.</p>';
   }
 
+  // ------------------------------------------------------------ ações da supervisão
+  let selectedAction = '', actionDraft = null;
+  async function loadAcoes(version = readVersion) {
+    const d = await api(`${API}/acoes?ciclo=${encodeURIComponent(state.ciclo)}`);
+    if(version!==readVersion)return;
+    $('action-upload-label').classList.toggle('hidden',!state.opts.permissoes.definir_responsavel);
+    $('action-select').innerHTML='<option value="">Selecione uma ação</option>'+d.acoes.map(a=>`<option value="${a.id}">${esc(a.nome)} · ${fmtN(a.total)} leads</option>`).join('');
+    if(!d.acoes.some(a=>String(a.id)===selectedAction))selectedAction='';
+    $('action-select').value=selectedAction;
+    if(selectedAction)await loadAcaoReport(version);
+    else $('action-report').innerHTML='<p class="empty">Selecione uma ação ou envie a planilha com uma aba por tutora.</p>';
+  }
+  async function loadAcaoReport(version=readVersion){
+    if(!selectedAction)return;
+    const d=await api(`${API}/acoes/${encodeURIComponent(selectedAction)}`);if(version!==readVersion)return;
+    const k=d.kpis,a=d.acao;
+    const metric=(title,value,note)=>`<article class="kpi"><span>${title}</span><strong>${value}</strong><small>${note}</small></article>`;
+    $('action-report').innerHTML=`<div class="op-section-head"><div><h2>${esc(a.nome)}</h2><p>${a.supervisora?'Supervisora: '+esc(a.supervisora)+' · ':''}Início: ${fmtD(a.inicio)}${a.fim?' · Até '+fmtD(a.fim):''}</p></div></div>
+      <div class="op-action-kpis">${metric('Leads distribuídos',fmtN(k.total),'Inscrições existentes vinculadas à ação')}${metric('Atendimento',fmtP(k.taxa_atendimento),fmtN(k.atendidos)+' de '+fmtN(k.total)+' leads com atendimento no período')}${metric('Novas confirmações de RA',fmtN(k.novas_conversoes),fmtN(k.ja_convertidos)+' já tinham RA ao distribuir')}${metric('Conversão da base elegível',fmtP(k.taxa_conversao),fmtN(k.novas_conversoes)+' ÷ '+fmtN(k.elegiveis)+' sem RA na distribuição')}</div>
+      <p class="op-action-note">Atendimento considera registros feitos no sistema entre ${fmtD(a.inicio)} e ${fmtD(d.ate)}, por qualquer pessoa da equipe. A conversão compara o RA atual com a situação salva na distribuição e acompanha a atualização da lista oficial; não comprova que a ação causou a matrícula.</p>
+      <article class="card"><header><h2>Resultado por tutora</h2></header><div class="table-wrap"><table><thead><tr><th>Tutora</th><th>Leads</th><th>Atendidos</th><th>Sem atendimento</th><th>Taxa de atendimento</th><th>RA inicial</th><th>Novos RA</th><th>Conversão</th></tr></thead><tbody>${d.por_tutora.map(t=>`<tr><td>${esc(t.nome)}</td><td>${fmtN(t.total)}</td><td>${fmtN(t.atendidos)}</td><td>${fmtN(t.nao_atendidos)}</td><td>${fmtP(t.taxa_atendimento)}<div class="op-action-bar"><i style="width:${Math.min(100,t.taxa_atendimento||0)}%"></i></div></td><td>${fmtN(t.ja_convertidos)}</td><td>${fmtN(t.novas_conversoes)}</td><td>${fmtP(t.taxa_conversao)}</td></tr>`).join('')}</tbody></table></div></article>
+      ${d.pendencias.length?`<article class="card"><header><h2>Pendências da distribuição (${d.pendencias.length})</h2><p>Estas linhas não foram atribuídas nem entram nos indicadores.</p></header><div class="table-wrap"><table><thead><tr><th>Aba / linha</th><th>Lead</th><th>Curso</th><th>Motivo</th></tr></thead><tbody>${d.pendencias.map(r=>`<tr><td>${esc(r.aba)} · ${r.linha}</td><td>${esc(r.nome)}<span class="sub">${esc(r.cpf)}</span></td><td>${esc(r.curso)}</td><td>${esc(r.motivo)}</td></tr>`).join('')}</tbody></table></div></article>`:''}
+      <article class="card"><header><h2>Leads da ação</h2><p>Abra o candidato para registrar o atendimento.</p></header><div class="table-wrap"><table><thead><tr><th>Candidato</th><th>Tutora</th><th>Curso / polo</th><th>Atendimento no período</th><th>RA</th></tr></thead><tbody>${d.linhas.map(r=>`<tr><td><button class="link" data-open="${r.id}">${esc(r.nome)}</button><span class="sub">${esc(r.cpf)}</span></td><td>${esc(r.tutora)}</td><td>${esc(r.curso)}<span class="sub">${esc(r.polo)}</span></td><td>${r.atendido?'Atendido ('+r.atendimentos+')':'Não atendido'}${r.atendido_pela_tutora?'<span class="sub">Com registro pela tutora atribuída</span>':''}</td><td>${r.ra_atual==='confirmado'?(r.ra_inicial==='confirmado'?'Já confirmado na distribuição':'Nova confirmação'):'Sem RA confirmado'}</td></tr>`).join('')}</tbody></table></div></article>`;
+  }
+  function mapActionSheets(sheets){
+    const linhas=[];
+    for(const sheet of sheets){
+      const hi=sheet.rows.findIndex(row=>row.some(v=>normHeader(v)==='cpf'));
+      if(hi<0)throw new Error(`A aba ${sheet.nome} não tem a coluna CPF.`);
+      const h=sheet.rows[hi].map(normHeader),cpf=h.indexOf('cpf'),nome=h.findIndex(x=>['nome completo','nome'].includes(x)),curso=h.findIndex(x=>['curso','curso codigo','cd curso','codigo do curso'].includes(x));
+      if(curso<0)throw new Error(`A aba ${sheet.nome} não tem a coluna Curso.`);
+      sheet.rows.slice(hi+1).forEach((row,i)=>{if(!row.some(v=>String(v??'').trim()))return;linhas.push({aba:sheet.nome,linha:hi+i+2,nome:String(row[nome]||''),cpf:String(row[cpf]||'').replace(/\.0+$/,''),curso_cod:String(row[curso]||'').trim()});});
+    }
+    return linhas;
+  }
+  async function startAction(file){
+    actionDraft={ciclo:state.ciclo,nome:'Ação da supervisão — '+fmtD(state.opts.hoje),inicio:state.opts.hoje,fim:'',supervisora:'',arquivo:file.name,linhas:mapActionSheets(await readSheet(file,true)),tutores:{}};
+    const abas=[...new Set(actionDraft.linhas.map(r=>r.aba))],tutores=state.opts.responsaveis.filter(r=>r.tipo==='tutor');
+    const box=$('import-body');
+    box.innerHTML=`<div class="dialog-head"><div><h2>Nova ação da supervisão</h2><p class="muted">${esc(file.name)} · ${actionDraft.linhas.length} linhas. Apenas leads existentes serão vinculados.</p></div><button type="button" class="icon-button" data-close aria-label="Fechar">×</button></div><form id="action-form" class="op-action-form"><div class="form-grid"><label class="field"><span>Nome da ação</span><input name="nome" value="${esc(actionDraft.nome)}" required maxlength="160"></label><label class="field"><span>Supervisora</span><input name="supervisora" maxlength="120" placeholder="Nome da supervisora"></label><label class="field"><span>Início</span><input name="inicio" type="date" value="${esc(actionDraft.inicio)}" max="${esc(state.opts.hoje)}" required></label><label class="field"><span>Fim previsto (opcional)</span><input name="fim" type="date"></label>${abas.map(aba=>`<label class="field"><span>Aba ${esc(aba)} → Tutora</span><select data-action-aba="${esc(aba)}"><option value="">Reconhecer pelo nome ou apelido cadastrado</option>${tutores.map(t=>`<option value="${esc(t.key.slice(2))}">${esc(t.nome)}</option>`).join('')}</select></label>`).join('')}</div><p class="op-action-note">A distribuição altera o responsável atual dos leads encontrados. Etapas, anotações e histórico serão preservados. CPFs com o mesmo curso em abas de tutoras diferentes ficam pendentes.</p><div class="dialog-actions"><span data-err class="save-error"></span><button class="button primary" type="submit">Conferir distribuição</button></div></form><div id="action-preview"></div>`;
+    $('import-dialog').showModal();
+    $('action-form').addEventListener('input',()=>{$('action-preview').innerHTML='';});
+    $('action-form').addEventListener('submit',async ev=>{
+      ev.preventDefault();const form=ev.target,err=form.querySelector('[data-err]'),button=form.querySelector('[type=submit]');button.disabled=true;err.textContent='';
+      try{
+        Object.assign(actionDraft,Object.fromEntries(new FormData(form)));actionDraft.tutores={};form.querySelectorAll('[data-action-aba]').forEach(s=>{if(s.value)actionDraft.tutores[s.dataset.actionAba]=s.value;});
+        const d=await api(`${API}/acoes/previa`,{method:'POST',body:JSON.stringify(actionDraft)});
+        $('action-preview').innerHTML=`<div class="box"><h3>Prévia da distribuição</h3><p>${d.totais.vinculaveis} leads prontos para vincular · ${d.totais.pendentes} linhas pendentes.</p>${d.existente?'<p>Esta planilha já foi usada para criar uma ação. Nenhuma distribuição será repetida.</p>':''}<div class="table-wrap"><table><thead><tr><th>Aba / tutora</th><th>Lead</th><th>Curso</th><th>Resultado</th></tr></thead><tbody>${d.linhas.map(r=>`<tr><td>${esc(r.aba)}<span class="sub">${esc(r.tutora||'Tutora não vinculada')}</span></td><td>${esc(r.nome)}<span class="sub">${esc(r.cpf)}</span></td><td>${esc(r.curso)}</td><td>${esc(r.motivo||'Vincular à ação e definir responsável')}${r.atual?'<span class="sub">Responsável atual: '+esc(r.atual)+'</span>':''}</td></tr>`).join('')}</tbody></table></div><p class="op-action-note">Linhas pendentes ficam registradas para revisão e não serão atribuídas.</p><div class="dialog-actions"><span id="action-save-error" class="save-error"></span><button id="action-confirm" class="button primary" ${!d.totais.vinculaveis&&!d.existente?'disabled':''}>${d.existente?'Abrir ação existente':'Criar ação e vincular '+d.totais.vinculaveis+' leads'}</button></div></div>`;
+        $('action-confirm').addEventListener('click',async e=>{e.target.disabled=true;try{const saved=await api(`${API}/acoes`,{method:'POST',body:JSON.stringify({...actionDraft,confirmado:true})});selectedAction=String(saved.id);$('import-dialog').close();await loadOpcoes();setTab('acoes');showNotice(saved.existente?'Esta ação já estava cadastrada.':'Ação criada. Os leads encontrados foram vinculados e os responsáveis atualizados.');}catch(error){$('action-save-error').textContent=error.message;e.target.disabled=false;}});
+      }catch(error){err.textContent=error.message;}finally{button.disabled=false;}
+    });
+  }
+  $('action-select').addEventListener('change',()=>{selectedAction=$('action-select').value;refresh();});
+  $('action-upload').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{await startAction(file);}catch(error){showError(error.message);}finally{e.target.value='';}});
+
+
   // ------------------------------------------------------------ navegação
   async function refresh() {
     const version=++readVersion;
@@ -509,14 +573,18 @@
       if (state.tab === 'painel') await loadPainel(version);
       else if (state.tab === 'candidatos') await loadLista(version);
       else if (state.tab === 'importacoes') await loadImportacoes(version);
+      else if (state.tab === 'acoes') await loadAcoes(version);
     } catch (e) { if(version===readVersion&&!cancelled(e))showError(e.message); }
   }
   function setTab(tab) {
     if(state.tab!==tab)requests.cancelReads();
     state.tab = tab;
-    document.querySelectorAll('.tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+    document.querySelectorAll('.tab').forEach(b => { const on = b.dataset.tab === tab; b.classList.toggle('active', on); if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current'); });
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('hidden', v.id !== 'view-' + tab));
-    $('filters').classList.toggle('hidden', tab === 'importacoes' || tab === 'definicoes');
+    $('op-page-title').textContent=({painel:'Painel gerencial',candidatos:'Candidatos',acoes:'Ações da supervisão',importacoes:'Importações',definicoes:'Definições'})[tab]||'Oportunidades';
+    $('op-sidebar').classList.remove('open');$('op-menu-backdrop').classList.add('hidden');$('op-menu-toggle').setAttribute('aria-expanded','false');
+    $('filters').classList.toggle('hidden', ['importacoes','definicoes','acoes'].includes(tab));
+    document.querySelector('.op-toolbar').classList.toggle('hidden',['importacoes','definicoes','acoes'].includes(tab));
     $('compare-row').classList.toggle('hidden', tab !== 'painel' || !state.compareOpen);
     refresh();
   }
@@ -548,6 +616,9 @@
     const o = ev.target.closest('[data-open]'); if (o) { openDetail(Number(o.dataset.open)); return; }
     const c = ev.target.closest('[data-close]'); if (c) c.closest('dialog')?.close();
   });
+  const closeMenu=()=>{$('op-sidebar').classList.remove('open');$('op-menu-backdrop').classList.add('hidden');$('op-menu-toggle').setAttribute('aria-expanded','false');};
+  $('op-menu-toggle').addEventListener('click',()=>{const open=$('op-sidebar').classList.toggle('open');$('op-menu-backdrop').classList.toggle('hidden',!open);$('op-menu-toggle').setAttribute('aria-expanded',String(open));});
+  $('op-menu-backdrop').addEventListener('click',closeMenu);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMenu();});
   $('theme-toggle').addEventListener('click', () => aplicarTema(document.documentElement.dataset.tema === 'claro' ? 'escuro' : 'claro', true));
   aplicarTema(document.documentElement.dataset.tema);
   $('logout').addEventListener('click', async () => { try { await api('/api/portal/logout', { method: 'POST', body: '{}' }); } catch {} location.assign('/'); });
