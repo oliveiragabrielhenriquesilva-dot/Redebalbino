@@ -79,12 +79,14 @@
   function saveUrl() {
     const p = params();
     if (state.tab !== 'painel') p.set('aba', state.tab);
+    if(state.tab==='acoes'&&selectedAction)p.set('acao',selectedAction);
     history.replaceState(null, '', location.pathname + '?' + p.toString());
   }
   function loadUrl() {
     const p = new URLSearchParams(location.search);
     state.ciclo = p.get('ciclo') || '';
-    for (const [k, v] of p) if (!['ciclo', 'aba'].includes(k)) state.f[k] = v;
+    selectedAction=p.get('acao')||'';
+    for (const [k, v] of p) if (!['ciclo', 'aba', 'acao'].includes(k)) state.f[k] = v;
     if (['candidatos', 'acoes', 'importacoes', 'definicoes'].includes(p.get('aba'))) state.tab = p.get('aba');
   }
   const labelOf = (opt, value) => (state.opts?.[opt] || []).find(x => String(x.value) === String(value))?.label || value;
@@ -509,16 +511,35 @@
   }
 
   // ------------------------------------------------------------ ações da supervisão
-  let selectedAction = '', actionDraft = null;
+  let selectedAction = '', actionDraft = null, showDeletedActions = false;
   async function loadAcoes(version = readVersion) {
-    const d = await api(`${API}/acoes?ciclo=${encodeURIComponent(state.ciclo)}`);
+    const d = await api(`${API}/acoes?ciclo=${encodeURIComponent(state.ciclo)}${showDeletedActions?'&excluidas=1':''}`);
     if(version!==readVersion)return;
-    $('action-upload-label').classList.toggle('hidden',!state.opts.permissoes.definir_responsavel);
-    $('action-select').innerHTML='<option value="">Selecione uma ação</option>'+d.acoes.map(a=>`<option value="${a.id}">${esc(a.nome)} · ${fmtN(a.total)} leads</option>`).join('');
-    if(!d.acoes.some(a=>String(a.id)===selectedAction))selectedAction='';
-    $('action-select').value=selectedAction;
-    if(selectedAction)await loadAcaoReport(version);
-    else $('action-report').innerHTML='<p class="empty">Selecione uma ação ou envie a planilha com uma aba por tutora.</p>';
+    const manage=state.opts.permissoes.definir_responsavel;
+    $('action-upload-label').classList.toggle('hidden',!manage||showDeletedActions);
+    $('action-trash-toggle').classList.toggle('hidden',!manage);
+    $('action-trash-toggle').textContent=showDeletedActions?'Voltar às ações':'Ações excluídas';
+    $('action-list-title').textContent=showDeletedActions?'Ações excluídas':'Acompanhe suas ações';
+    if(!d.acoes.some(a=>String(a.id)===selectedAction))selectedAction=showDeletedActions?'':String(d.acoes[0]?.id||'');
+    $('action-cards').innerHTML=d.acoes.length?d.acoes.map((a,i)=>`<article class="op-action-card ${String(a.id)===selectedAction?'selected':''}"><div class="op-action-card-top"><span class="op-action-state">${a.excluida_em?'Excluída':a.fim&&a.fim<state.opts.hoje?'Finalizada':'Em acompanhamento'}</span>${manage&&!a.excluida_em?`<button class="op-action-delete" data-delete-action="${a.id}" aria-label="Excluir ação ${esc(a.nome)}" title="Excluir ação"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7M14 10v7"/></svg></button>`:''}</div><h3>${esc(a.nome)}</h3><p>${fmtD(a.inicio)}${a.fim?' até '+fmtD(a.fim):' · Sem prazo definido'}${a.supervisora?' · '+esc(a.supervisora):''}</p><div class="op-action-card-numbers"><div><strong>${fmtN(a.total)}</strong><span>leads</span></div><div><strong>${fmtN(a.tutoras)}</strong><span>tutoras</span></div><div><strong>${fmtP(a.taxa_atendimento)}</strong><span>atendidos</span></div></div><progress class="op-action-progress" aria-label="Atendimento de ${esc(a.nome)}" max="100" value="${Math.min(100,a.taxa_atendimento||0)}"></progress><div class="op-action-card-bottom"><span class="${a.pendentes?'op-action-pending':'muted'}">${a.pendentes?fmtN(a.pendentes)+' pendências':fmtN(a.novas_conversoes)+' novas confirmações'}</span>${a.excluida_em?`<button class="button" data-restore-action="${a.id}">Restaurar ação</button>`:`<button class="op-action-open" data-action-open="${a.id}" ${String(a.id)===selectedAction?'aria-current="true"':''}>${String(a.id)===selectedAction?'Painel aberto':'Abrir ação'} <span aria-hidden="true">→</span></button>`}</div></article>`).join(''):`<div class="op-action-empty"><h3>${showDeletedActions?'Nenhuma ação excluída':'Comece sua primeira ação'}</h3><p>${showDeletedActions?'As ações excluídas poderão ser restauradas aqui.':'Envie uma planilha com uma aba por tutora para distribuir os leads e acompanhar os resultados.'}</p></div>`;
+    $('action-cards').querySelectorAll('[data-action-open]').forEach(b=>b.addEventListener('click',()=>{selectedAction=b.dataset.actionOpen;refresh();}));
+    $('action-cards').querySelectorAll('[data-delete-action]').forEach(b=>b.addEventListener('click',()=>confirmActionDelete(d.acoes.find(a=>String(a.id)===b.dataset.deleteAction))));
+    $('action-cards').querySelectorAll('[data-restore-action]').forEach(b=>b.addEventListener('click',async()=>{b.disabled=true;try{await api(`${API}/acoes/${b.dataset.restoreAction}/restaurar`,{method:'POST',body:'{}'});showDeletedActions=false;selectedAction=b.dataset.restoreAction;await refresh();}catch(e){showError(e.message);b.disabled=false;}}));
+    saveUrl();
+    if(selectedAction&&!showDeletedActions)await loadAcaoReport(version);
+    else $('action-report').innerHTML='';
+  }
+  function confirmActionDelete(a){
+    $('import-body').innerHTML=`<div class="dialog-head"><div><h2>Excluir esta ação?</h2><p>${esc(a.nome)}</p></div><button class="icon-button" data-close aria-label="Fechar">×</button></div><div class="box"><p>A ação sairá do painel. Leads, responsáveis e atendimentos serão mantidos.</p><p>Você poderá restaurá-la em <b>Ações excluídas</b>.</p><div class="dialog-actions"><span id="action-delete-error" class="save-error"></span><button class="button" data-close>Cancelar</button><button class="button op-danger" id="action-delete-confirm">Excluir ação</button></div></div>`;
+    $('import-dialog').showModal();$('action-delete-confirm').addEventListener('click',async ev=>{ev.target.disabled=true;try{await api(`${API}/acoes/${a.id}`,{method:'DELETE'});$('import-dialog').close();if(selectedAction===String(a.id))selectedAction='';await refresh();showNotice('Ação excluída. Você pode restaurá-la em Ações excluídas.');}catch(e){$('action-delete-error').textContent=e.message;ev.target.disabled=false;}});
+  }
+  function renderPendingActions(d){
+    if(!d.pendencias.length)return '';
+    const tutores=state.opts.responsaveis.filter(t=>t.tipo==='tutor');
+    return `<details class="card op-pending-section"><summary><span><strong>${d.pendencias.length} pendências na distribuição</strong><small>Confira inscrições repetidas e escolha a tutora responsável.</small></span><span class="op-action-pending">Resolver pendências</span></summary><div class="op-pending-grid">${(d.grupos_pendentes||[]).map((g,i)=>{
+      const unique=[...new Set(g.origens.map(o=>o.tutor_id).filter(Boolean))];
+      return `<form class="op-pending-card" data-pending-index="${i}"><h3>${esc(g.nome)}</h3><p class="sub">${esc(g.cpf||'CPF não informado')} · ${esc(g.curso)}</p><p class="op-pending-origins">${g.origens.map(o=>esc(o.aba)+' · linha '+o.linha).join(' / ')}</p><p class="op-pending-reason">${esc(g.motivo)}</p><label class="field"><span>Inscrição</span><select name="oportunidade_id" aria-label="Inscrição de ${esc(g.nome)}" required ${!g.candidatos.length?'disabled':''}><option value="">${g.candidatos.length?'Escolha a inscrição correta':'Nenhuma inscrição identificada'}</option>${g.candidatos.map(c=>`<option value="${c.id}" ${g.candidatos.length===1?'selected':''}>ID ${esc(c.identificador)} · ${fmtD(c.data)} · ${esc(c.status||'Sem status')} · ${esc(c.polo)}</option>`).join('')}</select></label><label class="field"><span>Tutora responsável</span><select name="tutor_id" aria-label="Tutora para ${esc(g.nome)}" required><option value="">Escolha a tutora</option>${tutores.map(t=>`<option value="${esc(t.key.slice(2))}" ${unique.length===1&&String(unique[0])===t.key.slice(2)?'selected':''}>${esc(t.nome)}</option>`).join('')}</select></label><div class="op-pending-commands"><span data-err class="save-error"></span><button class="button primary" type="submit" ${!g.candidatos.length?'disabled':''}>Vincular lead</button></div></form>`;
+    }).join('')}</div></details>`;
   }
   async function loadAcaoReport(version=readVersion){
     if(!selectedAction)return;
@@ -529,8 +550,12 @@
       <div class="op-action-kpis">${metric('Leads distribuídos',fmtN(k.total),'Inscrições existentes vinculadas à ação')}${metric('Atendimento',fmtP(k.taxa_atendimento),fmtN(k.atendidos)+' de '+fmtN(k.total)+' leads com atendimento no período')}${metric('Novas confirmações de RA',fmtN(k.novas_conversoes),fmtN(k.ja_convertidos)+' já tinham RA ao distribuir')}${metric('Conversão da base elegível',fmtP(k.taxa_conversao),fmtN(k.novas_conversoes)+' ÷ '+fmtN(k.elegiveis)+' sem RA na distribuição')}</div>
       <p class="op-action-note">Atendimento considera registros feitos no sistema entre ${fmtD(a.inicio)} e ${fmtD(d.ate)}, por qualquer pessoa da equipe. A conversão compara o RA atual com a situação salva na distribuição e acompanha a atualização da lista oficial; não comprova que a ação causou a matrícula.</p>
       <article class="card"><header><h2>Resultado por tutora</h2></header><div class="table-wrap"><table><thead><tr><th>Tutora</th><th>Leads</th><th>Atendidos</th><th>Sem atendimento</th><th>Taxa de atendimento</th><th>RA inicial</th><th>Novos RA</th><th>Conversão</th></tr></thead><tbody>${d.por_tutora.map(t=>`<tr><td>${esc(t.nome)}</td><td>${fmtN(t.total)}</td><td>${fmtN(t.atendidos)}</td><td>${fmtN(t.nao_atendidos)}</td><td>${fmtP(t.taxa_atendimento)}<div class="op-action-bar"><i style="width:${Math.min(100,t.taxa_atendimento||0)}%"></i></div></td><td>${fmtN(t.ja_convertidos)}</td><td>${fmtN(t.novas_conversoes)}</td><td>${fmtP(t.taxa_conversao)}</td></tr>`).join('')}</tbody></table></div></article>
-      ${d.pendencias.length?`<article class="card"><header><h2>Pendências da distribuição (${d.pendencias.length})</h2><p>Estas linhas não foram atribuídas nem entram nos indicadores.</p></header><div class="table-wrap"><table><thead><tr><th>Aba / linha</th><th>Lead</th><th>Curso</th><th>Motivo</th></tr></thead><tbody>${d.pendencias.map(r=>`<tr><td>${esc(r.aba)} · ${r.linha}</td><td>${esc(r.nome)}<span class="sub">${esc(r.cpf)}</span></td><td>${esc(r.curso)}</td><td>${esc(r.motivo)}</td></tr>`).join('')}</tbody></table></div></article>`:''}
+      ${renderPendingActions(d)}
       <article class="card"><header><h2>Leads da ação</h2><p>Abra o candidato para registrar o atendimento.</p></header><div class="table-wrap"><table><thead><tr><th>Candidato</th><th>Tutora</th><th>Curso / polo</th><th>Atendimento no período</th><th>RA</th></tr></thead><tbody>${d.linhas.map(r=>`<tr><td><button class="link" data-open="${r.id}">${esc(r.nome)}</button><span class="sub">${esc(r.cpf)}</span></td><td>${esc(r.tutora)}</td><td>${esc(r.curso)}<span class="sub">${esc(r.polo)}</span></td><td>${r.atendido?'Atendido ('+r.atendimentos+')':'Não atendido'}${r.atendido_pela_tutora?'<span class="sub">Com registro pela tutora atribuída</span>':''}</td><td>${r.ra_atual==='confirmado'?(r.ra_inicial==='confirmado'?'Já confirmado na distribuição':'Nova confirmação'):'Sem RA confirmado'}</td></tr>`).join('')}</tbody></table></div></article>`;
+    $('action-report').querySelectorAll('[data-pending-index]').forEach(form=>form.addEventListener('submit',async ev=>{
+      ev.preventDefault();const button=form.querySelector('[type=submit]'),err=form.querySelector('[data-err]');button.disabled=true;err.textContent='';
+      try{const g=d.grupos_pendentes[Number(form.dataset.pendingIndex)],values=Object.fromEntries(new FormData(form));await api(`${API}/acoes/${selectedAction}/resolver`,{method:'POST',body:JSON.stringify({...values,grupo:g.key,versao:d.pendencias_versao})});await refresh();showNotice('Lead vinculado à ação e responsável atualizado. As linhas repetidas foram resolvidas juntas.');}catch(e){err.textContent=e.message;button.disabled=false;}
+    }));
   }
   function mapActionSheets(sheets){
     const linhas=[];
@@ -560,7 +585,7 @@
       }catch(error){err.textContent=error.message;}finally{button.disabled=false;}
     });
   }
-  $('action-select').addEventListener('change',()=>{selectedAction=$('action-select').value;refresh();});
+  $('action-trash-toggle').addEventListener('click',()=>{showDeletedActions=!showDeletedActions;selectedAction='';refresh();});
   $('action-upload').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{await startAction(file);}catch(error){showError(error.message);}finally{e.target.value='';}});
 
 

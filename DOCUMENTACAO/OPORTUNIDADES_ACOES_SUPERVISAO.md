@@ -93,3 +93,26 @@ comparação de curso descartava o registro. O código resolvido e o nome origin
 agora seguem na base interna. Teste de regressão reproduz a falha com curso_cod
 vazio e curso_nome=ESPRE_PED e verifica o vínculo sem reimportação.
 A prévia distingue CPF ausente da base de CPF encontrado com curso divergente.
+
+## Cards, revisão e exclusão recuperável
+
+A lista de seleção foi substituída por cards com leads, tutoras, atendimento e
+pendências. A ação mais recente abre automaticamente; cada card abre o seu painel.
+O parâmetro `acao` conserva a seleção ao compartilhar/reabrir a página.
+
+Pendências são agrupadas por pessoa, CPF mascarado e curso. O administrador pode
+conferir os IDs de inscrição e respectivas datas, escolher uma inscrição e uma
+tutora e vincular o lead. O servidor revalida o grupo, a inscrição, o polo e a
+permissão, verifica uma versão das pendências para evitar alterações concorrentes,
+resolve juntas as linhas repetidas e registra o histórico. Nenhuma inscrição é
+apagada; registros antigos duplicados permanecem na base.
+
+DELETE /api/ma/oportunidades/acoes/ID exclui a ação do painel por marcação, sem
+apagar vínculos, leads ou atendimentos e sem reatribuir responsáveis. Em Ações
+excluídas, POST /api/ma/oportunidades/acoes/ID/restaurar recupera a mesma ação.
+Somente quem pode distribuir pode excluir, restaurar ou revisar pendências.
+Tutores não consultam a lista excluída. ma_op_acao_eventos guarda o histórico da
+revisão/exclusão/restauração; as colunas novas de exclusão são aditivas.
+
+POST /api/ma/oportunidades/acoes/ID/resolver recebe versao, grupo,
+oportunidade_id e tutor_id. Uma versão desatualizada retorna 409, sem alterações.

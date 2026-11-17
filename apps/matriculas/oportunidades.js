@@ -919,7 +919,12 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     if (p === '/api/ma/oportunidades/acoes' && m === 'GET') { responderLeitura(()=>acoes.listar(q,usuario)); return true; }
     if (p === '/api/ma/oportunidades/acoes/previa' && m === 'POST') { enviarJson(res,200,acoes.previa(await lerCorpo(req,4e7),usuario)); return true; }
     if (p === '/api/ma/oportunidades/acoes' && m === 'POST') { enviarJson(res,200,acoes.criar(await lerCorpo(req,4e7),usuario)); return true; }
+    const acaoResolver = p.match(/^\/api\/ma\/oportunidades\/acoes\/(\d+)\/resolver$/);
+    if(acaoResolver && m === 'POST'){enviarJson(res,200,acoes.resolver(Number(acaoResolver[1]),await lerCorpo(req),usuario));return true;}
+    const acaoRestaurar = p.match(/^\/api\/ma\/oportunidades\/acoes\/(\d+)\/restaurar$/);
+    if(acaoRestaurar && m === 'POST'){enviarJson(res,200,acoes.excluir(Number(acaoRestaurar[1]),usuario,true));return true;}
     const acaoMatch = p.match(/^\/api\/ma\/oportunidades\/acoes\/(\d+)$/);
+    if(acaoMatch && m === 'DELETE'){enviarJson(res,200,acoes.excluir(Number(acaoMatch[1]),usuario));return true;}
     if (acaoMatch && m === 'GET') { responderLeitura(()=>acoes.relatorio(Number(acaoMatch[1]),usuario)); return true; }
     if (p === '/api/ma/oportunidades' && m === 'GET') { responderLeitura(()=>listaCompat(q, usuario)); return true; }
     if (p === '/api/ma/oportunidades/opcoes' && m === 'GET') { responderLeitura(()=>opcoes(q, usuario)); return true; }

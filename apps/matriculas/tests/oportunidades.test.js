@@ -270,3 +270,40 @@ test('ação encontra curso guardado no campo nome pela importação antiga',()=
  assert.strictEqual(preview.totais.vinculaveis,1);
  assert.strictEqual(op.carregarBase(96,admin).base[0].curso_cod,'ESPRE_PED');
 });
+
+test('resolve pendência agrupada com inscrição e tutora explícitas sem duplicar a ação',()=>{
+ db.exec(`INSERT INTO ciclos(id,nome) VALUES(97,'Revisão de pendências');
+ INSERT INTO ma_oportunidades(ciclo_id,identificador,nome,cpf,curso_nome,polo_fonte,data_registro) VALUES
+ (97,'REVA','Pessoa revisão','52998224725','ESPRE_PED','Franca','2026-10-01'),
+ (97,'REVB','Pessoa revisão','52998224725','ESPRE_PED','Franca','2026-11-10'),
+ (97,'REVC','Outro lead','11144477735','ESPRE_PED','Franca','2026-11-01');`);
+ const c={ciclo:97,nome:'Revisão',inicio:'2026-11-17',confirmado:true,linhas:[{aba:'Bia',nome:'Pessoa revisão',cpf:'52998224725',curso_cod:'ESPRE_PED'},{aba:'Emilly',nome:'Pessoa revisão',cpf:'52998224725',curso_cod:'ESPRE_PED'},{aba:'Bia',nome:'Outro lead',cpf:'11144477735',curso_cod:'ESPRE_PED'}]};
+ const created=op.acoes.criar(c,admin),report=op.acoes.relatorio(created.id,admin),group=report.grupos_pendentes[0];
+ assert.strictEqual(group.candidatos.length,2);assert.strictEqual(group.candidatos[0].identificador,'REVB');assert.strictEqual(group.origens.length,2);
+ const body={grupo:group.key,versao:report.pendencias_versao,oportunidade_id:group.candidatos[0].id,tutor_id:95};
+ assert.throws(()=>op.acoes.resolver(created.id,body,tutorFranca),/acesso/);
+ assert.throws(()=>op.acoes.resolver(created.id,{...body,oportunidade_id:999999},admin),/correspondente/);
+ const result=op.acoes.resolver(created.id,body,admin);assert.strictEqual(result.resolvidas,2);
+ const after=op.acoes.relatorio(created.id,admin);assert.strictEqual(after.kpis.total,2);assert.strictEqual(after.pendencias.length,0);
+ assert.strictEqual(db.prepare('SELECT responsavel_tutor_id FROM ma_oportunidades WHERE id=?').get(body.oportunidade_id).responsavel_tutor_id,95);
+ assert.strictEqual(db.prepare("SELECT responsavel_tutor_id FROM ma_oportunidades WHERE identificador='REVA'").get().responsavel_tutor_id,null);
+ assert.throws(()=>op.acoes.resolver(created.id,body,admin),/pendências mudaram/);
+ assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_op_acao_eventos WHERE acao_id=?').get(created.id).n,1);
+ assert.strictEqual(op.acoes.listar({ciclo:97},admin).acoes[0].pendentes,0);
+});
+
+test('excluir e restaurar ação preserva leads, responsáveis e histórico e exige permissão',()=>{
+ const a=op.acoes.listar({ciclo:97},admin).acoes[0],before=op.acoes.relatorio(a.id,admin);
+ const leads=db.prepare('SELECT count(*) n FROM ma_oportunidades').get().n;
+ assert.throws(()=>op.acoes.excluir(a.id,tutorFranca),/acesso/);
+ op.acoes.excluir(a.id,admin);
+ assert.strictEqual(op.acoes.listar({ciclo:97},admin).acoes.length,0);
+ assert.throws(()=>op.acoes.relatorio(a.id,admin),/não encontrada/);
+ assert.strictEqual(op.acoes.listar({ciclo:97,excluidas:'1'},admin).acoes[0].id,a.id);
+ assert.throws(()=>op.acoes.listar({ciclo:97,excluidas:'1'},tutorFranca),/acesso/);
+ assert.strictEqual(db.prepare('SELECT count(*) n FROM ma_oportunidades').get().n,leads);
+ op.acoes.excluir(a.id,admin,true);
+ const restored=op.acoes.relatorio(a.id,admin);assert.deepStrictEqual(restored.linhas,before.linhas);
+ assert.strictEqual(op.acoes.listar({ciclo:97},admin).acoes.length,1);
+ assert.strictEqual(op.acoes.listar({ciclo:97,excluidas:'1'},admin).acoes.length,0);
+});
