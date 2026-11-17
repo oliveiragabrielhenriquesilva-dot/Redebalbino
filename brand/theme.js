@@ -45,7 +45,7 @@
     if (/^\/conecta(?:\/|$)/.test(location.pathname)) {
       root.classList.add('rb-shell-page');
       const bar = document.createElement('div'); bar.className = 'rb-system-bar';
-      bar.innerHTML = '<a class="rb-home" href="/">Rede Balbino</a><nav aria-label="Navegação entre sistemas"><a href="/">Portal</a><details class="rb-systems"><summary>Meus sistemas</summary><div class="rb-system-links"><a href="/conecta/">Balbino Conecta</a><a href="/">Ver meus acessos no portal</a></div></details></nav><label class="rb-theme-label">Aparência <select data-rb-theme aria-label="Escolher tema"><option value="light">Tema claro</option><option value="dark">Tema escuro</option></select></label>';
+      bar.innerHTML = '<a class="rb-home" href="/" aria-label="Rede Balbino — portal"><img class="rb-approved-logo" src="/brand/rede-balbino-capelo-2026.png" width="125" height="38" alt="Rede Balbino"></a><nav aria-label="Navegação entre sistemas"><a href="/">Portal</a><details class="rb-systems"><summary>Meus sistemas</summary><div class="rb-system-links"><a href="/conecta/">Balbino Conecta</a><a href="/">Ver meus acessos no portal</a></div></details></nav><label class="rb-theme-label">Aparência <select data-rb-theme aria-label="Escolher tema"><option value="light">Tema claro</option><option value="dark">Tema escuro</option></select></label>';
       document.body.prepend(bar);
       const menu = bar.querySelector('details');
       document.addEventListener('keydown', event => { if (event.key === 'Escape' && menu.open) { menu.open = false; menu.querySelector('summary').focus(); } });

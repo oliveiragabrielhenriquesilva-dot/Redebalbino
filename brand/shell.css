@@ -25,3 +25,22 @@ html[data-theme="light"]{--rb-surface:#fff;--rb-text:#142b49;--rb-muted:#4b5e76;
 html[data-rb-module="artes"][data-theme="light"]{--fundo:#edf3fb;--cartao:#fff;--texto:#142b49;--suave:#4b5e76;--linha:#bdccdc;--marinho:#fff;--ciano-escuro:#1d4ed8}
 html[data-rb-module="artes"][data-theme="light"] body{background:#edf3fb;color:var(--texto)}
 html[data-rb-module="artes"][data-theme="light"] .barra,html[data-rb-module="artes"][data-theme="light"] .barra nav a,html[data-rb-module="artes"][data-theme="light"] .marca span{color:#142b49}
+/* Marca aprovada: B com capelo. Cor no tema claro e versão branca no escuro. */
+img.rb-approved-logo{display:block;width:180px;height:66px;max-width:100%;object-fit:contain;object-position:left center;flex-shrink:0}
+html[data-theme="dark"] img.rb-approved-logo{filter:brightness(0) invert(1)}
+html[data-theme="light"] img.rb-approved-logo{filter:none}
+.rb-conecta-brand{flex-direction:column;align-items:flex-start;gap:14px;margin-bottom:28px}
+.rb-conecta-brand>a{display:block;text-decoration:none}
+.rb-conecta-brand strong{font-size:17px}
+.rb-conecta-brand small{letter-spacing:.4px;font-size:10px;line-height:1.5}
+.rb-module-name{font-size:12px;font-weight:600;color:var(--muted);border-left:1px solid var(--line);padding-left:12px}
+.login-icon.rb-login-logo{width:190px;height:72px;box-shadow:none;border:0;background:none}
+.login-icon.rb-login-logo img.rb-approved-logo{width:190px;height:70px}
+.rb-system-bar .rb-home img.rb-approved-logo{width:125px;height:38px}
+.rel img.rb-approved-logo,.rel-pagina img.rb-approved-logo{filter:none}
+@media(max-width:650px){img.rb-approved-logo{width:150px;height:55px}.topbar .brand{gap:8px}.rb-module-name{font-size:11px;padding-left:8px}}
+@media print{html[data-theme] img.rb-approved-logo{filter:none!important}}
+/* Relatórios conservam a marca colorida em uma base branca para impressão. */
+.rel-timbre-marca{background:#fff;border:1px solid #d6dfe9}
+.rel-timbre-marca .logo{width:100%;min-width:0}
+.rel-timbre-marca img.rb-approved-logo{width:100%;height:auto;max-height:52px;filter:none!important}

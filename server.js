@@ -545,6 +545,8 @@ const server = http.createServer((req, res) => {
     return res.end(content);
   }
   const brandAssets = {
+    '/brand/rede-balbino-capelo-2026.png': 'rede-balbino-capelo-2026.png',
+    '/brand/rede-balbino-capelo-icone-2026.png': 'rede-balbino-capelo-icone-2026.png',
     '/brand/rede-balbino-simbolo.svg': 'rede-balbino-simbolo.svg',
     '/brand/rede-balbino-claro.svg': 'rede-balbino-claro.svg',
     '/brand/rede-balbino-branco.svg': 'rede-balbino-branco.svg',
@@ -566,7 +568,7 @@ const server = http.createServer((req, res) => {
   }
   if (brandAssets[url.pathname]) {
     const content = fs.readFileSync(path.join(ROOT, 'brand', brandAssets[url.pathname]));
-    res.writeHead(200, { 'Content-Type': brandAssets[url.pathname].endsWith('.svg') ? 'image/svg+xml' : 'image/webp', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+    res.writeHead(200, { 'Content-Type': brandAssets[url.pathname].endsWith('.svg') ? 'image/svg+xml' : brandAssets[url.pathname].endsWith('.png') ? 'image/png' : 'image/webp', 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
     return res.end(content);
   }
   const app = apps.find(a => url.pathname === a.prefix || url.pathname.startsWith(a.prefix + '/'));

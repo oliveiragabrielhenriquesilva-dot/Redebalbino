@@ -58,14 +58,12 @@ function miniBarra(valor, total, marco = null) {
   return `<div class="mini-barra">${barra(valor, total, marco)}<span>${pctTxt(pct(valor, total))}</span></div>`;
 }
 
-// Identidade oficial Rede Balbino — símbolo modular de conexão.
+// Marca aprovada em 17/11/2026: B com capelo de formatura.
 function marcaSVG(tam = 40, escuro = true) {
-  const imagem = 'rede-balbino-simbolo.svg';
-  return `<img class="marca-oficial" width="${tam}" height="${tam}" src="/brand/${imagem}" alt="Rede Balbino">`;
-} function logoHTML(cfgs, escuro = true) {
-  const nome = String(cfgs.nome_rede || 'Rede Balbino').trim();
-  const [p1, ...resto] = nome.split(/\s+/);
-  return `<div class="logo ${escuro ? '' : 'claro'}">${marcaSVG(40, escuro)}<div class="logo-txt">${resto.length ? `<small>${esc(p1)}</small><b>${esc(resto.join(' '))}</b>` : `<b>${esc(nome)}</b>`}</div></div>`;
+  return `<img class="marca-oficial rb-approved-logo" width="180" height="66" src="/brand/rede-balbino-capelo-2026.png" alt="Rede Balbino">`;
+}
+function logoHTML(cfgs, escuro = true) {
+  return `<div class="logo ${escuro ? '' : 'claro'}">${marcaSVG(40, escuro)}</div>`;
 }
 function saveGap(saldo, compacto = false) {
   if (saldo == null) return '<span class="muted">—</span>';
@@ -215,7 +213,7 @@ function montarShell() {
       <section class="conteudo" id="conteudo"></section>
     </div>
   </div>`;
-  const atualizarTema = () => { const escuro = document.documentElement.dataset.tema === 'escuro'; $('#b-tema').textContent = escuro ? '☀️ Tema claro' : '🌙 Tema escuro'; const logo = $('.side .marca .marca-oficial'); if (logo) logo.src = '/brand/rede-balbino-simbolo.svg'; };
+  const atualizarTema = () => { const escuro = document.documentElement.dataset.tema === 'escuro'; $('#b-tema').textContent = escuro ? '☀️ Tema claro' : '🌙 Tema escuro'; const logo = $('.side .marca .marca-oficial'); if (logo) logo.src = '/brand/rede-balbino-capelo-2026.png'; };
   atualizarTema();
   $('#b-tema').onclick = () => { const tema = document.documentElement.dataset.tema === 'escuro' ? 'claro' : 'escuro'; if (window.BalbinoTheme) window.BalbinoTheme.set(tema); else { document.documentElement.dataset.tema = tema; ls.set('tema', tema); } atualizarTema(); };
   $('#sel-ciclo').value = estado.ciclo || '';
