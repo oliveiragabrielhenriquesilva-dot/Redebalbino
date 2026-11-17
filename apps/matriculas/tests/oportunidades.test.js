@@ -249,7 +249,7 @@ test('distribuição não escolhe tutora em conflitos nem muda de curso só por 
  {aba:'Bia',cpf:'11144477735',curso_cod:'ESPRE_BEDU'}]};
  const p=op.acoes.previa(input,admin);assert.strictEqual(p.totais.vinculaveis,0);
  assert.ok(p.linhas.slice(0,2).every(r=>/tutoras diferentes/.test(r.motivo)));
- assert.match(p.linhas[2].motivo,/não localizado/);
+ assert.match(p.linhas[2].motivo,/curso não corresponde/);
  assert.throws(()=>op.acoes.criar({...input,confirmado:true},admin),/Nenhum lead/);
  assert.strictEqual(op.acoes.previa({...input,linhas:[{...input.linhas[0],aba:'Apelido desconhecido'}]},admin).totais.pendentes,1);
  assert.strictEqual(op.acoes.previa({...input,linhas:[{...input.linhas[0],aba:'Apelido desconhecido'}],tutores:{'Apelido desconhecido':95}},admin).totais.vinculaveis,1);
@@ -261,4 +261,12 @@ test('CPF numérico do Excel em notação científica mantém os dígitos e a va
  for(const value of ['5.2998224724E10','1e100','52998224725.5'])assert.strictEqual(op.cpfNormalizado(value).valido,false);
  const input={ciclo:95,nome:'Excel científico',inicio:'2026-01-01',linhas:[{aba:'Bia',cpf:'5.2998224725E10',curso_cod:'ESPRE_PED'}]};
  assert.strictEqual(op.acoes.previa(input,admin).totais.vinculaveis,1);
+});
+
+test('ação encontra curso guardado no campo nome pela importação antiga',()=>{
+ db.exec(`INSERT INTO ciclos(id,nome) VALUES(96,'Ação com importação antiga');
+ INSERT INTO ma_oportunidades(ciclo_id,identificador,nome,cpf,curso_cod,curso_nome,polo_fonte) VALUES(96,'acao-legado','Teste legado','52998224725','','ESPRE_PED','Franca');`);
+ const preview=op.acoes.previa({ciclo:96,nome:'Legado',inicio:'2026-11-17',linhas:[{aba:'Bia',cpf:'52998224725',curso_cod:'ESPRE_PED'}]},admin);
+ assert.strictEqual(preview.totais.vinculaveis,1);
+ assert.strictEqual(op.carregarBase(96,admin).base[0].curso_cod,'ESPRE_PED');
 });

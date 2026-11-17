@@ -83,3 +83,13 @@ Validação do arquivo original em banco temporário com as inscrições corresp
 147 CPFs reconhecidos; 137 linhas sem conflito, 10 linhas com o mesmo lead/curso
 atribuído a tutoras diferentes e 1 linha sem CPF. Isso verifica a leitura e a
 regra de conflito; não representa vínculo ou contagem validada na base de produção.
+
+## Registros da importação antiga
+
+A base enriquecida deve carregar o código recuperado de curso_nome, não apenas
+o valor original de curso_cod. A exibição traduzia ESPRE_PED para Pedagogia,
+mas entregava curso_cod vazio para a busca de ações; o CPF era localizado e a
+comparação de curso descartava o registro. O código resolvido e o nome original
+agora seguem na base interna. Teste de regressão reproduz a falha com curso_cod
+vazio e curso_nome=ESPRE_PED e verifica o vínculo sem reimportação.
+A prévia distingue CPF ausente da base de CPF encontrado com curso divergente.

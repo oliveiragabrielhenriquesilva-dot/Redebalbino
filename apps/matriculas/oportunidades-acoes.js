@@ -33,13 +33,14 @@ module.exports = function criarAcoes({db,all,get,run,tx,falha,norm,hojeISO,ciclo
   }
   const linhas=c.linhas.map((l,i)=>{
    const aba=String(l.aba||'').trim().slice(0,100),cpf=cpfNormalizado(l.cpf).valor,t=tutorPorAba.get(aba),codigo=String(l.curso_cod||'').trim().toUpperCase();
-   let matches=cpf?porCpf.get(cpf)||[]:[];
+   const matchesCpf=cpf?porCpf.get(cpf)||[]:[];
+   let matches=matchesCpf;
    // CPF e curso identificam a inscrição; não troca de curso quando o CPF tem outra oportunidade.
    if(codigo)matches=matches.filter(r=>fonteCodigo(r)===codigo);
    const r=matches.length===1?matches[0]:null;
    return {linha:Number(l.linha)||i+2,aba,nome:String(l.nome||'').slice(0,180),cpf:mascaraCpf(cpf),curso:codigo,
     tutor_id:t?.id||null,tutora:t?.nome||'',oportunidade_id:r?.id||null,ra_inicial:r?.ra_situacao||null,
-    motivo:!cpf?(String(l.cpf??'').trim()?'CPF inválido':'CPF não informado'):!t?'Vincule a aba a uma tutora cadastrada':!matches.length?'Lead não localizado neste processo e curso':matches.length>1?'Mais de uma inscrição corresponde ao CPF e curso':!r.polo_id?'Polo do lead não reconhecido':(polosTutora.get(t.id)||[]).length&&!(polosTutora.get(t.id)||[]).includes(r.polo_id)?'Tutora não vinculada ao polo deste lead':'',
+    motivo:!cpf?(String(l.cpf??'').trim()?'CPF inválido':'CPF não informado'):!t?'Vincule a aba a uma tutora cadastrada':!matches.length?(matchesCpf.length?'CPF localizado, mas o curso não corresponde às inscrições deste processo':'CPF não localizado nas oportunidades deste processo'):matches.length>1?'Mais de uma inscrição corresponde ao CPF e curso':!r.polo_id?'Polo do lead não reconhecido':(polosTutora.get(t.id)||[]).length&&!(polosTutora.get(t.id)||[]).includes(r.polo_id)?'Tutora não vinculada ao polo deste lead':'',
     atual:r?.responsavel||'',polo:r?.polo||''};
   });
   const grupos=new Map();for(const r of linhas)if(r.oportunidade_id){const a=grupos.get(r.oportunidade_id)||[];a.push(r);grupos.set(r.oportunidade_id,a);}
