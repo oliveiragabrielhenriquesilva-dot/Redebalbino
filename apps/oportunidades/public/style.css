@@ -151,3 +151,31 @@ details summary{cursor:pointer;color:var(--ink2)}
 :root[data-tema="claro"] dialog{background:#fff;color:#10233f;box-shadow:0 30px 100px rgba(18,48,84,.24)}
 :root[data-tema="claro"] .icon-button{color:#334a68;background:#f4f7fc}
 :root[data-tema="claro"] .site-foot strong{color:#334a68}
+
+
+/* Visão de polos na mesma hierarquia do painel de Matrículas. */
+.intro{align-items:center;margin-bottom:20px;gap:20px}.intro h1{font-size:28px;letter-spacing:-.8px;margin:7px 0;line-height:1.2}.lead{font-size:13px}
+.kpis.op-summary{grid-template-columns:repeat(4,minmax(0,1fr))}
+.op-summary .kpi{background:var(--card-flat);box-shadow:none;border-radius:12px;min-height:118px}
+.op-section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 14px}.op-section-head h2{font-size:18px;margin:0 0 6px}.op-section-head p{font-size:12px;color:var(--muted);margin:0;line-height:1.6}
+.op-polo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:20px}
+.op-polo-card{min-width:0;border:1px solid var(--line);border-radius:12px;padding:20px;background:var(--card-flat);color:var(--ink);display:flex;flex-direction:column}
+.op-polo-card.has-late{box-shadow:inset 3px 0 var(--wait)}
+.op-polo-card>header{padding:0;border:0;margin:0 0 18px;background:none;display:grid;gap:10px}
+.op-polo-name{display:flex;align-items:center;justify-content:space-between;gap:14px;background:none;border:0;padding:0;color:var(--ink);font:inherit;font-size:16px;font-weight:750;text-align:left;cursor:pointer;line-height:1.4}
+.op-polo-name>span{font-size:18px;color:var(--accent);font-weight:400}
+.op-polo-badge{width:fit-content;max-width:100%;font-size:10px;padding:4px 8px;border-radius:5px;background:var(--wait-bg);color:var(--wait);line-height:1.5}
+.op-polo-badge.neutral{background:var(--track);color:var(--muted)}
+.op-polo-total{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:12px}
+.op-polo-total>div>span{display:block;color:var(--muted);font-size:11px}.op-polo-total strong{font-size:30px;font-weight:750;letter-spacing:-1px;line-height:1.3}
+.op-polo-rate{text-align:right}.op-polo-rate>b{color:var(--teal);font-size:21px;font-variant-numeric:tabular-nums}.op-polo-rate>span{margin-top:4px;font-size:10px}
+.op-polo-card progress{display:block;width:100%;height:7px;border:0;border-radius:5px;overflow:hidden;background:var(--track);accent-color:var(--teal);color:var(--teal)}
+.op-polo-card progress::-webkit-progress-bar{background:var(--track);border-radius:5px}.op-polo-card progress::-webkit-progress-value{background:var(--teal);border-radius:5px}.op-polo-card progress::-moz-progress-bar{background:var(--teal);border-radius:5px}
+.op-polo-formula{font-size:10px;line-height:1.6;color:var(--muted);margin:8px 0 18px}
+.op-polo-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px 10px;padding-top:16px;border-top:1px solid var(--line)}
+.op-polo-metrics>div>span{display:block;font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:5px}.op-polo-metrics b{font-size:17px;font-variant-numeric:tabular-nums}
+.op-polo-open{display:flex;justify-content:space-between;gap:16px;background:none;border:0;border-top:1px solid var(--line);color:var(--accent);padding:14px 0 0;margin-top:18px;font:inherit;font-size:12px;font-weight:650;cursor:pointer;text-align:left}
+.op-extra{border:1px solid var(--line);border-radius:10px;background:var(--card-flat);margin-bottom:20px}.op-extra>summary{padding:15px 18px;font-size:12px;font-weight:650;color:var(--ink2);cursor:pointer}.op-extra>.kpis{padding:0 16px;margin-bottom:16px}.op-extra .kpi{box-shadow:none;background:var(--field);border-radius:9px}
+.op-polo-card :is(button,progress):focus-visible,.op-extra>summary:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+@media(max-width:1200px){.op-polo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.kpis.op-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.op-polo-grid{grid-template-columns:1fr}.intro h1{font-size:25px}.op-polo-card{padding:18px}.op-polo-metrics{gap:17px 12px}.op-polo-metrics>div>span{font-size:11px}.op-summary .kpi{min-height:108px}}

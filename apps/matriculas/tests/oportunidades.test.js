@@ -138,3 +138,19 @@ test('produto identifica Pós por EPOS, HPOS e sufixo sem depender de mapeamento
   assert.strictEqual(op.lista({ciclo:90,q:'g1'},admin).linhas[0].produto,'Graduação');
   const csv=op.exportar({ciclo:90,produto:'81',formato:'csv'},admin).corpo.toString('utf8');assert.strictEqual(csv.trim().split('\r\n').length-1,3);
 });
+
+test('cards por polo respeitam recorte, retornos e acesso mesmo quando o polo está vazio',()=>{
+  const full=op.painel({ciclo:90},admin);
+  assert.strictEqual(full.por_polo.reduce((n,p)=>n+p.total,0),full.kpis.total);
+  const f=full.por_polo.find(p=>p.key==='1');assert.ok(f);
+  const onlyPos=op.painel({ciclo:90,produto:'81'},admin);
+  assert.strictEqual(onlyPos.por_polo.find(p=>p.key==='1').total,3);
+  const vazio=onlyPos.por_polo.find(p=>p.key==='2');assert.strictEqual(vazio.total,0);assert.strictEqual(vazio.taxa,null);
+  const restricted=op.painel({ciclo:90,produto:'81'},tutorFranca);
+  assert.deepStrictEqual(restricted.por_polo.map(p=>p.key),['1']);
+  const selected=op.painel({ciclo:90,produto:'81',polo:'2'},admin);assert.strictEqual(selected.por_polo.length,1);assert.strictEqual(selected.por_polo[0].total,0);
+  const p1=op.painel({ciclo:2},admin).por_polo.find(p=>p.key==='1');
+  assert.strictEqual(p1.vencidos,op.painel({ciclo:2,polo:'1',retorno:'vencido'},admin).kpis.total);
+  assert.strictEqual(p1.hoje,op.painel({ciclo:2,polo:'1',retorno:'hoje'},admin).kpis.total);
+  assert.strictEqual(p1.proximos7,op.painel({ciclo:2,polo:'1',retorno:'proximos7'},admin).kpis.total);
+});

@@ -373,11 +373,14 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     for (const r of rows) {
       const k = r[chave];
       let g = m.get(k);
-      if (!g) { g = { key: k, label: rotulo(r), total: 0, confirmado: 0, aguardando: 0, sem_ra: 0, abertas: 0, sem_contato: 0, vencidos: 0, atendimentos: 0, status: {} }; m.set(k, g); }
+      if (!g) { g = { key: k, label: rotulo(r), total: 0, confirmado: 0, aguardando: 0, sem_ra: 0, abertas: 0, sem_contato: 0, vencidos: 0, hoje: 0, proximos7: 0, sem_data: 0, atendimentos: 0, status: {} }; m.set(k, g); }
       g.total++; g[r.ra_situacao]++;
       if (r.aberta) g.abertas++;
       if (r.sem_contato) g.sem_contato++;
       if (r.retorno === 'vencido') g.vencidos++;
+      if (r.retorno === 'hoje') g.hoje++;
+      if (r.retorno === 'proximos7') g.proximos7++;
+      if (r.retorno === 'sem') g.sem_data++;
       g.atendimentos += contarAtendimentosFiltrados(r, f);
       g.status[r.status_key] = (g.status[r.status_key] || 0) + 1;
     }
@@ -457,10 +460,17 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       comparacao = { ciclo: cid, ciclo_nome: get('SELECT nome FROM ciclos WHERE id=?', cid)?.nome, insc_de: f2.insc_de || null, insc_ate: f2.insc_ate || null, kpis: kpis(outros, f2),
         por_status: agrupar(outros, 'status_key', r => r.status_origem || 'Sem status na origem', f2).map(g => ({ key: g.key, label: g.label, total: g.total, confirmado: g.confirmado })) };
     }
+    const porPolo = agrupar(rows, 'polo_key', r => r.polo, f);
+    // Polos cadastrados também aparecem zerados, sempre dentro da permissão e do recorte.
+    const restrito = poloRestrito(usuario);
+    for (const polo of all('SELECT id, nome FROM polos WHERE ativo=1 ORDER BY ordem, nome')) {
+      if ((restrito && polo.id !== restrito) || (f.polo && f.polo !== String(polo.id))) continue;
+      if (!porPolo.some(p => p.key === String(polo.id))) porPolo.push({key:String(polo.id),label:polo.nome,total:0,confirmado:0,aguardando:0,sem_ra:0,abertas:0,sem_contato:0,vencidos:0,hoje:0,proximos7:0,sem_data:0,atendimentos:0,status:{},taxa:null});
+    }
     return {
       ciclo: cicloId, filtros: f, permissoes: permissoes(usuario), atualizado_em: new Date().toISOString(),
       kpis: k, por_status: porStatus, por_etapa: porEtapa, funil,
-      por_polo: agrupar(rows, 'polo_key', r => r.polo, f),
+      por_polo: porPolo,
       por_tutor: agrupar(rows, 'tutor_key', r => r.tutor_origem || 'Sem tutor no relatório', f),
       por_responsavel: agrupar(rows, 'responsavel_key', r => r.responsavel || 'Sem responsável', f),
       por_curso: agrupar(rows, 'curso_key', r => r.curso || 'Curso não informado', f).slice(0, 60),

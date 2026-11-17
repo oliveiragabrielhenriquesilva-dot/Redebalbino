@@ -151,6 +151,15 @@
     return t;
   }
 
+  function renderPoloCards(rows) {
+    $('pole-cards').innerHTML = rows.length ? rows.map(p => {
+      const recorte = { polo: p.key };
+      const metric = (label, value, extra, cls='') => `<div><span>${esc(label)}</span><b>${num(value, `${p.label} · ${label}`, { ...recorte, ...extra }, cls)}</b></div>`;
+      const percent = Math.max(0, Math.min(100, Number(p.taxa) || 0));
+      return `<article class="op-polo-card ${p.vencidos ? 'has-late' : ''}"><header><button type="button" class="op-polo-name" data-select-polo="${esc(p.key)}" aria-label="Abrir polo ${esc(p.label)}">${esc(p.label)} <span aria-hidden="true">→</span></button>${p.vencidos ? '<span class="op-polo-badge">Retornos vencidos</span>' : '<span class="op-polo-badge neutral">'+(p.total?'Sem retorno vencido':'Sem oportunidades no recorte')+'</span>'}</header><div class="op-polo-total"><div><span>Oportunidades</span><strong>${num(p.total, `${p.label} · oportunidades`, recorte)}</strong></div><div class="op-polo-rate"><b>${fmtP(p.taxa)}</b><span>de conversão</span></div></div><progress max="100" value="${percent}" aria-label="Conversão de ${esc(p.label)}: ${fmtP(p.taxa)}"></progress><p class="op-polo-formula">${fmtN(p.confirmado)} RA confirmado(s) em ${fmtN(p.total)} oportunidade(s)</p><div class="op-polo-metrics">${metric('RA confirmado',p.confirmado,{ra:'confirmado'},'ok')}${metric('Retornos vencidos',p.vencidos,{retorno:'vencido'},p.vencidos?'warn':'')}${metric('Retornos hoje',p.hoje||0,{retorno:'hoje'})}${metric('Próximos 7 dias',p.proximos7||0,{retorno:'proximos7'})}${metric('Sem contato',p.sem_contato,{contato:'sem'})}${metric('Aguardando RA',p.aguardando,{ra:'aguardando'})}</div><button type="button" class="op-polo-open" data-select-polo="${esc(p.key)}">Abrir este polo <span aria-hidden="true">→</span></button></article>`;
+    }).join('') : '<p class="empty">Nenhum polo disponível para este recorte.</p>';
+  }
+
   // ------------------------------------------------------------ painel
   async function loadPainel() {
     const d = await api(`${API}/painel?${params()}`);
@@ -159,18 +168,21 @@
     $('avisos').innerHTML = d.avisos.map(a => `<div class="aviso">${esc(a)}</div>`).join('');
     const tile = (label, value, drill, opts = {}) => `<article class="kpi ${opts.cls || ''}"><span>${esc(label)}</span><strong>${drill ? num(value, drill.title, drill.extra) : esc(value)}</strong>${opts.sub ? `<small>${opts.sub}</small>` : ''}</article>`;
     $('kpis').innerHTML = [
-      tile('Retornos vencidos', k.retornos.vencido, { title: 'Abrir candidatos com retorno vencido', extra: { retorno: 'vencido' } }, { cls: 'alert', sub: 'Prioridade de contato hoje' }),
+      tile('Oportunidades', k.total, { title: 'Oportunidades do filtro', extra: {} }, { sub: `${fmtN(d.total_base)} no processo${d.permissoes.polo_restrito ? ' · seu polo' : ''}` }),
+      tile('RA confirmado', k.ra.confirmado, { title: 'RA confirmado', extra: { ra: 'confirmado' } }, { cls: 'good', sub: 'Matrículas confirmadas na lista oficial' }),
+      tile('Conversão', fmtP(k.taxa_conversao), null, { sub: esc(k.formula) }),
+      tile('Retornos vencidos', k.retornos.vencido, { title: 'Retornos vencidos', extra: { retorno: 'vencido' } }, { cls: 'alert', sub: `${fmtN(k.retornos.hoje)} retorno(s) para hoje` })
+    ].join('');
+    $('kpis-extra').innerHTML = [
       tile('Retornos para hoje', k.retornos.hoje, { title: 'Retornos previstos para hoje', extra: { retorno: 'hoje' } }),
       tile('Próximos 7 dias', k.retornos.proximos7, { title: 'Retornos nos próximos 7 dias', extra: { retorno: 'proximos7' } }, { sub: `${fmtN(k.retornos.sem)} sem data de retorno` }),
-      tile('Oportunidades', k.total, { title: 'Todas as oportunidades do filtro', extra: {} }, { sub: `${fmtN(d.total_base)} no processo${d.permissoes.polo_restrito ? ' (seu polo)' : ''}` }),
-      tile('RA confirmado', k.ra.confirmado, { title: 'RA confirmado', extra: { ra: 'confirmado' } }, { cls: 'good' }),
-      tile('Taxa de conversão', fmtP(k.taxa_conversao), null, { cls: 'hero', sub: esc(k.formula) }),
       tile('Aguardando conciliação', k.ra.aguardando, { title: 'Aguardando conciliação de RA', extra: { ra: 'aguardando' } }),
       tile('Sem RA', k.ra.sem_ra, { title: 'Sem RA', extra: { ra: 'sem_ra' } }),
       tile('Em aberto', k.abertas, null, { sub: 'sem RA e etapa não encerrada' }),
       tile('Sem contato registrado', k.sem_contato, { title: 'Sem contato registrado', extra: { contato: 'sem' } }),
-      tile('Atendimentos registrados', k.atendimentos_registrados, null, { sub: `${fmtN(k.oportunidades_atendidas)} oportunidade(s) atendida(s)${state.f.atend_de || state.f.atend_ate ? ' no período' : ''}` })
+      tile('Atendimentos registrados', k.atendimentos_registrados, null, { sub: `${fmtN(k.oportunidades_atendidas)} oportunidade(s) atendida(s)` })
     ].join('');
+    renderPoloCards(d.por_polo);
     renderComparacao(d);
     bars($('chart-status'), d.por_status.map(s => ({ label: s.label, value: s.total, sub: s.confirmado, note: ` · ${fmtP(s.percentual)} · RA ${fmtN(s.confirmado)}`, tip: `${s.label}: ${s.total} oportunidades, ${s.confirmado} com RA confirmado (${fmtP(s.taxa)})`, drill: { title: `Status: ${s.label}`, extra: { status: s.key } } })),
       { legend: '<span class="sw"></span>Oportunidades <span class="sw sub"></span>com RA confirmado' });
@@ -521,6 +533,13 @@
   $('drill-apply').addEventListener('click', () => { state.f = { ...state.f, ...state.drill.extra }; writeFilters(); $('drill-dialog').close(); refresh(); });
   $('upload').addEventListener('change', async ev => { const file = ev.target.files?.[0]; if (!file) return; try { await startImport(file); } catch (e) { if ($('import-dialog').open) $('import-dialog').close(); showError(e.message); } finally { ev.target.value = ''; } });
   document.addEventListener('click', ev => {
+    const pole = ev.target.closest('[data-select-polo]');
+    if (pole) {
+      state.f.polo = pole.dataset.selectPolo; state.list.page = 1;
+      const select = document.querySelector('[data-f="polo"]');
+      if (![...select.options].some(option => option.value === state.f.polo)) select.add(new Option(state.painel.por_polo.find(p=>p.key===state.f.polo)?.label || 'Polo',state.f.polo));
+      writeFilters(); refresh(); $('filters').scrollIntoView({block:'start',behavior:'smooth'}); return;
+    }
     const d = ev.target.closest('[data-drill]'); if (d) { const item = drillRegistry[Number(d.dataset.drill)]; if (item) openDrill(item.title, item.extra); return; }
     const o = ev.target.closest('[data-open]'); if (o) { openDetail(Number(o.dataset.open)); return; }
     const c = ev.target.closest('[data-close]'); if (c) c.closest('dialog')?.close();
