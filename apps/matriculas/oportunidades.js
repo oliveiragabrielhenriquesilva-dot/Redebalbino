@@ -161,17 +161,40 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     const poloMemo = new Map();
     const poloId = nome => { const k = String(nome || '').trim(); if (!k) return null; if (!poloMemo.has(k)) poloMemo.set(k, poloDaFonte(k) || null); return poloMemo.get(k); };
     const polos = Object.fromEntries(all('SELECT id, nome FROM polos').map(r => [r.id, r.nome]));
-    const produtos = Object.fromEntries(all('SELECT id, nome FROM produtos').map(r => [r.id, r.nome]));
+    const catalogo = all('SELECT id, nome, subgrupo, ativo, ordem FROM produtos ORDER BY ordem, nome');
+    const produtos = Object.fromEntries(catalogo.map(r => [r.id, r.nome]));
+    const subgrupos = Object.fromEntries(catalogo.map(r => [r.id, r.subgrupo || '']));
     const porCodigo = produtoDoCurso();
     const porNomeCurso = new Map();
     for (const r of all('SELECT curso_nome, produto_id FROM ma_lista_cursos WHERE produto_id IS NOT NULL AND curso_nome IS NOT NULL')) {
-      const k = norm(r.curso_nome); const s = porNomeCurso.get(k) || new Set(); s.add(r.produto_id); porNomeCurso.set(k, s);
+      const k = norm(r.curso_nome); const ids = porNomeCurso.get(k) || new Set(); ids.add(r.produto_id); porNomeCurso.set(k, ids);
     }
-    const produtoId = (cod, nome) => {
+    const cursos = all('SELECT nome, produto_id, apelidos, polos FROM cursos WHERE ativo=1 AND produto_id IS NOT NULL');
+    const produtoNome = nomes => { const ids = catalogo.filter(p => nomes.includes(norm(p.nome))).map(p => p.id); return ids.length === 1 ? ids[0] : null; };
+    const limpar = nome => norm(nome).replace(/^(?:graduacao|licenciatura|bacharelado|superior de tecnologia|tecnologo|curso superior de tecnologia) em /, '').replace(/ (?:graduacao )?(?:ead|semipresencial|hibrido)$/, '').trim();
+    const produtoId = (cod, nome, polo) => {
+      const codigo = String(cod || '').trim(), n = norm(nome);
+      // Nível explícito na fonte tem prioridade sobre palavras como Saúde/Engenharia no nome.
+      if (/^(?:[eh]?pos)(?:_|\b)/i.test(codigo) || /\bpos graduacao\b/.test(n) || /^(?:mba|especializacao)\b/.test(n)) return produtoNome(['pos', 'pos graduacao']);
       if (cod && porCodigo[cod]) return porCodigo[cod];
-      const s = porNomeCurso.get(norm(nome)); return s && s.size === 1 ? [...s][0] : null;
+      if (/^etec_/i.test(codigo)) return produtoNome(['tecnico']);
+      if (/^egrad_/i.test(codigo)) return produtoNome(['graduacao', 'ead']);
+      const mapeados = porNomeCurso.get(n); if (mapeados?.size === 1) return [...mapeados][0];
+      // Reutiliza cursos, apelidos e polos do cadastro existente; não cria regras genéricas por área.
+      const alvo = limpar(nome), candidatos = [];
+      for (const curso of cursos) {
+        const permitidos = String(curso.polos || '').split(',').filter(Boolean).map(Number);
+        if (permitidos.length && (!polo || !permitidos.includes(Number(polo)))) continue;
+        const nomes = [curso.nome, ...String(curso.apelidos || '').split(/[,;\n]/)].map(limpar).filter(Boolean);
+        const matches = nomes.filter(n => alvo === n || (n.length >= 4 && (alvo + ' ').startsWith(n + ' ')));
+        if (matches.length) candidatos.push({ id: curso.produto_id, score: Math.max(...matches.map(n => n.length + (n === alvo ? 10000 : 0))) });
+      }
+      if (!candidatos.length) return null;
+      const max = Math.max(...candidatos.map(c => c.score));
+      const ids = [...new Set(candidatos.filter(c => c.score === max).map(c => c.id))];
+      return ids.length === 1 ? ids[0] : null;
     };
-    return { poloId, polos, produtos, produtoId };
+    return { poloId, polos, produtos, subgrupos, catalogo, produtoId };
   }
 
   function tipoProduto(nomeProduto, codigoCurso, nomeCurso) {
@@ -179,9 +202,11 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
     const codigo = norm(codigoCurso);
     const curso = norm(nomeCurso);
     const texto = `${produto} ${codigo} ${curso}`;
+    if (/^(?:[eh]?pos)(?:_|\b)/i.test(String(codigoCurso || '').trim())) return 'pos';
     if (/(^| )(pos|mba|especializacao|lato sensu)( |$)/.test(texto)) return 'pos';
     if (/(^| )(tecnico|etec|tec)( |$)/.test(texto)) return 'tecnico';
     if (/(^| )(graduacao|bacharelado|licenciatura|egrad|grad)( |$)/.test(texto) || /superior de tecnologia/.test(curso)) return 'graduacao';
+    if (/(^| )(prof|profissionalizante)( |$)/.test(produto)) return 'prof';
     if (produto) return 'graduacao';
     return 'sem';
   }
@@ -242,7 +267,10 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       const proximo = o.proximo_contato || o.data_retorno_origem || null;
       const aberta = ra.situacao !== 'confirmado' && !ETAPAS_FECHADAS.has(o.etapa);
       const retorno = !aberta ? 'encerrado' : !proximo ? 'sem' : proximo < hoje ? 'vencido' : proximo === hoje ? 'hoje' : proximo <= em7 ? 'proximos7' : 'futuro';
-      const produto_id = ctx.produtoId(o.curso_cod, o.curso_nome);
+      const produto_id = ctx.produtoId(o.curso_cod, o.curso_nome, polo_id);
+      const produto_tipo = tipoProduto(produto_id ? ctx.produtos[produto_id] || '' : '', o.curso_cod, o.curso_nome);
+      const produto = produto_id ? ctx.produtos[produto_id] || '' : produto_tipo === 'pos' ? 'Pós-graduação' : '';
+      const produto_key = produto_id ? String(produto_id) : produto_tipo === 'pos' ? 'tipo:pos' : 'sem';
       const curso = o.curso_nome || o.curso_cod || '';
       const respKey = o.responsavel_tutor_id ? 't:' + o.responsavel_tutor_id : o.responsavel_id ? 'u:' + o.responsavel_id : '';
       base.push({
@@ -250,7 +278,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
         polo_id, polo: polo_id ? ctx.polos[polo_id] || o.polo_fonte : (o.polo_fonte ? `${o.polo_fonte} (não identificado)` : 'Polo não informado'),
         polo_key: polo_id ? String(polo_id) : 'sem', polo_fonte: o.polo_fonte || '',
         curso, curso_key: norm(curso) || 'sem', curso_cod: o.curso_cod || '',
-        produto_id, produto: produto_id ? ctx.produtos[produto_id] || '' : '', produto_key: produto_id ? String(produto_id) : 'sem', produto_tipo: tipoProduto(produto_id ? ctx.produtos[produto_id] || '' : '', o.curso_cod, o.curso_nome),
+        produto_id, produto, produto_key, produto_tipo, produto_grupo: norm(ctx.subgrupos[produto_id] || ''),
         tutor_origem: o.responsavel_origem || '', tutor_key: norm(o.responsavel_origem) || 'sem',
         responsavel_key: respKey || 'sem', responsavel: o.resp_tutor_nome || o.resp_usuario_nome || '',
         status_origem: o.status_origem || '', status_key: norm(o.status_origem) || 'sem',
@@ -297,7 +325,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
       if (f.tutor && r.tutor_key !== f.tutor) return false;
       if (f.resp && r.responsavel_key !== f.resp) return false;
       if (f.curso && r.curso_key !== f.curso) return false;
-      if (f.produto && r.produto_key !== f.produto) return false;
+      if (f.produto && (f.produto.startsWith('grupo:') ? r.produto_grupo !== f.produto.slice(6) : r.produto_key !== f.produto)) return false;
       if (f.tipo_produto && r.produto_tipo !== f.tipo_produto) return false;
       if (f.status && r.status_key !== f.status) return false;
       if (f.etapa && r.etapa !== f.etapa) return false;
@@ -447,7 +475,7 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
 
   function opcoes(q, usuario) {
     const cicloId = cicloValido(q.ciclo);
-    const { base } = carregarBase(cicloId, usuario);
+    const { base, ctx } = carregarBase(cicloId, usuario);
     const uniq = (key, label) => { const m = new Map(); for (const r of base) if (!m.has(r[key])) m.set(r[key], label(r)); return [...m.entries()].map(([value, label]) => ({ value, label })).sort((a, b) => String(a.label).localeCompare(String(b.label), 'pt-BR')); };
     const restrito = poloRestrito(usuario);
     const tutores = all(`SELECT t.id, t.nome, GROUP_CONCAT(tp.polo_id) polos FROM tutores t LEFT JOIN tutor_polos tp ON tp.tutor_id=t.id WHERE t.ativo=1 GROUP BY t.id ORDER BY t.nome COLLATE NOCASE`)
@@ -465,8 +493,15 @@ module.exports = function criarOportunidades({ db, DATA_DIR, all, get, run, tx, 
         for (const r of base) r.autores.forEach((nome, i) => { const value = r.autores_keys[i] || 'sem'; if (!m.has(value)) m.set(value, nome || 'Sem autor'); });
         return [...m].map(([value, label]) => ({ value, label })).sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'));
       })(),
-      tipos_produto: [{ value: 'graduacao', label: 'Graduação' }, { value: 'pos', label: 'Pós' }, { value: 'tecnico', label: 'Técnico' }],
-      cursos: uniq('curso_key', r => r.curso || 'Curso não informado'), produtos: uniq('produto_key', r => r.produto || 'Produto não identificado'),
+      tipos_produto: [{ value: 'graduacao', label: 'Graduação' }, { value: 'pos', label: 'Pós-graduação' }, { value: 'tecnico', label: 'Técnico' }, { value: 'prof', label: 'Profissionalizante' }],
+      cursos: uniq('curso_key', r => r.curso || 'Curso não informado'), produtos: (() => {
+        const lista = ctx.catalogo.filter(p => p.ativo || base.some(r => r.produto_id === p.id));
+        const grupos = [...new Set(lista.map(p => p.subgrupo).filter(Boolean))].map(nome => ({ value: 'grupo:' + norm(nome), label: nome + ' — todos os produtos' }));
+        const itens = lista.map(p => ({ value: String(p.id), label: p.nome }));
+        for (const r of base) if (!itens.some(p => p.value === r.produto_key)) itens.push({ value: r.produto_key, label: r.produto || 'Produto não identificado' });
+        if (!lista.some(p => ['pos', 'pos graduacao'].includes(norm(p.nome))) && !itens.some(p => p.value === 'tipo:pos')) itens.push({value:'tipo:pos',label:'Pós-graduação'});
+        return [...grupos, ...itens];
+      })(),
       status: uniq('status_key', r => r.status_origem || 'Sem status na origem'),
       etapas: ETAPAS.map(([value, label]) => ({ value, label })), canais: Object.entries(CANAIS).map(([value, label]) => ({ value, label })),
       ra: Object.entries(RA_LABEL).map(([value, label]) => ({ value, label })), retornos: Object.entries(RETORNO_LABEL).map(([value, label]) => ({ value, label })),
@@ -870,3 +905,4 @@ function gerarXlsx(planilhas) {
   return zipStored(files);
 }
 module.exports.gerarXlsx = gerarXlsx;
+

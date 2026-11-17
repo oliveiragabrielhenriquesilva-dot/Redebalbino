@@ -109,3 +109,32 @@ test('datas da planilha', () => {
   assert.strictEqual(op.dataFonte('46270').valor, '2026-09-05');
   assert.strictEqual(op.dataFonte('31/02/2026').ok, false);
 });
+
+
+test('produto identifica Pós por EPOS, HPOS e sufixo sem depender de mapeamento prévio',()=>{
+  db.exec(`INSERT INTO ciclos(id,nome,padrao) VALUES(90,'Teste produtos',0);
+    INSERT INTO produtos(id,nome,categoria_id,subgrupo) VALUES
+      (81,'Pós',1,NULL),(82,'Semi - Bem Estar',1,NULL),(83,'Semi - Farmácia e Biomedicina',1,'Semi - Saúde'),
+      (84,'Semi - Nutrição',1,'Semi - Saúde'),(85,'Semi - Engenharia',1,NULL);
+    INSERT INTO cursos(nome,produto_id,apelidos,polos) VALUES
+      ('Estética e Cosmética',82,'Estética','1'),('Saúde Capital',82,'Saúde e Estética Capilar','1'),
+      ('Farmácia',83,NULL,'1'),('Biomedicina',83,NULL,'1'),('Nutrição',84,NULL,'1'),('Engenharia',85,NULL,'1');`);
+  const entries=[
+    ['p1','EPOS_123','Gestão de Pessoas','Franca'],['p2','HPOS_456','Fisioterapia','Franca'],
+    ['p3','','Nutrição Clínica (PÓS-GRADUAÇÃO - EAD)','Franca'],
+    ['b1','ESPRE_1','Estética e Cosmética (GRADUAÇÃO - SEMIPRESENCIAL)','Franca'],
+    ['b2','ESPRE_2','Saúde e Estética Capilar','Franca'],['s1','ESPRE_3','Bacharelado em Farmácia','Franca'],
+    ['s2','ESPRE_4','Nutrição','Franca'],['e1','ESPRE_5','Engenharia Civil','Franca'],
+    ['g1','EGRAD_55','Engenharia de Software','Franca'],['fora','ESPRE_6','Estética','Batatais']
+  ];
+  op.importar({ciclo:90,confirmado:true,linhas:entries.map(([identificador,curso_cod,curso_nome,polo_fonte])=>({identificador,curso_cod,curso_nome,polo_fonte,nome:'Teste '+identificador}))},admin);
+  const options=op.opcoes({ciclo:90},admin);assert.ok(options.produtos.some(p=>p.value==='81'));assert.ok(options.produtos.some(p=>p.value==='grupo:semi saude'));
+  const pos=op.lista({ciclo:90,produto:'81'},admin);assert.strictEqual(pos.total,3);assert.deepStrictEqual(pos.linhas.map(r=>r.identificador).sort(),['p1','p2','p3']);
+  assert.strictEqual(op.painel({ciclo:90,tipo_produto:'pos'},admin).kpis.total,3);
+  assert.strictEqual(op.painel({ciclo:90,produto:'82'},admin).kpis.total,2);
+  assert.strictEqual(op.painel({ciclo:90,produto:'grupo:semi saude'},admin).kpis.total,2);
+  assert.strictEqual(op.painel({ciclo:90,produto:'85'},admin).kpis.total,1);
+  assert.strictEqual(op.lista({ciclo:90,q:'fora'},admin).linhas[0].produto,'');
+  assert.strictEqual(op.lista({ciclo:90,q:'g1'},admin).linhas[0].produto,'Graduação');
+  const csv=op.exportar({ciclo:90,produto:'81',formato:'csv'},admin).corpo.toString('utf8');assert.strictEqual(csv.trim().split('\r\n').length-1,3);
+});

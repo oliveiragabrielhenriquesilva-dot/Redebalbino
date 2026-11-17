@@ -87,7 +87,7 @@
   function loadUrl() {
     const p = new URLSearchParams(location.search);
     state.ciclo = p.get('ciclo') || '';
-    for (const [k, v] of p) if (!['ciclo', 'aba', 'produto'].includes(k)) state.f[k] = v;
+    for (const [k, v] of p) if (!['ciclo', 'aba'].includes(k)) state.f[k] = v;
     if (['candidatos', 'importacoes', 'definicoes'].includes(p.get('aba'))) state.tab = p.get('aba');
   }
   const labelOf = (opt, value) => (state.opts?.[opt] || []).find(x => String(x.value) === String(value))?.label || value;
@@ -226,7 +226,7 @@
     const raPill = r => `<span class="pill ra-${esc(r.ra_situacao)}" title="${esc(r.ra_motivo)}">${esc(r.ra_label)}${r.ra ? ' · ' + esc(r.ra) : ''}</span>`;
     return [
       { key: 'nome', label: 'Candidato', html: r => `<button type="button" class="link" data-open="${r.id}">${esc(r.nome || 'Nome não informado')}</button><span class="sub">ID ${esc(r.identificador)}${r.cpf ? ' · CPF ' + esc(r.cpf) : ''}</span>` },
-      { key: 'polo', label: 'Polo / curso', html: r => `${esc(r.polo)}<span class="sub">${esc(r.curso || 'Curso não informado')}</span>` },
+      { key: 'polo', label: 'Polo / curso / produto', html: r => `${esc(r.polo)}<span class="sub">${esc(r.curso || 'Curso não informado')}</span><span class="sub">Produto: ${esc(r.produto || 'Não identificado')}</span>` },
       { key: 'status_origem', label: 'Status (origem)', html: r => esc(r.status_origem || '—') },
       { key: 'etapa_label', label: 'Etapa', html: r => `<span class="pill etapa-${esc(r.etapa)}">${esc(r.etapa_label)}</span>` },
       { key: 'ra_situacao', label: 'RA', html: raPill },
@@ -509,7 +509,7 @@
   document.querySelectorAll('[data-f]').forEach(el => el.addEventListener(el.tagName === 'INPUT' && el.type === 'search' ? 'input' : 'change', onFilter));
   ['cmp-ciclo', 'cmp-de', 'cmp-ate'].forEach(id => $(id).addEventListener('change', onFilter));
   $('clear-filters').addEventListener('click', () => { state.f = {}; writeFilters(); state.list.page = 1; refresh(); });
-  $('toggle-filters').addEventListener('click', () => { state.filtersOpen = !state.filtersOpen; $('filter-advanced').classList.toggle('hidden', !state.filtersOpen); $('toggle-filters').textContent = state.filtersOpen ? 'Menos filtros (11)' : 'Mais filtros (11)'; $('toggle-filters').setAttribute('aria-expanded', state.filtersOpen); });
+  $('toggle-filters').addEventListener('click', () => { state.filtersOpen = !state.filtersOpen; $('filter-advanced').classList.toggle('hidden', !state.filtersOpen); $('toggle-filters').textContent = state.filtersOpen ? 'Menos filtros (12)' : 'Mais filtros (12)'; $('toggle-filters').setAttribute('aria-expanded', state.filtersOpen); });
   $('toggle-compare').addEventListener('click', () => { state.compareOpen = !state.compareOpen; $('compare-row').classList.toggle('hidden', !state.compareOpen); $('toggle-compare').setAttribute('aria-expanded', state.compareOpen); });
   $('cycle').addEventListener('change', async () => { state.ciclo = $('cycle').value; try { await loadOpcoes(); } catch (e) { showError(e.message); } refresh(); });
   document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
