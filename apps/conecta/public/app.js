@@ -81,31 +81,50 @@ $('general').innerHTML=DATA.blocks.map((b,i)=>`<details ${i===2?'open':''}><summ
 const feeState=new Map();
 const brl=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 function percentage(raw){const s=String(raw).trim().replace(',','.');if(!/^\d{1,3}(\.\d{1,2})?$/.test(s))return null;const n=Number(s);return n>=0&&n<=100?Math.round(n*100):null;}
-function feeCalculation(base,discountBps,punctualBps){
+const FIXED_PUNCTUALITY_BPS=1000;
+function feeCalculation(base,discountBps){
+  const punctualBps=FIXED_PUNCTUALITY_BPS;
   const without=Math.floor((base*(10000-discountBps)+5000)/10000);
   const final=Math.floor((without*(10000-punctualBps)+5000)/10000);
   return {base,without,final,courseDiscount:base-without,punctualDiscount:without-final,saving:base-final};
 }
-function feeSettings(c){if(!feeState.has(c.id))feeState.set(c.id,{discount:'0',punctual:'10',code:c.pricing?.code||''});return feeState.get(c.id);}
+function feeSettings(c){if(!feeState.has(c.id))feeState.set(c.id,{discount:'',code:c.pricing?.code||''});return feeState.get(c.id);}
 function feePrice(c){const state=feeSettings(c);return (c.pricingOptions||[]).find(p=>p.code===state.code)||null;}
-function feeMarkup(c){
- const state=feeSettings(c),p=feePrice(c),options=c.pricingOptions||[];
- if(!p)return `<div class="fee-missing"><strong>Mensalidade</strong><span>Valor não disponível na tabela enviada para este curso e modalidade.</span></div>`;
- return `<div class="fee-compact-head"><h3>Simular mensalidade</h3><span>Região 6 · Processo 51/2027</span></div><div class="fee-grid"><div class="fee-base"><span>Valor integral fixo</span><strong>${brl(p.price)}</strong></div><div class="fee-fields"><label>Desconto (%)<input id="feeDiscount" type="text" inputmode="decimal" maxlength="6" value="${esc(state.discount)}" aria-describedby="feeHint feeError"></label><label>Pontualidade (%)<input id="feePunctual" type="text" inputmode="decimal" maxlength="6" value="${esc(state.punctual)}" aria-describedby="feeHint feeError"></label></div><div class="fee-result" aria-live="polite" aria-atomic="true"><span>Com pontualidade / mês</span><strong id="feeFinal">—</strong></div></div><p id="feeError" role="alert" class="fee-error" hidden></p><div class="fee-bottom"><div class="fee-summary"><span>Sem pontualidade</span><b id="feeWithout">—</b></div><div class="fee-summary"><span>Economia mensal</span><b id="feeSaving">—</b></div><details class="fee-breakdown"><summary>Como foi calculado</summary><div class="fee-steps"><div><span>Valor integral</span><b>${brl(p.price)}</b></div><div><span>1. Desconto do curso</span><b id="feeCourseDiscount">—</b></div><div><span>Valor após desconto</span><b id="feeAfter">—</b></div><div><span>2. Pontualidade</span><b id="feePunctualDiscount">—</b></div><p id="feeHint" class="fee-hint">Primeiro o desconto do curso; depois, a pontualidade sobre o valor já descontado. Arredondamento em centavos a cada etapa.</p><p class="fee-source">${esc(p.code)} · Tabela de 16/11/2026</p></div></details></div>`;
-}
 
+function feeMessage(c,price,discountBps){
+ const result=feeCalculation(price.price,discountBps),percent=(discountBps/100).toLocaleString('pt-BR',{maximumFractionDigits:2});
+ return ['Olá! 😊 Vamos retomar seu interesse no curso de *'+c.name+'* na UniCesumar:', '',
+ '🎓 *Curso:* '+c.name,'📚 *Modalidade:* '+modalityLabel(c),...(c.grau?['*Formação:* '+c.grau]:[]),...(c.duracao?['⏳ *Duração:* '+c.duracao]:[]),'',
+ '💰 *Mensalidade com pagamento até o vencimento: '+brl(result.final)+'*',
+ 'Valor calculado com '+percent+'% de desconto de negociação e, depois, 10% de pontualidade sobre o valor já descontado.',
+ '*Sem pontualidade:* '+brl(result.without)+'.','',
+ 'A oferta, a disponibilidade no polo e as condições de ingresso precisam ser confirmadas antes da matrícula.',
+ 'Quer que eu te ajude com os próximos passos?'].join('\n');
+}
+function feeMarkup(c){
+ const state=feeSettings(c),p=feePrice(c);
+ if(!p)return `<div class="fee-missing"><strong>Mensalidade</strong><span>Valor não disponível na tabela enviada para este curso e modalidade.</span></div>`;
+ return `<div class="fee-compact-head"><h3>Simular mensalidade</h3><span>Região 6 · Processo 51/2027</span></div><div class="fee-grid"><div class="fee-base"><span>Valor integral fixo</span><strong>${brl(p.price)}</strong></div><div class="fee-fields"><div class="fee-negotiation"><label for="feeDiscount">Desconto de negociação</label><div class="fee-discount-control"><button type="button" data-fee-adjust="-1" aria-label="Diminuir desconto em 1 ponto percentual">−</button><div class="fee-percent-input"><input id="feeDiscount" type="text" inputmode="decimal" maxlength="6" value="${esc(state.discount)}" placeholder="Ex.: 35,5" aria-describedby="feeNegotiationHint feeError"><span aria-hidden="true">%</span></div><button type="button" data-fee-adjust="1" aria-label="Aumentar desconto em 1 ponto percentual">+</button></div><small id="feeNegotiationHint">Informe de 0 a 100%. Aceita vírgula e até duas casas decimais.</small></div><div class="fee-fixed-punctuality"><span>Pontualidade</span><strong>10%</strong><small>Fixa · pagamento até o vencimento</small></div></div><div class="fee-result" aria-live="polite" aria-atomic="true"><span>Com pontualidade / mês</span><strong id="feeFinal">—</strong></div></div><p id="feeError" role="alert" class="fee-error" hidden></p><div class="fee-bottom"><div class="fee-summary"><span>Sem pontualidade</span><b id="feeWithout">—</b></div><div class="fee-summary"><span>Economia mensal</span><b id="feeSaving">—</b></div><details class="fee-breakdown"><summary>Como foi calculado</summary><div class="fee-steps"><div><span>Valor integral</span><b>${brl(p.price)}</b></div><div><span>1. Desconto negociado</span><b id="feeCourseDiscount">—</b></div><div><span>Valor após desconto</span><b id="feeAfter">—</b></div><div><span>2. Pontualidade fixa de 10%</span><b id="feePunctualDiscount">—</b></div><p id="feeHint" class="fee-hint">Primeiro o desconto negociado; depois, os 10% de pontualidade sobre o valor já descontado. Arredondamento em centavos a cada etapa.</p><p class="fee-source">${esc(p.code)} · Tabela de 16/11/2026</p></div></details></div><div class="fee-message-tools"><button type="button" class="btn primary" id="feeGenerate" disabled>Gerar mensagem de reabertura</button><span class="fee-hint">Revise o desconto e o valor antes de compartilhar.</span></div><section id="feeMessagePanel" class="fee-message-panel" hidden><label for="feeMessage">Mensagem de reabertura · revise antes de copiar</label><textarea id="feeMessage" rows="13"></textarea><button type="button" class="btn" id="feeCopy">Copiar mensagem</button><span id="feeCopyStatus" class="small muted" role="status" aria-live="polite"></span></section>`;
+}
 function updateFee(){
  if(!selected)return;const p=feePrice(selected);if(!p||!$('feeDiscount'))return;
- const state=feeSettings(selected);state.discount=$('feeDiscount').value;state.punctual=$('feePunctual').value;
- const d=percentage(state.discount),t=percentage(state.punctual),valid=d!==null&&t!==null;
- $('feeDiscount').setAttribute('aria-invalid',String(d===null));$('feePunctual').setAttribute('aria-invalid',String(t===null));$('feeError').hidden=valid;
- $('feeError').textContent=valid?'':'Informe percentuais de 0 a 100, com até duas casas decimais.';
+ const state=feeSettings(selected);state.discount=$('feeDiscount').value;
+ const d=percentage(state.discount),valid=d!==null,empty=!state.discount.trim();
+ $('feeDiscount').setAttribute('aria-invalid',String(!valid&&!empty));$('feeError').hidden=valid||empty;
+ $('feeError').textContent=valid||empty?'':'Informe um desconto de 0 a 100%, com até duas casas decimais.';
+ $('feeGenerate').disabled=!valid;$('feeMessagePanel').hidden=true;$('feeMessage').value='';$('feeCopyStatus').textContent='';
  const ids=['feeFinal','feeWithout','feeSaving','feeCourseDiscount','feeAfter','feePunctualDiscount'];if(!valid){ids.forEach(id=>$(id).textContent='—');return;}
- const result=feeCalculation(p.price,d,t);
+ const result=feeCalculation(p.price,d);
  $('feeFinal').textContent=brl(result.final);$('feeWithout').textContent=brl(result.without);$('feeSaving').textContent=brl(result.saving);$('feeCourseDiscount').textContent='− '+brl(result.courseDiscount);$('feeAfter').textContent=brl(result.without);$('feePunctualDiscount').textContent='− '+brl(result.punctualDiscount);
 }
+document.addEventListener('click',async e=>{
+ const adjustment=e.target.closest('[data-fee-adjust]');
+ if(adjustment&&selected&&$('feeDiscount')){const raw=$('feeDiscount').value,current=percentage(raw);if(current===null&&raw.trim()){updateFee();$('feeDiscount').focus();return;}const next=Math.max(0,Math.min(10000,(current||0)+Number(adjustment.dataset.feeAdjust)*100));$('feeDiscount').value=(next/100).toLocaleString('pt-BR',{maximumFractionDigits:2});updateFee();return;}
+ if(e.target.closest('#feeGenerate')&&selected){const p=feePrice(selected),d=percentage($('feeDiscount').value);if(!p||d===null){updateFee();return;}$('feeMessage').value=feeMessage(selected,p,d);$('feeMessagePanel').hidden=false;$('feeMessage').focus();}
+ if(e.target.closest('#feeCopy')&&$('feeMessage')){try{await navigator.clipboard.writeText($('feeMessage').value);$('feeCopyStatus').textContent='Mensagem copiada.';}catch{$('feeMessage').focus();$('feeMessage').select();$('feeCopyStatus').textContent='Selecione e copie a mensagem com Ctrl+C.';}}
+});
 function openCourse(id,updateHash=true){renderCourseBase(id,updateHash);if(!selected||selected.id!==id)return;const hero=document.querySelector('#detail .course-hero');if(!hero)return;hero.classList.add('has-calculator');hero.innerHTML='<div class="fee-course-info">'+hero.innerHTML+'</div><section id="feeCalculator" class="fee-calculator" aria-label="Calculadora de mensalidade">'+feeMarkup(selected)+'</section>';updateFee();}
-document.addEventListener('input',e=>{if(e.target.id==='feeDiscount'||e.target.id==='feePunctual')updateFee();});
+document.addEventListener('input',e=>{if(e.target.id==='feeDiscount')updateFee();});
 document.addEventListener('change',e=>{if(e.target.id==='feeCode'&&selected){feeSettings(selected).code=e.target.value;$('feeCalculator').innerHTML=feeMarkup(selected);updateFee();}});
 
 function routeFromHash(){
