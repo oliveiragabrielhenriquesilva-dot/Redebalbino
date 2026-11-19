@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#0b1730">
   <meta name="description" content="Central de acessos e sistemas da Rede Balbino.">
   <title>Rede Balbino — Central de Acessos</title>
-  <link rel="stylesheet" href="/portal.css?v=20261116-conecta">
+  <link rel="stylesheet" href="/portal.css?v=20261119-descontos">
   <link rel="stylesheet" href="/brand/balbino.css?v=20261116-brand-contrast">
   <script src="/catalogo.js?v=20261116-conecta" defer></script>
-  <script src="/portal.js?v=20261116-conecta" defer></script>
+  <script src="/portal.js?v=20261119-descontos" defer></script>
 <link rel="icon" href="/brand/rede-balbino-capelo-icone-2026.png" type="image/png"><link rel="stylesheet" href="/brand/shell.css?v=20261117"></head>
 <body>
   
@@ -19,7 +19,7 @@
       <a class="brand" href="/" aria-label="Rede Balbino — início">
         <img class="rb-approved-logo" src="/brand/rede-balbino-capelo-2026.png" width="180" height="66" alt="Rede Balbino">
       </a>
-      <div class="top-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-pressed="true" aria-label="Tema escuro ativo. Alternar para tema claro">☾ <span>Escuro</span></button><button class="secondary-btn" id="openLoginBtn" type="button">Entrar</button><button class="secondary-btn hidden" id="manageUsersBtn" type="button">Usuários e acessos</button><button class="user-chip hidden" id="logoutBtn" type="button">Sair</button></div>
+      <div class="top-actions"><button class="theme-toggle" id="themeToggle" type="button" aria-pressed="true" aria-label="Tema escuro ativo. Alternar para tema claro">☾ <span>Escuro</span></button><button class="secondary-btn" id="openLoginBtn" type="button">Entrar</button><button class="secondary-btn hidden" id="manageConectaBtn" type="button">Configurar Conecta</button><button class="secondary-btn hidden" id="manageUsersBtn" type="button">Usuários e acessos</button><button class="user-chip hidden" id="logoutBtn" type="button">Sair</button></div>
     </header>
 
     <main id="main">
@@ -70,6 +70,12 @@
     </main>
   </div>
 
+  <dialog class="users-dialog conecta-settings-dialog" id="conectaSettingsDialog" aria-labelledby="conectaSettingsTitle">
+    <div class="dialog-head"><div><div class="eyebrow">Administração · Balbino Conecta</div><h2 id="conectaSettingsTitle">Descontos por produto</h2></div><button class="icon-btn" id="closeConectaSettings" type="button" aria-label="Fechar configuração do Conecta">×</button></div>
+    <p class="dialog-note">Defina o desconto de negociação padrão para cada produto já cadastrado. A pontualidade permanece fixa em 10%, aplicada depois do desconto negociado.</p>
+    <div id="conectaSettingsStatus" role="status" aria-live="polite"></div>
+    <form id="conectaSettingsForm" hidden><div id="conectaProducts"></div><details class="conecta-mapping"><summary>Conferir vínculos dos cursos com os produtos</summary><p>Os vínculos cadastrados são usados automaticamente. Escolha um produto aqui apenas para corrigir ou completar uma associação. Nenhum novo produto é criado.</p><label for="conectaCourseSearch">Buscar curso</label><input id="conectaCourseSearch" type="search" placeholder="Nome do curso ou modalidade"><div class="conecta-course-mappings" id="conectaCourseMappings"></div></details><section class="conecta-template"><h3>Mensagem padrão de reabertura</h3><p>Edite o texto e mantenha os campos que deseja preencher automaticamente. A mensagem também poderá ser ajustada antes de copiar.</p><div id="conectaTemplateFields" class="conecta-template-fields"></div><label for="conectaMessageTemplate">Texto da mensagem</label><textarea id="conectaMessageTemplate" rows="13" maxlength="6000" required></textarea></section><div class="form-actions"><button class="primary-btn" id="saveConectaSettings" type="submit">Salvar padrões para toda a equipe</button></div></form>
+  </dialog>
   <dialog class="users-dialog" id="usersDialog" aria-labelledby="usersTitle">
     <div class="dialog-head"><div><div class="eyebrow">Administração</div><h2 id="usersTitle">Usuários e acessos</h2></div><button class="icon-btn" id="closeUsersBtn" type="button" aria-label="Fechar">×</button></div>
     <p class="dialog-note">O login central controla quais sistemas aparecem. Os acessos de tutores em Matrículas são vinculados ao polo e ao perfil de consulta de cada um.</p>
@@ -108,4 +114,5 @@
   <div class="toast hidden" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
+
 

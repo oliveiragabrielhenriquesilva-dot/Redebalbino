@@ -369,6 +369,15 @@ async function portalApi(req, res, url) {
     if (!Array.isArray(order) || order.length > valid.size || order.some(key => typeof key !== 'string' || !valid.has(key)) || new Set(order).size !== order.length) return jsonReply(res, 400, { error: 'Ordem de atalhos inválida.' });
     return jsonReply(res, 200, portal.setHomeOrder(actor.id, homeCatalog.normalizeOrder(order)));
   }
+  if(p==='/api/portal/conecta-negociacao'){
+    if(!['GET','PUT'].includes(method))return jsonReply(res,405,{error:'Método não permitido.'});
+    if(method==='PUT'&&!actor.is_admin)return jsonReply(res,403,{error:'Acesso restrito ao administrador.'});
+    const file=path.join(RUNTIME,'matriculas','matriculas.db');
+    if(!fs.existsSync(file))return jsonReply(res,503,{error:'O cadastro de produtos ainda não está disponível.'});
+    const db=new DatabaseSync(file);db.exec('PRAGMA busy_timeout=5000');
+    try{const service=require('./apps/conecta/negociacao')(db,JSON.parse(readConectaData().toString('utf8')));const data=method==='GET'?service.snapshot():service.save(await readJson(req),actor);return jsonReply(res,200,data);}
+    catch(error){return jsonReply(res,error.status||500,{error:error.message});}finally{db.close();}
+  }
   if (!actor.is_admin) return jsonReply(res, 403, { error: 'Acesso restrito ao administrador.' });
   if (method === 'GET' && p === '/api/portal/users') return jsonReply(res, 200, { users: portal.listUsers() });
   if (method === 'GET' && p === '/api/portal/tutor-users/preview') {

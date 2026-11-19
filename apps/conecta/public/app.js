@@ -79,6 +79,14 @@ function reset(){catalogModality='';catalogLimit=12;['search','area','degree'].f
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.mode){history.replaceState(null,'',location.pathname+({calendar:'#calendario-academico',referral:'#eu-indico'}[b.dataset.mode]||''));showMode(b.dataset.mode);window.scrollTo(0,0)}if(b.dataset.course)openCourse(b.dataset.course);if(b.id==='back'){showMode(mode==='overview'?'all':mode);history.replaceState(null,'',location.pathname);window.scrollTo(0,0)}if(b.id==='emptyClear')reset();if(b.id==='previous'||b.id==='nextCourse'){const i=visible.findIndex(c=>c.id===selected.id),c=visible[i+(b.id==='previous'?-1:1)];if(c)openCourse(c.id)}});
 $('general').innerHTML=DATA.blocks.map((b,i)=>`<details ${i===2?'open':''}><summary>${esc(b.title)}</summary><div class="general-body"><div class="scope">${esc(b.scope)}</div><div class="source-text">${esc(b.body)}</div></div></details>`).join('');$('search').oninput=()=>renderCatalog();$('area').onchange=()=>renderCatalog();$('degree').onchange=()=>renderCatalog();$('clear').onclick=reset;$('expand').onclick=()=>{const ds=[...$('general').querySelectorAll('details')],open=ds.some(x=>!x.open);ds.forEach(x=>x.open=open);$('expand').textContent=open?'Recolher tudo':'Expandir tudo'};$('print').onclick=()=>{const closed=[...document.querySelectorAll('section:not([hidden]) details:not([open])')];closed.forEach(d=>d.open=true);window.print();closed.forEach(d=>d.open=false)};
 const feeState=new Map();
+let feePolicy=null,feePolicyError='',feePolicyPending=null,feePolicyLoadedAt=0;
+function feeStandard(c){const row=feePolicy?.courses.find(x=>x.id===c.id),product=row?.productId?feePolicy.products.find(p=>p.id===row.productId&&p.ativo):null;return {product,discountBps:product?.discountBps??null};}
+async function refreshFeePolicy(repaint=true,force=false){
+ if(feePolicyPending)return feePolicyPending;if(!force&&Date.now()-feePolicyLoadedAt<20000)return;
+ feePolicyPending=(async()=>{try{const response=await fetch('/api/portal/conecta-negociacao',{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error('Não foi possível carregar os padrões de negociação.');feePolicy=await response.json();feePolicyError='';feePolicyLoadedAt=Date.now();}catch(e){feePolicyError='Padrões de negociação indisponíveis. Confira o desconto manualmente.';}finally{feePolicyPending=null;}
+ if(repaint&&selected&&$('feeCalculator')){$('feeCalculator').innerHTML=feeMarkup(selected);updateFee();}})();return feePolicyPending;
+}
+
 const brl=cents=>(cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 function percentage(raw){const s=String(raw).trim().replace(',','.');if(!/^\d{1,3}(\.\d{1,2})?$/.test(s))return null;const n=Number(s);return n>=0&&n<=100?Math.round(n*100):null;}
 const FIXED_PUNCTUALITY_BPS=1000;
@@ -88,11 +96,15 @@ function feeCalculation(base,discountBps){
   const final=Math.floor((without*(10000-punctualBps)+5000)/10000);
   return {base,without,final,courseDiscount:base-without,punctualDiscount:without-final,saving:base-final};
 }
-function feeSettings(c){if(!feeState.has(c.id))feeState.set(c.id,{discount:'',code:c.pricing?.code||''});return feeState.get(c.id);}
+function feeSettings(c){
+ const standard=feeStandard(c);if(!feeState.has(c.id))feeState.set(c.id,{discount:standard.discountBps===null?'':String(standard.discountBps/100).replace('.',','),manual:false,revision:feePolicy?.revision,code:c.pricing?.code||''});
+ const state=feeState.get(c.id);if(state.revision!==feePolicy?.revision){if(!state.manual)state.discount=standard.discountBps===null?'':String(standard.discountBps/100).replace('.',',');state.revision=feePolicy?.revision;}return state;
+}
 function feePrice(c){const state=feeSettings(c);return (c.pricingOptions||[]).find(p=>p.code===state.code)||null;}
 
 function feeMessage(c,price,discountBps){
  const result=feeCalculation(price.price,discountBps),percent=(discountBps/100).toLocaleString('pt-BR',{maximumFractionDigits:2});
+ if(feePolicy?.messageTemplate){const values={curso:c.name,modalidade:modalityLabel(c),formacao:c.grau||'',duracao:c.duracao||'',mensalidade:brl(result.final),valor_sem_pontualidade:brl(result.without),desconto_negociacao:percent,pontualidade:'10'};return feePolicy.messageTemplate.split('\n').filter(line=>!['formacao','duracao'].some(key=>!values[key]&&line.includes('{'+key+'}'))).map(line=>line.replace(/\{([a-z_]+)\}/g,(whole,key)=>values[key]??whole)).join('\n');}
  return ['Olá! 😊 Vamos retomar seu interesse no curso de *'+c.name+'* na UniCesumar:', '',
  '🎓 *Curso:* '+c.name,'📚 *Modalidade:* '+modalityLabel(c),...(c.grau?['*Formação:* '+c.grau]:[]),...(c.duracao?['⏳ *Duração:* '+c.duracao]:[]),'',
  '💰 *Mensalidade com pagamento até o vencimento: '+brl(result.final)+'*',
@@ -102,13 +114,13 @@ function feeMessage(c,price,discountBps){
  'Quer que eu te ajude com os próximos passos?'].join('\n');
 }
 function feeMarkup(c){
- const state=feeSettings(c),p=feePrice(c);
+ const state=feeSettings(c),p=feePrice(c),standard=feeStandard(c);
  if(!p)return `<div class="fee-missing"><strong>Mensalidade</strong><span>Valor não disponível na tabela enviada para este curso e modalidade.</span></div>`;
- return `<div class="fee-compact-head"><h3>Simular mensalidade</h3><span>Região 6 · Processo 51/2027</span></div><div class="fee-grid"><div class="fee-base"><span>Valor integral fixo</span><strong>${brl(p.price)}</strong></div><div class="fee-fields"><div class="fee-negotiation"><label for="feeDiscount">Desconto de negociação</label><div class="fee-discount-control"><button type="button" data-fee-adjust="-1" aria-label="Diminuir desconto em 1 ponto percentual">−</button><div class="fee-percent-input"><input id="feeDiscount" type="text" inputmode="decimal" maxlength="6" value="${esc(state.discount)}" placeholder="Ex.: 35,5" aria-describedby="feeNegotiationHint feeError"><span aria-hidden="true">%</span></div><button type="button" data-fee-adjust="1" aria-label="Aumentar desconto em 1 ponto percentual">+</button></div><small id="feeNegotiationHint">Informe de 0 a 100%. Aceita vírgula e até duas casas decimais.</small></div><div class="fee-fixed-punctuality"><span>Pontualidade</span><strong>10%</strong><small>Fixa · pagamento até o vencimento</small></div></div><div class="fee-result" aria-live="polite" aria-atomic="true"><span>Com pontualidade / mês</span><strong id="feeFinal">—</strong></div></div><p id="feeError" role="alert" class="fee-error" hidden></p><div class="fee-bottom"><div class="fee-summary"><span>Sem pontualidade</span><b id="feeWithout">—</b></div><div class="fee-summary"><span>Economia mensal</span><b id="feeSaving">—</b></div><details class="fee-breakdown"><summary>Como foi calculado</summary><div class="fee-steps"><div><span>Valor integral</span><b>${brl(p.price)}</b></div><div><span>1. Desconto negociado</span><b id="feeCourseDiscount">—</b></div><div><span>Valor após desconto</span><b id="feeAfter">—</b></div><div><span>2. Pontualidade fixa de 10%</span><b id="feePunctualDiscount">—</b></div><p id="feeHint" class="fee-hint">Primeiro o desconto negociado; depois, os 10% de pontualidade sobre o valor já descontado. Arredondamento em centavos a cada etapa.</p><p class="fee-source">${esc(p.code)} · Tabela de 16/11/2026</p></div></details></div><div class="fee-message-tools"><button type="button" class="btn primary" id="feeGenerate" disabled>Gerar mensagem de reabertura</button><span class="fee-hint">Revise o desconto e o valor antes de compartilhar.</span></div><section id="feeMessagePanel" class="fee-message-panel" hidden><label for="feeMessage">Mensagem de reabertura · revise antes de copiar</label><textarea id="feeMessage" rows="13"></textarea><button type="button" class="btn" id="feeCopy">Copiar mensagem</button><span id="feeCopyStatus" class="small muted" role="status" aria-live="polite"></span></section>`;
+ return `<div class="fee-compact-head"><h3>Simular mensalidade</h3><span>Região 6 · Processo 51/2027</span></div><div class="fee-grid"><div class="fee-base"><span>Valor integral fixo</span><strong>${brl(p.price)}</strong></div><div class="fee-fields"><div class="fee-negotiation"><label for="feeDiscount">Desconto de negociação</label><div class="fee-discount-control"><button type="button" data-fee-adjust="-1" aria-label="Diminuir desconto em 1 ponto percentual">−</button><div class="fee-percent-input"><input id="feeDiscount" type="text" inputmode="decimal" maxlength="6" value="${esc(state.discount)}" placeholder="Ex.: 35,5" aria-describedby="feeNegotiationHint feeError"><span aria-hidden="true">%</span></div><button type="button" data-fee-adjust="1" aria-label="Aumentar desconto em 1 ponto percentual">+</button></div><small id="feeNegotiationHint">Informe de 0 a 100%. Aceita vírgula e até duas casas decimais.</small><p class="fee-standard-note">${esc(feePolicyError||(standard.product?standard.product.nome+(standard.discountBps===null?' · sem padrão definido':' · padrão: '+String(standard.discountBps/100).replace('.',',')+'%'):'Produto não identificado. Consulte o administrador.'))}</p>${standard.discountBps===null?'':'<button type="button" class="text-btn" id="feeRestoreStandard">Usar desconto padrão do produto</button>'}</div><div class="fee-fixed-punctuality"><span>Pontualidade</span><strong>10%</strong><small>Fixa · pagamento até o vencimento</small></div></div><div class="fee-result" aria-live="polite" aria-atomic="true"><span>Com pontualidade / mês</span><strong id="feeFinal">—</strong></div></div><p id="feeError" role="alert" class="fee-error" hidden></p><div class="fee-bottom"><div class="fee-summary"><span>Sem pontualidade</span><b id="feeWithout">—</b></div><div class="fee-summary"><span>Economia mensal</span><b id="feeSaving">—</b></div><details class="fee-breakdown"><summary>Como foi calculado</summary><div class="fee-steps"><div><span>Valor integral</span><b>${brl(p.price)}</b></div><div><span>1. Desconto negociado</span><b id="feeCourseDiscount">—</b></div><div><span>Valor após desconto</span><b id="feeAfter">—</b></div><div><span>2. Pontualidade fixa de 10%</span><b id="feePunctualDiscount">—</b></div><p id="feeHint" class="fee-hint">Primeiro o desconto negociado; depois, os 10% de pontualidade sobre o valor já descontado. Arredondamento em centavos a cada etapa.</p><p class="fee-source">${esc(p.code)} · Tabela de 16/11/2026</p></div></details></div><div class="fee-message-tools"><button type="button" class="btn primary" id="feeGenerate" disabled>Gerar e copiar mensagem de reabertura</button><span class="fee-hint">Revise o desconto e o valor antes de compartilhar.</span></div><section id="feeMessagePanel" class="fee-message-panel" hidden><label for="feeMessage">Mensagem de reabertura · exibida e copiada automaticamente</label><textarea id="feeMessage" rows="13"></textarea><p class="fee-hint">Ao editar, o texto será copiado novamente ao sair deste campo.</p><span id="feeCopyStatus" class="small muted" role="status" aria-live="polite"></span></section>`;
 }
-function updateFee(){
+function updateFee(manual=false){
  if(!selected)return;const p=feePrice(selected);if(!p||!$('feeDiscount'))return;
- const state=feeSettings(selected);state.discount=$('feeDiscount').value;
+ const state=feeSettings(selected);state.discount=$('feeDiscount').value;if(manual)state.manual=true;
  const d=percentage(state.discount),valid=d!==null,empty=!state.discount.trim();
  $('feeDiscount').setAttribute('aria-invalid',String(!valid&&!empty));$('feeError').hidden=valid||empty;
  $('feeError').textContent=valid||empty?'':'Informe um desconto de 0 a 100%, com até duas casas decimais.';
@@ -119,12 +131,21 @@ function updateFee(){
 }
 document.addEventListener('click',async e=>{
  const adjustment=e.target.closest('[data-fee-adjust]');
- if(adjustment&&selected&&$('feeDiscount')){const raw=$('feeDiscount').value,current=percentage(raw);if(current===null&&raw.trim()){updateFee();$('feeDiscount').focus();return;}const next=Math.max(0,Math.min(10000,(current||0)+Number(adjustment.dataset.feeAdjust)*100));$('feeDiscount').value=(next/100).toLocaleString('pt-BR',{maximumFractionDigits:2});updateFee();return;}
- if(e.target.closest('#feeGenerate')&&selected){const p=feePrice(selected),d=percentage($('feeDiscount').value);if(!p||d===null){updateFee();return;}$('feeMessage').value=feeMessage(selected,p,d);$('feeMessagePanel').hidden=false;$('feeMessage').focus();}
- if(e.target.closest('#feeCopy')&&$('feeMessage')){try{await navigator.clipboard.writeText($('feeMessage').value);$('feeCopyStatus').textContent='Mensagem copiada.';}catch{$('feeMessage').focus();$('feeMessage').select();$('feeCopyStatus').textContent='Selecione e copie a mensagem com Ctrl+C.';}}
+ if(adjustment&&selected&&$('feeDiscount')){const raw=$('feeDiscount').value,current=percentage(raw);if(current===null&&raw.trim()){updateFee();$('feeDiscount').focus();return;}const next=Math.max(0,Math.min(10000,(current||0)+Number(adjustment.dataset.feeAdjust)*100));$('feeDiscount').value=(next/100).toLocaleString('pt-BR',{maximumFractionDigits:2});updateFee(true);return;}
+
+ if(e.target.closest('#feeRestoreStandard')&&selected){const standard=feeStandard(selected),state=feeSettings(selected);if(standard.discountBps!==null){state.manual=false;state.discount=String(standard.discountBps/100).replace('.',',');$('feeDiscount').value=state.discount;updateFee();}return;}
+ if(e.target.closest('#feeGenerate')&&selected){const p=feePrice(selected),d=percentage($('feeDiscount').value);if(!p||d===null){updateFee();return;}$('feeMessage').value=feeMessage(selected,p,d);$('feeMessagePanel').hidden=false;await copyFeeMessage();}
+
 });
+
+async function copyFeeMessage(selectFallback=true){
+ const field=$('feeMessage'),status=$('feeCopyStatus');if(!field||!status)return;const text=field.value;status.textContent='Copiando mensagem…';
+ try{await navigator.clipboard.writeText(text);if(field.value===text)status.textContent='Mensagem copiada. Pronta para colar no WhatsApp.';}
+ catch{if(!selectFallback){status.textContent='Não foi possível copiar a edição automaticamente. Selecione o texto e use Ctrl+C.';return;}field.focus();field.select();let copied=false;try{copied=document.execCommand('copy');}catch{}status.textContent=copied?'Mensagem copiada. Pronta para colar no WhatsApp.':'O navegador não permitiu copiar automaticamente. O texto está selecionado; use Ctrl+C.';}
+}
+document.addEventListener('focusout',e=>{if(e.target.id==='feeMessage')copyFeeMessage(false);});
 function openCourse(id,updateHash=true){renderCourseBase(id,updateHash);if(!selected||selected.id!==id)return;const hero=document.querySelector('#detail .course-hero');if(!hero)return;hero.classList.add('has-calculator');hero.innerHTML='<div class="fee-course-info">'+hero.innerHTML+'</div><section id="feeCalculator" class="fee-calculator" aria-label="Calculadora de mensalidade">'+feeMarkup(selected)+'</section>';updateFee();}
-document.addEventListener('input',e=>{if(e.target.id==='feeDiscount')updateFee();});
+document.addEventListener('input',e=>{if(e.target.id==='feeDiscount')updateFee(true);});
 document.addEventListener('change',e=>{if(e.target.id==='feeCode'&&selected){feeSettings(selected).code=e.target.value;$('feeCalculator').innerHTML=feeMarkup(selected);updateFee();}});
 
 function routeFromHash(){
@@ -135,7 +156,9 @@ function routeFromHash(){
  else showMode('home');
 }
 document.addEventListener('input',e=>{if(e.target.matches('[data-referral-search]'))window.BalbinoConteudos.filter($('referralProgram'),'referral',e.target.value);});
-routeFromHash();window.addEventListener('hashchange',routeFromHash);
+window.addEventListener('focus',()=>refreshFeePolicy());
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshFeePolicy();});
+routeFromHash();refreshFeePolicy(true,true);window.addEventListener('hashchange',routeFromHash);
 
 })().catch(()=>{const main=document.querySelector('main');const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Não foi possível carregar o Balbino Conecta. Atualize a página ou entre novamente no Portal.';main.replaceChildren(p);});
 

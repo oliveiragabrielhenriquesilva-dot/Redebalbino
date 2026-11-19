@@ -55,6 +55,7 @@
     show($('logoutBtn'), logged);
     show($('openLoginBtn'), !logged);
     show($('manageUsersBtn'), logged && !mustChangePassword && me.isAdmin);
+    show($('manageConectaBtn'), logged && !mustChangePassword && me.isAdmin);
     const grid = $('appGrid'); grid.replaceChildren();
     for (const key of homeOrder) {
       const app = apps[key];
@@ -269,7 +270,31 @@
     try { await request(`/api/portal/users/${encodeURIComponent(user.id)}/active`, { method: 'POST', body: JSON.stringify({ active }) }); await loadUsers(); toast(active ? 'Usuário ativado.' : 'Usuário desativado.'); }
     catch (err) { toast(err.message, true); }
   }
+
+  let conectaSettings=null;
+  const ce=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const cn=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  function renderConectaSettings(data){
+    conectaSettings=data;const products=data.products.filter(p=>p.ativo);
+    $('conectaProducts').innerHTML='<p class="dialog-note">Deixe em branco para não aplicar desconto automático. Informe 0 para definir explicitamente nenhum desconto negociado.</p><div class="conecta-product-settings">'+products.map(p=>`<label class="conecta-product-setting"><span><strong>${ce(p.nome)}</strong><small>${data.courses.filter(c=>c.productId===p.id).length} curso(s) vinculado(s)</small></span><span class="conecta-percent"><input data-discount-product="${p.id}" aria-label="Desconto de ${ce(p.nome)} em porcentagem" inputmode="decimal" maxlength="6" placeholder="Sem padrão" value="${p.discountBps===null?'':String(p.discountBps/100).replace('.',',')}"><b aria-hidden="true">%</b></span></label>`).join('')+'</div>';
+    $('conectaCourseMappings').innerHTML=data.courses.map(c=>`<label class="conecta-course-mapping" data-course-search="${ce(cn(c.name+' '+c.degree+' '+c.modality))}"><span>${ce(c.name)}<small>${ce(c.degree||'')} · ${ce(c.modality)}${!c.productId?' · Sem produto identificado':''}</small></span><select data-discount-course="${ce(c.id)}" aria-label="Produto do curso ${ce(c.name+' '+(c.degree||''))}"><option value="">Usar cadastro${c.automaticProductId?' — '+ce(products.find(p=>p.id===c.automaticProductId)?.nome||''):' — sem vínculo identificado'}</option>${products.map(p=>`<option value="${p.id}" ${c.override===p.id?'selected':''}>${ce(p.nome)}</option>`).join('')}</select></label>`).join('');
+    $('conectaCourseSearch').value='';$('conectaMessageTemplate').value=data.messageTemplate;
+    $('conectaTemplateFields').innerHTML=data.messageFields.map(field=>`<button type="button" class="secondary-btn" data-conecta-token="${ce(field)}">{${ce(field)}}</button>`).join('');
+    $('conectaSettingsForm').hidden=false;
+  }
+  $('manageConectaBtn').addEventListener('click',async()=>{const status=$('conectaSettingsStatus');$('conectaSettingsDialog').showModal();$('conectaSettingsForm').hidden=true;status.textContent='Carregando os produtos cadastrados…';try{renderConectaSettings(await request('/api/portal/conecta-negociacao'));status.textContent='';}catch(e){status.textContent=e.message;}});
+  $('closeConectaSettings').addEventListener('click',()=>$('conectaSettingsDialog').close());
+  $('conectaSettingsDialog').addEventListener('click',e=>{if(e.target===$('conectaSettingsDialog'))$('conectaSettingsDialog').close();});
+  $('conectaCourseSearch').addEventListener('input',e=>{const q=cn(e.target.value);document.querySelectorAll('[data-course-search]').forEach(row=>row.hidden=!row.dataset.courseSearch.includes(q));});
+  $('conectaTemplateFields').addEventListener('click',e=>{const button=e.target.closest('[data-conecta-token]');if(!button)return;const input=$('conectaMessageTemplate');input.setRangeText('{'+button.dataset.conectaToken+'}',input.selectionStart,input.selectionEnd,'end');input.focus();});
+  $('conectaSettingsForm').addEventListener('submit',async e=>{
+    e.preventDefault();const products={},courses={},status=$('conectaSettingsStatus'),button=$('saveConectaSettings');
+    for(const input of document.querySelectorAll('[data-discount-product]')){const raw=input.value.trim().replace(',','.');if(!raw){products[input.dataset.discountProduct]=null;continue;}if(!/^\d{1,3}(\.\d{1,2})?$/.test(raw)||Number(raw)>100){status.textContent='Informe descontos de 0 a 100%, com até duas casas decimais.';input.focus();return;}products[input.dataset.discountProduct]=Math.round(Number(raw)*100);}
+    document.querySelectorAll('[data-discount-course]').forEach(input=>courses[input.dataset.discountCourse]=input.value?Number(input.value):null);
+    button.disabled=true;status.textContent='Salvando…';try{const data=await request('/api/portal/conecta-negociacao',{method:'PUT',body:JSON.stringify({revision:conectaSettings.revision,products,courses,messageTemplate:$('conectaMessageTemplate').value})});renderConectaSettings(data);status.textContent='Padrões salvos para toda a equipe. O Conecta aplica os valores ao abrir ou voltar à página. Descontos alterados manualmente na simulação são preservados.';}catch(err){status.textContent=err.message;}finally{button.disabled=false;}
+  });
   render();
   refresh().catch(err => { $('loginError').textContent = err.message; show($('loginError'), true); });
 })();
+
 
