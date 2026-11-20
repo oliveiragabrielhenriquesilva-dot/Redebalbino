@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Rede Balbino — Coletor de negociação",
+  "version": "0.1.0",
+  "description": "Consulta valores visíveis no portal UniCesumar, com prévia local e exportação. Não emite acordos.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://portal.ead.cesumar.br/*"],
+  "action": { "default_title": "Abrir coletor da Rede Balbino" },
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [{
+    "matches": ["https://portal.ead.cesumar.br/*"],
+    "js": ["core.js", "runner.js", "content.js"],
+    "run_at": "document_idle"
+  }]
+}
