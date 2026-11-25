@@ -119,3 +119,7 @@ main{padding-top:27px}.header{margin-bottom:23px;align-items:flex-start}.header 
 @media print{.fee-message-tools,.fee-message-panel,.fee-discount-control>button{display:none!important}}
 
 .fee-standard-note{font-size:11px!important;line-height:1.6;margin:8px 0;color:var(--muted)}#feeRestoreStandard{font-size:11px;text-align:left;margin-top:4px}.fee-message-panel textarea{font-size:13px}
+
+/* Ações da HERO: reabertura e matriz lado a lado. */
+.fee-message-tools:has(#matrixCopy)>.btn{flex:1 1 0;min-width:0;align-self:stretch}.fee-message-tools:has(#matrixCopy)>.fee-hint{flex-basis:100%}
+@media(max-width:650px){.fee-message-tools:has(#matrixCopy)>.btn{flex-basis:100%}}
