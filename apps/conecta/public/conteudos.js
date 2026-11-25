@@ -119,7 +119,9 @@ function referralPage(){return `<div class="learning-intro referral-hero"><div><
 function filter(container,kind,value){const q=norm(value),ref=kind==='referral',nodes=container.querySelectorAll(ref?'[data-referral-item]':'[data-learning-course]');let count=0;nodes.forEach(el=>{const show=!q||(ref?el.dataset.referralText:el.dataset.learningName).includes(q);el.hidden=!show;if(ref&&q)el.open=show;if(show)count++;});container.querySelector(ref?'[data-referral-count]':'[data-learning-count]').textContent=count+(ref?' resposta(s) encontrada(s)':' curso(s) encontrado(s)');container.querySelector(ref?'.referral-empty':'.learning-empty').hidden=!!count;}
 
 // Usa somente a matriz cadastrada, sem deduzir semestres, ano de ingresso ou disciplinas.
-function matrixMessage(course){
+const MATRIX_FIELDS=['curso','modalidade','formacao','referencia_matriz','grade_curricular'];
+const DEFAULT_MATRIX_MESSAGE=['🎓 *Matriz curricular — {curso}*','📚 *Modalidade:* {modalidade}','*Formação:* {formacao}','*Matriz de referência:* {referencia_matriz}','','{grade_curricular}','','A matriz pode variar conforme o ingresso e a matriz curricular vigente. Confirme a grade aplicável antes da matrícula.'].join('\n');
+function matrixMessage(course,template=DEFAULT_MATRIX_MESSAGE){
  const matrix=course?.argumentario?.sheet?.matriz;
  const clean=value=>typeof value==='string'?value.replace(/\r\n?/g,'\n').trim():'';
  function lines(value){
@@ -134,7 +136,8 @@ function matrixMessage(course){
  const body=lines(matrix);if(!body.some(line=>line.startsWith('• ')))return '';
  const modality={ead:'EaD',semipresencial:'Semipresencial'}[course.modalidade];
  const ref=clean(String(course.argumentario.matrix_reference||''));
- return ['🎓 *Matriz curricular — '+clean(course.name)+'*',...(modality?['📚 *Modalidade:* '+modality]:[]),...(clean(course.grau)?['*Formação:* '+clean(course.grau)]:[]),ref?'*Matriz de referência:* '+ref:'*Ano da matriz:* não informado na fonte.',...body,'','A matriz pode variar conforme o ingresso e a matriz curricular vigente. Confirme a grade aplicável antes da matrícula.'].join('\n');
+ const values={curso:clean(course.name),modalidade:modality||'',formacao:clean(course.grau),referencia_matriz:ref||'não informado na fonte.',grade_curricular:body.join('\n').trim()};
+ return String(template).split('\n').filter(line=>!['modalidade','formacao'].some(k=>!values[k]&&line.includes('{'+k+'}'))).map(line=>line.replace(/\{([a-z_]+)\}/g,(whole,key)=>values[key]??whole)).join('\n');
 }
-const api={matrixMessage,PED,FAQ,TRAINING,appliesTraining,enrichBlocks,matchCourse,enrichCourse,distributionContent,sourceNote,referralPage,filter};if(typeof module==='object'&&module.exports)module.exports=api;else root.BalbinoConteudos=api;
+const api={MATRIX_FIELDS,DEFAULT_MATRIX_MESSAGE,matrixMessage,PED,FAQ,TRAINING,appliesTraining,enrichBlocks,matchCourse,enrichCourse,distributionContent,sourceNote,referralPage,filter};if(typeof module==='object'&&module.exports)module.exports=api;else root.BalbinoConteudos=api;
 })(typeof globalThis==='undefined'?this:globalThis);

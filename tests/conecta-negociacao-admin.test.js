@@ -19,4 +19,17 @@ test('rota real exige sessão, protege gravação por papel e origem; permite co
  const call=(method,actor,body,origin='https://redebalbino.com.br')=>ctx.portalApi({method,actor,body,headers:{host:'redebalbino.com.br',origin}},{},new URL('https://redebalbino.com.br/api/portal/conecta-negociacao'));
  assert.equal((await call('GET',null)).status,401);assert.equal((await call('GET',{is_admin:false})).status,200);assert.equal((await call('PUT',{is_admin:false},payload())).status,403);assert.equal((await call('PUT',admin,payload(),'https://other.example')).status,403);assert.equal((await call('PUT',admin,payload())).status,200);
 });
+
+test('modelo da grade é persistido centralmente e preservado por clientes antigos',()=>{
+ const body=payload();body.matrixMessageTemplate='Confira a grade de {curso}:\n{grade_curricular}\nReferência: {referencia_matriz}';const saved=service.save(body,admin);
+ assert.equal(saved.matrixMessageTemplate,body.matrixMessageTemplate);assert(saved.matrixMessageFields.includes('grade_curricular'));
+ const second=new DatabaseSync(file);assert.equal(create(second,catalog).snapshot().matrixMessageTemplate,body.matrixMessageTemplate);second.close();
+ const legacy=payload();service.save(legacy,admin);assert.equal(service.snapshot().matrixMessageTemplate,body.matrixMessageTemplate);
+});
+test('grade exige conteúdo automático, valida campos e mantém os dois modelos em gravação rejeitada',()=>{
+ const before=service.snapshot();for(const template of ['', 'Texto sem grade', '{grade_curricular} {desconto_invalido}', 'x'.repeat(6001)]){
+  assert.throws(()=>service.save({...payload(),matrixMessageTemplate:template},admin),e=>e.status===400);assert.equal(service.snapshot().matrixMessageTemplate,before.matrixMessageTemplate);assert.equal(service.snapshot().messageTemplate,before.messageTemplate);
+ }
+ assert.throws(()=>service.save({...payload(),matrixMessageTemplate:'{grade_curricular}'},{is_admin:false}),e=>e.status===403);
+});
 test.after(()=>{db.close();fs.rmSync(dir,{recursive:true,force:true});});

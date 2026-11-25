@@ -1,5 +1,6 @@
 'use strict';
 const crypto=require('node:crypto');
+const {DEFAULT_MATRIX_MESSAGE,MATRIX_FIELDS}=require('./public/conteudos');
 const fail=(status,message)=>{throw Object.assign(new Error(message),{status});};
 const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const name=x=>norm(x).replace(/^(graduacao|bacharelado|licenciatura|superior de tecnologia|tecnologo|tecnologia) em /,'').replace(/ (bacharelado|licenciatura)$/,'');
@@ -20,17 +21,22 @@ module.exports=function(db,catalog){
    const degree=norm(c.grau),target=name(c.name),candidates=registered.filter(r=>active.has(r.produto_id)&&[r.nome,...String(r.apelidos||'').split(/[,;\n]/)].some(n=>name(n)===target));
    const ids=[...new Set(candidates.filter(r=>{const label=norm(r.nome+' '+products.find(p=>p.id===r.produto_id)?.nome);if(degree.includes('licenciatura'))return label.includes('licenciatura')&&!label.includes('bacharel');if(degree.includes('bacharel')&&target==='educacao fisica')return label.includes('bacharel');return !label.includes('licenciatura');}).map(r=>r.produto_id))];return ids.length===1?ids[0]:null;
   };
-  return {messageTemplate:value.messageTemplate||DEFAULT_MESSAGE,messageFields:MESSAGE_FIELDS,revision:revision(raw),updatedAt:value.updatedAt||null,updatedBy:value.updatedBy||null,products:products.map(p=>({...p,discountBps:value.products?.[p.id]??null})),courses:catalog.courses.map(c=>{const automatic=resolve(c),override=value.courses?.[c.id],productId=override&&active.has(override)?override:automatic;return {id:c.id,name:c.name,degree:c.grau,modality:c.modalidade,productId,automaticProductId:automatic,override:override||null};})};
+  return {matrixMessageTemplate:value.matrixMessageTemplate||DEFAULT_MATRIX_MESSAGE,matrixMessageFields:MATRIX_FIELDS,messageTemplate:value.messageTemplate||DEFAULT_MESSAGE,messageFields:MESSAGE_FIELDS,revision:revision(raw),updatedAt:value.updatedAt||null,updatedBy:value.updatedBy||null,products:products.map(p=>({...p,discountBps:value.products?.[p.id]??null})),courses:catalog.courses.map(c=>{const automatic=resolve(c),override=value.courses?.[c.id],productId=override&&active.has(override)?override:automatic;return {id:c.id,name:c.name,degree:c.grau,modality:c.modalidade,productId,automaticProductId:automatic,override:override||null};})};
  }
  function save(body,actor){
   if(!actor?.is_admin)fail(403,'Apenas administradores podem configurar os descontos.');
   if(!body||typeof body!=='object'||!body.products||typeof body.products!=='object'||Array.isArray(body.products)||!body.courses||typeof body.courses!=='object'||Array.isArray(body.courses))fail(400,'Configuração inválida.');
   if(typeof body.messageTemplate!=='string'||!body.messageTemplate.trim()||body.messageTemplate.length>6000)fail(400,'Informe uma mensagem padrão de até 6.000 caracteres.');
   const invalid=[...body.messageTemplate.matchAll(/\{([^{}]+)\}/g)].map(m=>m[1]).filter(k=>!MESSAGE_FIELDS.includes(k));if(invalid.length)fail(400,'Campo de mensagem desconhecido: '+invalid.join(', '));
+  const saved=current().value,matrixMessageTemplate=body.matrixMessageTemplate===undefined?(saved.matrixMessageTemplate||DEFAULT_MATRIX_MESSAGE):body.matrixMessageTemplate;
+  if(typeof matrixMessageTemplate!=='string'||!matrixMessageTemplate.trim()||matrixMessageTemplate.length>6000)fail(400,'Informe uma mensagem da grade de até 6.000 caracteres.');
+  const invalidMatrix=[...matrixMessageTemplate.matchAll(/\{([^{}]+)\}/g)].map(m=>m[1]).filter(k=>!MATRIX_FIELDS.includes(k));
+  if(invalidMatrix.length)fail(400,'Campo da grade desconhecido: '+invalidMatrix.join(', '));
+  if(!matrixMessageTemplate.includes('{grade_curricular}'))fail(400,'Mantenha o campo {grade_curricular} na mensagem da grade.');
   const before=snapshot(),active=new Set(before.products.filter(p=>p.ativo).map(p=>p.id)),courseIds=new Set(catalog.courses.map(c=>c.id)),products={},courses={};
   for(const [key,value] of Object.entries(body.products)){if(!active.has(Number(key)))fail(400,'Produto não encontrado ou inativo.');if(value===null)continue;if(!Number.isInteger(value)||value<0||value>10000)fail(400,'Informe descontos de 0 a 100%, com até duas casas decimais.');products[key]=value;}
   for(const [key,value] of Object.entries(body.courses)){if(!courseIds.has(key))fail(400,'Curso não encontrado.');if(value===null)continue;if(!Number.isInteger(value)||!active.has(value))fail(400,'Vínculo com produto inválido.');courses[key]=value;}
-  db.exec('BEGIN IMMEDIATE');try{const now=current();if(body.revision!==revision(now.raw))fail(409,'Outro administrador alterou a configuração. Reabra a tela para atualizar.');const text=JSON.stringify({products,courses,messageTemplate:body.messageTemplate.trim(),updatedAt:new Date().toISOString(),updatedBy:String(actor.name||actor.username||actor.id)});db.prepare("INSERT INTO config(chave,valor) VALUES('conecta_negociacao',?) ON CONFLICT(chave) DO UPDATE SET valor=excluded.valor").run(text);db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}
+  db.exec('BEGIN IMMEDIATE');try{const now=current();if(body.revision!==revision(now.raw))fail(409,'Outro administrador alterou a configuração. Reabra a tela para atualizar.');const text=JSON.stringify({matrixMessageTemplate:matrixMessageTemplate.trim(),products,courses,messageTemplate:body.messageTemplate.trim(),updatedAt:new Date().toISOString(),updatedBy:String(actor.name||actor.username||actor.id)});db.prepare("INSERT INTO config(chave,valor) VALUES('conecta_negociacao',?) ON CONFLICT(chave) DO UPDATE SET valor=excluded.valor").run(text);db.exec('COMMIT');}catch(e){db.exec('ROLLBACK');throw e;}
   return snapshot();
  }
  return {snapshot,save};
