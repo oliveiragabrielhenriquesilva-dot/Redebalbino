@@ -2,7 +2,7 @@
 const crypto=require('node:crypto'),DATA=require('./data/precos-regionais.json');
 const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const REGION6=new Set(['franca','batatais','itapira','ituverava','sao joaquim da barra','ribeirao preto','mogi mirim','mogi guacu']);
-function regionForPole(name){const n=norm(name).replace(/ sp$| mg$/,'');if(n==='monte siao')return 3;if(REGION6.has(n)||n.startsWith('ribeirao preto '))return 6;return null;}
+function regionForPole(name){const n=norm(name).replace(/ sp$| mg$/,'');if(n==='monte siao')return 3;if(REGION6.has(n)||n==='ribeirao preto ipiranga')return 6;return null;}
 const rowCode=row=>row.code||'POS_'+crypto.createHash('sha256').update(norm(row.name)).digest('hex').slice(0,16);
 const TABLES=DATA.tables.map(table=>({...table,index:new Map(table.rows.map(row=>[rowCode(row),row]))}));
 const fail=(status,message)=>{throw Object.assign(Error(message),{status});};

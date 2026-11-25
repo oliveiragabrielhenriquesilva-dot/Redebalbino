@@ -10,19 +10,20 @@ def extract(pdf):
  region=int(re.search(r'Região (\d+)',text)[1]);process=re.search(r'Processo (\d+)',text)[1]
  kind='pos' if pdf.name.startswith('pos-') else 'tecnico' if pdf.name.startswith('tecnicos-') else 'semi' if 'semipresencial' in pdf.name else 'ead'
  expected={'ead':59,'semi':52,'pos':489,'tecnico':14}[kind];rows=[]
- for block in text.split('\n\n'):
-  money=re.findall(r'R\$\s*([\d.]+,\d{2})',block)
-  if len(money)!=2:continue
-  lines=block.strip('\n').splitlines();first=next(line for line in lines if 'R$' in line);before=first.split('R$')[0];code=re.search(r'\b(E[A-Z]+_[A-Z0-9_]+)\b',before)
+ for first in text.replace('\f','\n').splitlines():
+  money=re.findall(r'R\$\s*([\d.]+,\d{2})',first)
+  if len(money)!=2:
+   line=first.strip()
+   header=(not line or line.startswith(('Cursos','Baixado em','BAIXADO EM','Graduação ·','Pós-Graduação EAD ·','Técnicos EAD ·','pontualidade','Mensal','Mensalidade')) or re.match(r'^(Bacharelado|Licenciatura|Tecnólogo / Superior de Tecnologia) ·',line))
+   if rows and not header and len(first)-len(first.lstrip())<end:rows[-1]['name']+=' '+line
+   continue
+  before=first.split('R$')[0];code=re.search(r'\b(E[A-Z]+_[A-Z0-9_]+)\b',before)
   if code:
    end=code.start();title=first[:end].strip();tail=before[code.end():];code=code[1]
   else:
    match=re.search(r'^(.*?)\s+(\d+)\s+(\d+)\s*$',before)
    if not match:raise ValueError('Colunas não reconhecidas: '+block)
    end=match.start(2);title=before[:end].strip();tail=before[end:];code=None
-  # Linhas de continuação do nome ficam à esquerda da coluna de código/duração.
-  for line in lines[lines.index(first)+1:]:
-   if line.strip() and len(line)-len(line.lstrip())<end:title+=' '+line.strip()
   values=re.findall(r'\b\d+(?:,\d+)?\b',tail);months=None;installments=None
   if kind in ['pos','tecnico']:
    if len(values)>=2:months=int(values[-2]);installments=int(values[-1])
