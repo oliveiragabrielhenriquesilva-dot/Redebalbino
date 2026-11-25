@@ -10,15 +10,15 @@ function actorContext(db,actor,requested){
  let accounts={};try{accounts=JSON.parse(actor.accounts_json||'{}');}catch{}
  const account=String(accounts.matriculas||''),match=account.match(/^@tutor:(\d+)$/);
  let admin=!!actor.is_admin,poleId=null;
- if(!admin&&match){
+ if(match){
   const tutor=db.prepare('SELECT id,ativo,polo_origem_id FROM tutores WHERE id=?').get(Number(match[1]));
   if(tutor?.ativo){const ids=db.prepare('SELECT polo_id FROM tutor_polos WHERE tutor_id=?').all(tutor.id).map(r=>Number(r.polo_id));poleId=ids.includes(Number(tutor.polo_origem_id))?Number(tutor.polo_origem_id):ids.length===1?ids[0]:null;}
- }else if(!admin&&account){
+ }else if(account&&account!=='@admin'){
   const user=db.prepare('SELECT papel,polo_id FROM usuarios WHERE ativo=1 AND login=? COLLATE NOCASE').get(account);
-  if(user){admin=user.papel==='admin';poleId=user.polo_id;}
+  if(user){admin=admin||user.papel==='admin';poleId=user.polo_id;}
  }
  const poles=db.prepare('SELECT id,nome FROM polos WHERE ativo=1 ORDER BY nome').all().filter(p=>regionForPole(p.nome));
- if(admin){if(requested){if(!/^\d+$/.test(String(requested)))fail(400,'Polo inválido.');poleId=Number(requested);if(!poles.some(p=>p.id===poleId))fail(400,'Polo sem tabela cadastrada.');}else poleId=null;}
+ if(admin){if(requested){if(!/^\d+$/.test(String(requested)))fail(400,'Polo inválido.');poleId=Number(requested);if(!poles.some(p=>p.id===poleId))fail(400,'Polo sem tabela cadastrada.');}}
  else if(requested&&Number(requested)!==Number(poleId))fail(403,'A tabela é definida pelo polo cadastrado no seu acesso.');
  const pole=poles.find(p=>p.id===poleId)||null;
  return {admin,pole,region:pole?regionForPole(pole.nome):null,poles:admin?poles:pole?[pole]:[],blockedReason:pole?'':admin?'Selecione o polo para consultar os valores.':'Seu acesso está sem polo válido definido. Solicite o vínculo ao administrador antes de simular.'};

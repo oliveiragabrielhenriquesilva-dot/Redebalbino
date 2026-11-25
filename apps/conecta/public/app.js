@@ -104,7 +104,7 @@ let regionalPricing=null,regionalRequest=0;
 function regionalControls(){
  let box=$('regionalPricing');if(!box){box=document.createElement('section');box.id='regionalPricing';box.className='panel';box.setAttribute('aria-label','Tabela de valores por polo');document.querySelector('main').prepend(box);}
  const ctx=regionalPricing?.context;
- box.innerHTML=ctx?`<div class="fee-compact-head"><h3>Tabela de valores do polo</h3><span>Atualizada em 25/11/2026</span></div>${ctx.admin?`<label for="regionalPole">Polo para consulta</label><select id="regionalPole"><option value="">Selecione o polo</option>${ctx.poles.map(p=>`<option value="${p.id}" ${ctx.pole?.id===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}</select>`:''}<p role="status">${esc(ctx.pole?ctx.pole.nome+' · Região '+ctx.region+' · Valores brutos e pontualidade separados.':ctx.blockedReason)}</p>`:'<p role="status">Carregando a tabela do seu polo…</p>';
+ box.innerHTML=ctx?`<div class="fee-compact-head"><h3>Tabela de valores do polo</h3><span>Atualizada em 25/11/2026</span></div>${ctx.admin?`<label for="regionalPole">Trocar polo para consulta (administrador)</label><select id="regionalPole"><option value="">Selecione o polo</option>${ctx.poles.map(p=>`<option value="${p.id}" ${ctx.pole?.id===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}</select>`:''}<p role="status">${esc(ctx.pole?ctx.pole.nome+' · Região '+ctx.region+' · Valores brutos e pontualidade separados.':ctx.blockedReason)}</p>`:'<p role="status">Carregando a tabela do seu polo…</p>';
 }
 async function loadRegionalPrices(polo=''){
  const request=++regionalRequest,id=selected?.id;
@@ -141,7 +141,7 @@ function feeCalculation(base,discountBps){
 }
 function feeSettings(c){
  const standard=feeStandard(c);if(!feeState.has(c.id))feeState.set(c.id,{discount:standard.discountBps===null?'':String(standard.discountBps/100).replace('.',','),manual:false,revision:feePolicy?.revision,code:c.pricing?.code||''});
- const state=feeState.get(c.id);if(state.revision!==feePolicy?.revision){if(!state.manual)state.discount=standard.discountBps===null?'':String(standard.discountBps/100).replace('.',',');state.revision=feePolicy?.revision;}return state;
+ const state=feeState.get(c.id);if(!(c.pricingOptions||[]).some(p=>p.code===state.code))state.code=c.pricing?.code||(c.pricingOptions||[])[0]?.code||'';if(state.revision!==feePolicy?.revision){if(!state.manual)state.discount=standard.discountBps===null?'':String(standard.discountBps/100).replace('.',',');state.revision=feePolicy?.revision;}return state;
 }
 function feePrice(c){const state=feeSettings(c);return (c.pricingOptions||[]).find(p=>p.code===state.code)||null;}
 
