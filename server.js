@@ -369,6 +369,14 @@ async function portalApi(req, res, url) {
     if (!Array.isArray(order) || order.length > valid.size || order.some(key => typeof key !== 'string' || !valid.has(key)) || new Set(order).size !== order.length) return jsonReply(res, 400, { error: 'Ordem de atalhos inválida.' });
     return jsonReply(res, 200, portal.setHomeOrder(actor.id, homeCatalog.normalizeOrder(order)));
   }
+  if(p==='/api/portal/conecta-precos'){
+    if(method!=='GET')return jsonReply(res,405,{error:'Método não permitido.'});
+    const file=path.join(RUNTIME,'matriculas','matriculas.db');
+    if(!fs.existsSync(file))return jsonReply(res,503,{error:'O cadastro de polos ainda não está disponível.'});
+    const db=new DatabaseSync(file,{readOnly:true});
+    try{return jsonReply(res,200,require('./apps/conecta/precos').snapshot(db,actor,url.searchParams.get('polo'),JSON.parse(readConectaData().toString('utf8'))));}
+    catch(error){return jsonReply(res,error.status||500,{error:error.message});}finally{db.close();}
+  }
   if(p==='/api/portal/conecta-negociacao'){
     if(!['GET','PUT'].includes(method))return jsonReply(res,405,{error:'Método não permitido.'});
     if(method==='PUT'&&!actor.is_admin)return jsonReply(res,403,{error:'Acesso restrito ao administrador.'});
@@ -481,7 +489,7 @@ function serveConecta(req, res, url) {
   if (url.pathname === '/conecta') { res.writeHead(308, { Location: '/conecta/' + url.search }); return res.end(); }
   const file = CONECTA_FILES.get(url.pathname.slice('/conecta'.length));
   if (!file) return jsonReply(res, 404, { error: 'Arquivo não encontrado.' });
-  const content = file[0] === 'dados.json' ? readConectaData() : fs.readFileSync(path.join(ROOT, 'apps/conecta/public', file[0]));
+  const content = file[0] === 'dados.json' ? Buffer.from(JSON.stringify({...JSON.parse(readConectaData().toString('utf8')),courses:JSON.parse(readConectaData().toString('utf8')).courses.map(c=>({...c,pricing:null,pricingOptions:[]}))})) : fs.readFileSync(path.join(ROOT, 'apps/conecta/public', file[0]));
   res.writeHead(200, { 'Content-Type': file[1], 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'self'; frame-src https://secretaria-unicesumar.github.io; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" });
   return req.method === 'HEAD' ? res.end() : res.end(content);
 }
