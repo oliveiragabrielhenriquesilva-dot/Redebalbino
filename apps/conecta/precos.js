@@ -21,7 +21,12 @@ function actorContext(db,actor,requested){
  if(admin){if(requested){if(!/^\d+$/.test(String(requested)))fail(400,'Polo inválido.');poleId=Number(requested);if(!poles.some(p=>p.id===poleId))fail(400,'Polo sem tabela cadastrada.');}}
  else if(requested&&Number(requested)!==Number(poleId))fail(403,'A tabela é definida pelo polo cadastrado no seu acesso.');
  const pole=poles.find(p=>p.id===poleId)||null;
- return {admin,pole,region:pole?regionForPole(pole.nome):null,poles:admin?poles:pole?[pole]:[],blockedReason:pole?'':admin?'Selecione o polo para consultar os valores.':'Seu acesso está sem polo válido definido. Solicite o vínculo ao administrador antes de simular.'};
+ let region=pole?regionForPole(pole.nome):null,administrativeReference=false;
+ if(admin&&!pole){
+  let settings={};try{if(db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='config'").get())settings=JSON.parse(db.prepare("SELECT valor FROM config WHERE chave='conecta_negociacao'").get()?.valor||'{}');}catch{}
+  region=settings.adminPricingRegion===3?3:6;administrativeReference=true;
+ }
+ return {admin,pole,region,administrativeReference,poles:admin?poles:pole?[pole]:[],blockedReason:region?'':'Seu acesso está sem polo válido definido. Solicite o vínculo ao administrador antes de simular.'};
 }
 function catalogWithRegionalCourses(catalog){
  const original=catalog.courses.map(c=>({...c,pricing:null,pricingOptions:[]}));
@@ -42,7 +47,7 @@ function snapshot(db,actor,requested,catalog){
   const source=sourceById.get(c.id),codes=new Set([source?.pricing?.code,...(source?.pricingOptions||[]).map(o=>o.code),c.regionalCode].filter(Boolean));
   for(const table of tables)for(const code of codes){
    const row=table.index.get(code);if(!row)continue;
-   c.pricingOptions.push({code,name:row.name,price:row.price,punctual:row.punctual,degree:c.grau,modalidade:c.modalidade,region:table.region,process:table.process,year:table.year,months:row.months,installments:row.installments,sourceDate:table.date,source:context.pole.nome+' · Região '+table.region+' · Processo '+table.process+'/'+table.year+' · 25/11/2026'});
+   c.pricingOptions.push({code,name:row.name,price:row.price,punctual:row.punctual,degree:c.grau,modalidade:c.modalidade,region:table.region,process:table.process,year:table.year,months:row.months,installments:row.installments,sourceDate:table.date,source:(context.pole?.nome||'Consulta administrativa')+' · Região '+table.region+' · Processo '+table.process+'/'+table.year+' · 25/11/2026'});
   }
   c.pricing=c.pricingOptions[0]||null;
  }

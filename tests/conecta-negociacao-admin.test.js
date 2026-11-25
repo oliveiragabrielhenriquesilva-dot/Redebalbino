@@ -32,4 +32,5 @@ test('grade exige conteúdo automático, valida campos e mantém os dois modelos
  }
  assert.throws(()=>service.save({...payload(),matrixMessageTemplate:'{grade_curricular}'},{is_admin:false}),e=>e.status===403);
 });
+test('referência administrativa salva somente regiões válidas',()=>{assert.equal(service.save({...payload(),adminPricingRegion:3},admin).adminPricingRegion,3);assert.equal(service.save(payload(),admin).adminPricingRegion,3);assert.throws(()=>service.save({...payload(),adminPricingRegion:1},admin),e=>e.status===400);});
 test.after(()=>{db.close();fs.rmSync(dir,{recursive:true,force:true});});

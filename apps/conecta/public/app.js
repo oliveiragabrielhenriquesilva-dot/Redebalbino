@@ -102,9 +102,8 @@ $('general').innerHTML=DATA.blocks.map((b,i)=>`<details ${i===2?'open':''}><summ
 const feeState=new Map();
 let regionalPricing=null,regionalRequest=0;
 function regionalControls(){
- let box=$('regionalPricing');if(!box){box=document.createElement('section');box.id='regionalPricing';box.className='panel';box.setAttribute('aria-label','Tabela de valores por polo');document.querySelector('main').prepend(box);}
- const ctx=regionalPricing?.context;
- box.innerHTML=ctx?`<div class="fee-compact-head"><h3>Tabela de valores do polo</h3><span>Atualizada em 25/11/2026</span></div>${ctx.admin?`<label for="regionalPole">Trocar polo para consulta (administrador)</label><select id="regionalPole"><option value="">Selecione o polo</option>${ctx.poles.map(p=>`<option value="${p.id}" ${ctx.pole?.id===p.id?'selected':''}>${esc(p.nome)}</option>`).join('')}</select>`:''}<p role="status">${esc(ctx.pole?ctx.pole.nome+' · Região '+ctx.region+' · Valores brutos e pontualidade separados.':ctx.blockedReason)}</p>`:'<p role="status">Carregando a tabela do seu polo…</p>';
+ // A ficha usa a tabela recebida do servidor; não pede escolha de polo.
+ const previous=$('regionalPricing');if(previous)previous.remove();
 }
 async function loadRegionalPrices(polo=''){
  const request=++regionalRequest,id=selected?.id;
@@ -115,12 +114,12 @@ async function loadRegionalPrices(polo=''){
   const response=await fetch('/api/portal/conecta-precos'+(polo?'?polo='+encodeURIComponent(polo):''),{credentials:'same-origin',cache:'no-store',signal:AbortSignal.timeout(15000)});
   const result=await response.json();if(!response.ok)throw Error(result.error||'Tabela indisponível.');if(request!==regionalRequest)return;
   regionalPricing=result;DATA.courses=result.courses;regionalControls();
- }catch(e){if(request!==regionalRequest)return;regionalPricing=null;regionalControls();$('regionalPricing').textContent='Não foi possível carregar os valores do polo. Atualize a página para tentar novamente. Nenhuma tabela alternativa foi aplicada.';}
+ }catch(e){if(request!==regionalRequest)return;regionalPricing={context:{blockedReason:'Tabela indisponível. Atualize a página para tentar novamente.'}};regionalControls();}
  if(request!==regionalRequest)return;
  if(id&&DATA.courses.some(c=>c.id===id))openCourse(id,false);
  else if(['all','ead','semipresencial'].includes(mode)){fillFilters();renderCatalog();}
 }
-document.addEventListener('change',e=>{if(e.target.id==='regionalPole')loadRegionalPrices(e.target.value);});
+
 
 let feePolicy=null,feePolicyError='',feePolicyPending=null,feePolicyLoadedAt=0;
 function feeStandard(c){const row=feePolicy?.courses.find(x=>x.id===c.id),product=row?.productId?feePolicy.products.find(p=>p.id===row.productId&&p.ativo):null;return {product,discountBps:product?.discountBps??null};}
@@ -158,7 +157,7 @@ function feeMessage(c,price,discountBps){
 }
 function feeMarkup(c){
  const state=feeSettings(c),p=feePrice(c),standard=feeStandard(c);
- if(!p)return `<div class="fee-missing"><strong>Mensalidade</strong><span>Valor indisponível para este curso no polo selecionado. Confira o vínculo de polo e a tabela cadastrada.</span></div><div class="fee-message-tools">${matrixTools(c)}</div>${matrixPanel(c)}`;
+ if(!p)return `<div class="fee-missing"><strong>Mensalidade</strong><span>Valor indisponível na tabela vinculada ao seu acesso. Confira o vínculo de polo e a tabela cadastrada.</span></div><div class="fee-message-tools">${matrixTools(c)}</div>${matrixPanel(c)}`;
  return `<div class="fee-compact-head"><h3>Simular mensalidade</h3><span>${esc(p.source)}</span></div><div class="fee-grid"><div class="fee-base"><span>Valor integral fixo</span><strong>${brl(p.price)}</strong></div><div class="fee-fields"><div class="fee-negotiation"><label for="feeDiscount">Bolsa / desconto manual</label><div class="fee-discount-control"><button type="button" data-fee-adjust="-1" aria-label="Diminuir desconto em 1 ponto percentual">−</button><div class="fee-percent-input"><input id="feeDiscount" type="text" inputmode="decimal" maxlength="6" value="${esc(state.discount)}" placeholder="Ex.: 35,5" aria-describedby="feeNegotiationHint feeError"><span aria-hidden="true">%</span></div><button type="button" data-fee-adjust="1" aria-label="Aumentar desconto em 1 ponto percentual">+</button></div><small id="feeNegotiationHint">Preenchimento manual de 0 a 100%. Aceita vírgula e até duas casas decimais. A pontualidade de 10% é aplicada depois.</small><p class="fee-standard-note">${esc(feePolicyError||(standard.product?standard.product.nome+(standard.discountBps===null?' · sem padrão definido':' · padrão: '+String(standard.discountBps/100).replace('.',',')+'%'):'Produto não identificado. Consulte o administrador.'))}</p>${standard.discountBps===null?'':'<button type="button" class="text-btn" id="feeRestoreStandard">Usar desconto padrão do produto</button>'}</div><div class="fee-fixed-punctuality"><span>Pontualidade</span><strong>10%</strong><small>Fixa · pagamento até o vencimento</small></div></div><div class="fee-result" aria-live="polite" aria-atomic="true"><span>Com pontualidade / mês</span><strong id="feeFinal">—</strong></div></div><p id="feeError" role="alert" class="fee-error" hidden></p><div class="fee-bottom"><div class="fee-summary"><span>Sem pontualidade</span><b id="feeWithout">—</b></div><div class="fee-summary"><span>Economia mensal</span><b id="feeSaving">—</b></div><details class="fee-breakdown"><summary>Como foi calculado</summary><div class="fee-steps"><div><span>Valor integral</span><b>${brl(p.price)}</b></div><div><span>1. Desconto negociado</span><b id="feeCourseDiscount">—</b></div><div><span>Valor após desconto</span><b id="feeAfter">—</b></div><div><span>2. Pontualidade fixa de 10%</span><b id="feePunctualDiscount">—</b></div><p id="feeHint" class="fee-hint">Primeiro o desconto negociado; depois, os 10% de pontualidade sobre o valor já descontado. Arredondamento em centavos a cada etapa.</p><p class="fee-source">${esc(p.code)} · ${esc(p.source)}</p></div></details></div><div class="fee-message-tools"><button type="button" class="btn primary" id="feeGenerate" disabled>Gerar e copiar mensagem de reabertura</button>${matrixTools(c)}<span class="fee-hint">Mensagens padronizadas pela Administração. Clique para exibir e copiar. Revise o desconto e o valor antes de compartilhar.</span></div><section id="feeMessagePanel" class="fee-message-panel" hidden><label for="feeMessage">Mensagem de reabertura · exibida e copiada automaticamente</label><textarea id="feeMessage" rows="13" readonly></textarea><p class="fee-hint">Modelo editável na Administração, junto à mensagem da grade curricular.</p><span id="feeCopyStatus" class="small muted" role="status" aria-live="polite"></span></section>${matrixPanel(c)}`;
 }
 function updateFee(manual=false){
