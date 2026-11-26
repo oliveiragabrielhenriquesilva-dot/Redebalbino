@@ -123,3 +123,32 @@ main{padding-top:27px}.header{margin-bottom:23px;align-items:flex-start}.header 
 /* Ações da HERO: reabertura e matriz lado a lado. */
 .fee-message-tools:has(#matrixCopy)>.btn{flex:1 1 0;min-width:0;align-self:stretch}.fee-message-tools:has(#matrixCopy)>.fee-hint{flex-basis:100%}
 @media(max-width:650px){.fee-message-tools:has(#matrixCopy)>.btn{flex-basis:100%}}
+
+.multa-layout{display:grid;grid-template-columns:minmax(195px,235px) minmax(0,1fr);gap:24px;align-items:start}
+.multa-index{position:sticky;top:24px;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.multa-index h3{font-size:13px;margin:0 0 8px}
+.multa-index ul{list-style:none;margin:0;padding:0}
+.multa-index ul+h3{margin-top:18px}
+.multa-index a{display:block;padding:7px 8px;border-radius:7px;color:var(--muted);font-size:12px;line-height:1.45;text-decoration:none}
+.multa-index a:hover,.multa-index a[aria-current="location"]{background:#1c3857;color:var(--text)}
+.multa-topics details{margin-bottom:12px;scroll-margin-top:16px}
+.multa-topics summary{padding:15px 18px;gap:12px}
+.multa-topics summary::after{flex:none}
+.multa-body{padding:16px 18px}
+.multa-body h3{font-size:14px;margin:0 0 6px}
+.multa-body p,.multa-body li{line-height:1.65}
+.multa-body ul{padding-inline-start:21px;margin:8px 0 0;color:var(--muted)}
+.multa-body li+li{margin-top:6px}
+.multa-answer+.multa-answer{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.multa-table table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.5}
+.multa-table caption{text-align:left;font-weight:600;margin-bottom:10px}
+.multa-table th,.multa-table td{border:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}
+.multa-table thead{background:#1c3857}
+.multa-table tbody th{font-weight:600}
+
+html[data-theme="light"] .multa-index a:hover,
+html[data-theme="light"] .multa-index a[aria-current="location"],
+html[data-theme="light"] .multa-table thead{background:#e4edf7;color:var(--text)}
+@media(max-width:1000px){.multa-layout{grid-template-columns:minmax(0,1fr);gap:16px}.multa-index{position:static}.multa-index ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px 8px}}
+@media(max-width:430px){.multa-index a{padding:6px 4px}.multa-body{padding:13px}.multa-table th,.multa-table td{padding:6px;font-size:12px}}
+@media print{.multa-layout{display:block}.multa-index{display:none}.multa-table thead{background:#e4edf7}.multa-body p,.multa-body ul{color:#2e435d}}
