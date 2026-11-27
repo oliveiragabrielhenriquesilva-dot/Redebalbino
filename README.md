@@ -1,4 +1,24 @@
-# Central Balbino — Hostinger
+# Rede Balbino
+
+Central de gestão educacional e automação de processos, criada para apoiar a operação de nove polos e mais de 20 tutoras.
+
+## O problema e a solução
+Centralizar rotinas comerciais e administrativas, indicadores, oportunidades, calendário e produção de materiais em uma aplicação web. A solução reúne módulos com armazenamento separado e integração operacional.
+
+## Tecnologias
+Node.js, JavaScript, SQLite, Chromium headless e hospedagem web.
+
+## Minha atuação
+Levantamento de requisitos, regras de negócio, prototipagem assistida por IA, validação funcional, documentação e implantação.
+
+## Privacidade
+Demonstrações devem utilizar dados fictícios. Não publique informações de estudantes, sessões, bancos ou credenciais.
+
+---
+
+## Referência operacional preservada
+
+### Central Balbino — Hostinger
 
 Uma aplicação Node.js única encaminha os três sistemas, mantendo cada código e banco separados:
 
